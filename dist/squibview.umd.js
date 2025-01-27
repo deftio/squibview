@@ -1424,7 +1424,8 @@
     baseClass: 'squibview'
   });
   _defineProperty(SquibView, "version", {
-    version: "0.0.24"
+    version: "0.0.24",
+    url: "https://github.com/deftio/squibview"
   });
 
   return SquibView;

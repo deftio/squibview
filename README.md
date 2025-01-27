@@ -1,6 +1,7 @@
 # SquibView
 
-[Live Demo (github)](https://deftio.github.io/examples/example_ESM.html)
+[Live Demo (github)](https://deftio.github.io/squibview/examples/example_ESM.html)
+
 [Live Demo (local)](./examples/example_ESM.html)
 
 SquibView is a javascript embeddable for converting GitHub-flavored Markdown (or full HTML pages) into a rendered view on the fly. 
