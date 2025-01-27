@@ -23,6 +23,7 @@ Squibview also can be used as an embedddable component in your app, where you ca
 Squibview is available on unpkg and npm.  
 
 ## Examples
+
 See the [examples folder](./examples)
 
 ## Features
@@ -82,5 +83,3 @@ Please make sure your contributions follow the project's coding style and that t
 ## License
 
 This project is licensed under the BSD-2 License. See the LICENSE file for details.
-(c) 2024 Manu Chatterjee
-

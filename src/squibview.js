@@ -19,7 +19,7 @@ class SquibView {
     };
 
     static version = {
-      version: "0.0.24",
+      version: "0.0.25",
       url : "https://github.com/deftio/squibview"
     };
 
@@ -171,7 +171,7 @@ class SquibView {
     }
 
     cleanMarkdown(md) {
-      return md.replace(/^```markdown\s+/, '').replace(/\s+```$/, '');
+      return md.replace(/^```markdown\s+/, '').replace(/```$/, '');
     }
 
     async renderMarkdown() {
