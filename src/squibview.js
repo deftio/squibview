@@ -19,7 +19,8 @@ class SquibView {
     };
 
     static version = {
-      version: "0.0.23"
+      version: "0.0.24",
+      url : "https://github.com/deftio/squibview"
     };
 
     constructor(element, options = {}) {
@@ -88,7 +89,7 @@ class SquibView {
         </div>
         <div class="${this.options.baseClass}-controls" ${!this.options.showControls ? 'style="display:none"' : ''}>
           <button data-view="md">Markdown</button>
-          <button data-view="html">Preview</button>
+          <button data-view="html">Rendered</button>
           <button data-view="split">Split</button>
           <button class="copy-md-button">Copy MD</button>
           <button class="copy-html-button">Copy Formatted</button>

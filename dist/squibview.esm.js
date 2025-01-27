@@ -514,7 +514,7 @@ var SquibView = /*#__PURE__*/function () {
     key: "createStructure",
     value: function createStructure() {
       this.container.classList.add(this.options.baseClass);
-      this.container.innerHTML = "\n        <div class=\"".concat(this.options.baseClass, "-title\" ").concat(!this.options.titleShow ? 'style="display:none"' : '', ">\n          ").concat(this.options.titleContent, "\n        </div>\n        <div class=\"").concat(this.options.baseClass, "-controls\" ").concat(!this.options.showControls ? 'style="display:none"' : '', ">\n          <button data-view=\"md\">Markdown</button>\n          <button data-view=\"html\">Preview</button>\n          <button data-view=\"split\">Split</button>\n          <button class=\"copy-md-button\">Copy MD</button>\n          <button class=\"copy-html-button\">Copy Formatted</button>\n        </div>\n        <div class=\"").concat(this.options.baseClass, "-editor\">\n          <textarea class=\"").concat(this.options.baseClass, "-input\"></textarea>\n          <div class=\"").concat(this.options.baseClass, "-output\"></div>\n        </div>\n      ");
+      this.container.innerHTML = "\n        <div class=\"".concat(this.options.baseClass, "-title\" ").concat(!this.options.titleShow ? 'style="display:none"' : '', ">\n          ").concat(this.options.titleContent, "\n        </div>\n        <div class=\"").concat(this.options.baseClass, "-controls\" ").concat(!this.options.showControls ? 'style="display:none"' : '', ">\n          <button data-view=\"md\">Markdown</button>\n          <button data-view=\"html\">Rendered</button>\n          <button data-view=\"split\">Split</button>\n          <button class=\"copy-md-button\">Copy MD</button>\n          <button class=\"copy-html-button\">Copy Formatted</button>\n        </div>\n        <div class=\"").concat(this.options.baseClass, "-editor\">\n          <textarea class=\"").concat(this.options.baseClass, "-input\"></textarea>\n          <div class=\"").concat(this.options.baseClass, "-output\"></div>\n        </div>\n      ");
       this.title = this.container.querySelector(".".concat(this.options.baseClass, "-title"));
       this.controls = this.container.querySelector(".".concat(this.options.baseClass, "-controls"));
       this.editor = this.container.querySelector(".".concat(this.options.baseClass, "-editor"));
@@ -1418,7 +1418,7 @@ _defineProperty(SquibView, "defaultOptions", {
   baseClass: 'squibview'
 });
 _defineProperty(SquibView, "version", {
-  version: "0.0.23"
+  version: "0.0.24"
 });
 
 export { SquibView as default };

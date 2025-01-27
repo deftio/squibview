@@ -1,6 +1,6 @@
 {
   "name": "squibview",
-  "version": "0.0.23",
+  "version": "0.0.24",
   "description": "SquibView is a light weight editor which live-renders mardown (including code, diagrams, etc) or HTML to a browser",
   "keywords": [
     "markdown",
@@ -32,8 +32,8 @@
     "examples": "examples"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rollup -c",
+    "test": "jest --coverage",
+    "build": "npm run updateVersion && npm run makeIndexHTML && npm run minifyCSS && rollup -c",
     "minifyCSS": "node ./tools/minifyCSS.cjs",
     "updateVersion": "node ./tools/updateVersion",
     "makeIndexHTML": "node ./node_modules/docbat/src/docbat-cli.js -i README.md -o index.html"
@@ -55,8 +55,8 @@
     ]
   },
   "devDependencies": {
-    "@babel/core": "^7.25.2",
-    "@babel/preset-env": "^7.25.3",
+    "@babel/core": "^7.26.7",
+    "@babel/preset-env": "^7.26.7",
     "@babel/preset-react": "^7.24.7",
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-commonjs": "^26.0.1",
