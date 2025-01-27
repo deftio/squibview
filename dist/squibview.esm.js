@@ -1408,7 +1408,7 @@ var SquibView = /*#__PURE__*/function () {
       return s;
     }
   }]);
-}(); // end of class GraphicalMD
+}(); // end of class SquibView
 _defineProperty(SquibView, "defaultOptions", {
   initialContent: '',
   showControls: true,
@@ -1420,4 +1420,6 @@ _defineProperty(SquibView, "defaultOptions", {
 _defineProperty(SquibView, "version", {
   version: "0.0.23"
 });
+
+export { SquibView as default };
 //# sourceMappingURL=squibview.esm.js.map

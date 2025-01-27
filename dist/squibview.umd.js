@@ -1,7 +1,8 @@
-(function (factory) {
+(function (global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :
-  factory();
-})((function () { 'use strict';
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.SquibView = factory());
+})(this, (function () { 'use strict';
 
   function _arrayLikeToArray(r, a) {
     (null == a || a > r.length) && (a = r.length);
@@ -1413,7 +1414,7 @@
         return s;
       }
     }]);
-  }(); // end of class GraphicalMD
+  }(); // end of class SquibView
   _defineProperty(SquibView, "defaultOptions", {
     initialContent: '',
     showControls: true,
@@ -1425,6 +1426,8 @@
   _defineProperty(SquibView, "version", {
     version: "0.0.23"
   });
+
+  return SquibView;
 
 }));
 //# sourceMappingURL=squibview.umd.js.map

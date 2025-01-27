@@ -34,7 +34,6 @@ export default [
         babelHelpers: 'bundled',
         presets: ['@babel/preset-env'],
       }),
-      css({ output: 'squibview.css' }), // Bundle CSS separately
     ],
   },
   // ESM Configuration
@@ -62,7 +61,6 @@ export default [
         babelHelpers: 'bundled',
         presets: ['@babel/preset-env'],
       }),
-      css({ output: 'squibview.css' }), // Ensure CSS is included
     ],
   }
 ];
