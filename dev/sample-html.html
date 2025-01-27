@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pitching to VCs - Reveal.js</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js/dist/theme/league.css">
+</head>
+<body>
+
+    <div class="reveal">
+        <div class="slides">
+            <section data-markdown="slides.md"
+                     data-separator="^---$"
+                     data-separator-vertical="^--$"
+                     data-separator-notes="^Note:">
+            </section>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/markdown/markdown.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/highlight/highlight.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/notes/notes.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+
+    <script>
+        mermaid.initialize({ startOnLoad: true });
+
+        Reveal.initialize({
+            hash: true,
+            controls: true,
+            progress: true,
+            slideNumber: true,
+            transition: 'slide',
+            plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ],
+            dependencies: [
+                { src: 'https://cdn.jsdelivr.net/npm/reveal.js/plugin/markdown/markdown.js' },
+                { src: 'https://cdn.jsdelivr.net/npm/reveal.js/plugin/highlight/highlight.js' },
+                { src: 'https://cdn.jsdelivr.net/npm/reveal.js/plugin/notes/notes.js' }
+            ]
+        });
+
+        // Process Mermaid Diagrams after Reveal.js initializes
+        Reveal.on('slidechanged', function() {
+            mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+        });
+    </script>
+
+</body>
+</html>

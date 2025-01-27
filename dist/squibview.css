@@ -1,0 +1,106 @@
+/* graphical_md.css */
+
+/* globals for suppressing mermaid msgs */
+.error-icon {
+    display: none;
+}
+
+text.error-text {
+    display: none;
+}
+
+/* squibview specific styles */
+
+.squibview {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.squibview-controls {
+    padding: 0.2em 0;
+    text-align: left;
+}
+
+.squibview-controls button {
+    border-radius: 4px;
+    background-color: #2a57d3;
+    border: none;
+    color: white;
+    padding: 0.4em 0.7em;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-right: 0.5em;
+}
+
+.squibview-controls button.active {
+    background-color: #e0e0e0;
+    border: 1px solid #2a57d3;
+    color: #255ff1;
+}
+
+.squibview-editor {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    /* Important for Firefox */
+}
+
+.squibview-input,
+.squibview-output {
+    height: 100%;
+    box-sizing: border-box;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+}
+
+.squibview-input {
+    padding: 1em;
+    font-family: monospace;
+    font-size: 1em;
+}
+
+.squibview-output {
+    padding: 1em;
+    overflow: auto;
+    border-left: 1px solid #ccc;
+}
+
+.squibview-hidden {
+    display: none !important;
+}
+
+.squibview-output table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 1em;
+}
+
+.squibview-output th,
+.squibview-output td {
+    border: 1px solid #ccc;
+    padding: 0.5em;
+    text-align: left;
+}
+
+.squibview-output th {
+    background: #f0f0f0;
+}
+
+.squibview-output pre code {
+    display: block;
+    padding: 0.5em;
+    background: #f7f7f7;
+    border-radius: 4px;
+}
+
+[contenteditable] {
+    outline: 0px solid transparent;
+    caret-color: red;
+}
+
+.squibview-title {
+    padding: 0 0;
+    font-size: 1.5em;
+    text-align: left;
+}
