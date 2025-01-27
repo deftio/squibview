@@ -76,11 +76,11 @@ Also supports Mermaid diagrams and SVG content within fenced code blocks.
 
     (async filename => {
       try {
-        editor.setContent(await (await fetch(filename)).text(), "md");
+        editor.setContent( editor.makeRevealJSFullPage( await (await fetch(filename)).text()), "html");
       } catch (error) {
-        console.error("Failed to load file:", error);
+        console.error("Failed to load Markdown:", error);
       }
-    })("./sample-content.md");
+    })("./slides.md");
 
 
 
