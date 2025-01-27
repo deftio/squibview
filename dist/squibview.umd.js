@@ -612,7 +612,7 @@
     }, {
       key: "cleanMarkdown",
       value: function cleanMarkdown(md) {
-        return md.replace(/^```markdown\s+/, '').replace(/\s+```$/, '');
+        return md.replace(/^```markdown\s+/, '').replace(/```$/, '');
       }
     }, {
       key: "renderMarkdown",
@@ -1413,6 +1413,14 @@
         console.log(editableAttr);
         return s;
       }
+    }, {
+      key: "makeRevealJSFullPage",
+      value: function makeRevealJSFullPage(markdown) {
+        var title = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "Reveal.js Markdown Presentation";
+        return "<!DOCTYPE html>\n  <html lang=\"en\">\n  <head>\n      <meta charset=\"utf-8\">\n      <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n      <title>".concat(title, "</title>\n      <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.css\">\n      <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/reveal.js/dist/theme/black.css\">\n      <script src=\"https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js\"></script>\n  </head>\n  <body>\n      <div class=\"reveal\">\n          <div class=\"slides\">\n              ").concat(markdown.split('---').map(function (slide) {
+          return "<section data-markdown><script type=\"text/template\">".concat(slide.trim(), "</script></section>");
+        }).join('\n'), "\n          </div>\n      </div>\n      <script src=\"https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.js\"></script>\n      <script src=\"https://cdn.jsdelivr.net/npm/reveal.js/plugin/markdown/markdown.js\"></script>\n      <script>\n          Reveal.initialize({\n              plugins: [ RevealMarkdown ]\n          });\n          \n          // Ensure Mermaid diagrams initialize correctly\n          document.addEventListener('DOMContentLoaded', () => {\n              mermaid.initialize({ startOnLoad: true , securityLevel: 'loose', theme: 'dark' });\n              document.querySelectorAll('.mermaid').forEach(el => {\n                  el.innerHTML = el.textContent;\n                  mermaid.init(undefined, el);\n              });\n          });\n      </script>\n  </body>\n  </html>");
+      }
     }]);
   }(); // end of class SquibView
   _defineProperty(SquibView, "defaultOptions", {
@@ -1424,7 +1432,7 @@
     baseClass: 'squibview'
   });
   _defineProperty(SquibView, "version", {
-    version: "0.0.24",
+    version: "0.0.25",
     url: "https://github.com/deftio/squibview"
   });
 

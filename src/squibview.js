@@ -845,6 +845,45 @@ class SquibView {
       return s;
     }
 
+    makeRevealJSFullPage(markdown, title = "Reveal.js Markdown Presentation") {
+      return `<!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${title}</title>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.css">
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js/dist/theme/black.css">
+      <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  </head>
+  <body>
+      <div class="reveal">
+          <div class="slides">
+              ${markdown.split('---').map(slide => `<section data-markdown><script type="text/template">${slide.trim()}</script></section>`).join('\n')}
+          </div>
+      </div>
+      <script src="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/markdown/markdown.js"></script>
+      <script>
+          Reveal.initialize({
+              plugins: [ RevealMarkdown ]
+          });
+          
+          // Ensure Mermaid diagrams initialize correctly
+          document.addEventListener('DOMContentLoaded', () => {
+              mermaid.initialize({ startOnLoad: true , securityLevel: 'loose', theme: 'dark' });
+              document.querySelectorAll('.mermaid').forEach(el => {
+                  el.innerHTML = el.textContent;
+                  mermaid.init(undefined, el);
+              });
+          });
+      </script>
+  </body>
+  </html>`;
+  }
+  
+
+
 }// end of class SquibView
 
 export default SquibView;
