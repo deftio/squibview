@@ -9,81 +9,82 @@
 */
 
 class SquibView {
-    static defaultOptions = {
-      initialContent: '',
-      showControls: true,
-      titleShow: false,        
-      titleContent: '',
-      initialView: 'split',
-      baseClass: 'squibview'
-    };
+  static defaultOptions = {
+    initialContent: '',
+    inputContentType: 'md', // 'md', 'html', 'reveal', 'csv' or 'tsv'
+    showControls: true,
+    titleShow: false,
+    titleContent: '',
+    initialView: 'split',
+    baseClass: 'squibview'
+  };
 
-    static version = {
-      version: "0.0.26",
-      url : "https://github.com/deftio/squibview"
-    };
+  static version = {
+    version: "0.0.26",
+    url: "https://github.com/deftio/squibview"
+  };
 
-    constructor(element, options = {}) {
-      this.options = { ...SquibView.defaultOptions, ...options };
-      this.container = typeof element === 'string' ? document.querySelector(element) : element;
+  constructor(element, options = {}) {
+    this.options = { ...SquibView.defaultOptions, ...options };
+    this.container = typeof element === 'string' ? document.querySelector(element) : element;
 
-      if (!this.container) {
-        throw new Error('Container element not found');
+    if (!this.container) {
+      throw new Error('Container element not found');
+    }
+
+    this.initializeLibraries();
+    this.createStructure();
+    this.initializeEventHandlers();
+    this.setContent(this.options.initialContent, this.options.inputContentType);
+    this.setView(this.options.initialView);
+    this.initializeResizeObserver();
+  }
+
+  initializeLibraries() {
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: 'loose',
+      theme: 'default',
+      errorCallback: function (error) {
+        console.warn("Mermaid error:", error);
+        return "<div class='mermaid-error'></div>"; // Replace with custom message
       }
-
-      this.initializeLibraries();
-      this.createStructure();
-      this.initializeEventHandlers();
-      this.setContent(this.options.initialContent);
-      this.setView(this.options.initialView);
-      this.initializeResizeObserver();
-    }
-
-    initializeLibraries() {
-      mermaid.initialize({
-        startOnLoad: false,
-        securityLevel: 'loose',
-        theme: 'default',
-        errorCallback: function (error) {
-          console.warn("Mermaid error:", error);
-          return "<div class='mermaid-error'></div>"; // Replace with custom message
+    });
+    mermaid.init(undefined, ".mermaid");
+    this.md = window.markdownit({
+      html: true,
+      linkify: true,
+      typographer: true,
+      highlight: (str, lang) => {
+        if (lang && hljs.getLanguage(lang)) {
+          try {
+            return hljs.highlight(str, { language: lang }).value;
+          } catch (__) { }
         }
-      });
-      mermaid.init(undefined, ".mermaid"); 
-      this.md = window.markdownit({
-        html: true,
-        linkify: true,
-        typographer: true,
-        highlight: (str, lang) => {
-          if (lang && hljs.getLanguage(lang)) {
-            try {
-              return hljs.highlight(str, { language: lang }).value;
-            } catch (__) { }
-          }
-          return '';
-        }
-      });
+        return '';
+      }
+    });
 
-      const defaultFence = this.md.renderer.rules.fence ||
-        ((tokens, idx, options, env, self) => self.renderToken(tokens, idx, options));
+    const defaultFence = this.md.renderer.rules.fence ||
+      ((tokens, idx, options, env, self) => self.renderToken(tokens, idx, options));
 
-      this.md.renderer.rules.fence = (tokens, idx, options, env, self) => {
-        const token = tokens[idx];
-        const info = token.info.trim();
-        if (info === 'mermaid') {
-          return '<div class="mermaid">' + token.content + '</div>';
-        }
-        if (info === 'svg') {
-          return token.content;
-        }
-        return defaultFence(tokens, idx, options, env, self);
-      };
-    }
+    this.md.renderer.rules.fence = (tokens, idx, options, env, self) => {
+      const token = tokens[idx];
+      const info = token.info.trim();
+      if (info === 'mermaid') {
+        return '<div class="mermaid">' + token.content + '</div>';
+      }
+      if (info === 'svg') {
+        return token.content;
+      }
+      return defaultFence(tokens, idx, options, env, self);
+    };
+  }
 
-    createStructure() {
-      this.container.classList.add(this.options.baseClass);
+  createStructure() {
+    this.container.classList.add(this.options.baseClass);
 
-      this.container.innerHTML = `
+    this.container.innerHTML = `
         <div class="${this.options.baseClass}-title" ${!this.options.titleShow ? 'style="display:none"' : ''}>
           ${this.options.titleContent}
         </div>
@@ -100,277 +101,282 @@ class SquibView {
         </div>
       `;
 
-      this.title = this.container.querySelector(`.${this.options.baseClass}-title`);
-      this.controls = this.container.querySelector(`.${this.options.baseClass}-controls`);
-      this.editor = this.container.querySelector(`.${this.options.baseClass}-editor`);
-      this.input = this.container.querySelector(`.${this.options.baseClass}-input`);
-      this.output = this.container.querySelector(`.${this.options.baseClass}-output`);
-    }
+    this.title = this.container.querySelector(`.${this.options.baseClass}-title`);
+    this.controls = this.container.querySelector(`.${this.options.baseClass}-controls`);
+    this.editor = this.container.querySelector(`.${this.options.baseClass}-editor`);
+    this.input = this.container.querySelector(`.${this.options.baseClass}-input`);
+    this.output = this.container.querySelector(`.${this.options.baseClass}-output`);
+  }
 
-    initializeEventHandlers() {
-      this.controls.querySelectorAll('button[data-view]').forEach(button => {
-        button.addEventListener('click', () => this.setView(button.dataset.view));
-      });
+  initializeEventHandlers() {
+    this.controls.querySelectorAll('button[data-view]').forEach(button => {
+      button.addEventListener('click', () => this.setView(button.dataset.view));
+    });
 
-      this.controls.querySelector('.copy-src-button').addEventListener('click', () => this.copySource());
-      this.controls.querySelector('.copy-html-button').addEventListener('click', () => this.copyHTML());
+    this.controls.querySelector('.copy-src-button').addEventListener('click', () => this.copySource());
+    this.controls.querySelector('.copy-html-button').addEventListener('click', () => this.copyHTML());
 
-      //onchange() for input source
-      this.input.addEventListener('input', () => { this.renderOutput(); });
-    }
-    initializeResizeObserver() {
-      const resizeObserver = new ResizeObserver(entries => {
-        for (let entry of entries) {
-          if (entry.target === this.container) {
-            this.adjustLayout();
-          }
+    //onchange() for input source
+    this.input.addEventListener('input', () => { this.renderOutput(); });
+  }
+  initializeResizeObserver() {
+    const resizeObserver = new ResizeObserver(entries => {
+      for (let entry of entries) {
+        if (entry.target === this.container) {
+          this.adjustLayout();
         }
-      });
-      resizeObserver.observe(this.container);
-    }
-
-    adjustLayout() {
-      const containerRect = this.container.getBoundingClientRect();
-      const titleHeight = this.title.offsetHeight;
-      const controlsHeight = this.controls.offsetHeight;
-
-      const availableHeight = containerRect.height - titleHeight - controlsHeight;
-      const availableWidth = containerRect.width;
-      this.editor.style.height = `${availableHeight}px`;
-      this.editor.style.width = `${availableWidth}px`;
-
-      if (this.currentView === 'split') {
-        this.input.style.width = '50%';
-        this.output.style.width = '50%';
-      } else if (this.currentView === 'src') {
-        this.input.style.width = '100%';
-      } else if (this.currentView === 'html') {
-        this.output.style.width = '100%';
       }
-    }
+    });
+    resizeObserver.observe(this.container);
+  }
 
-    setContent(content, contentType = 'md') {
-      this.input.value = content;
+  adjustLayout() {
+    const containerRect = this.container.getBoundingClientRect();
+    const titleHeight = this.title.offsetHeight;
+    const controlsHeight = this.controls.offsetHeight;
+
+    const availableHeight = containerRect.height - titleHeight - controlsHeight;
+    const availableWidth = containerRect.width;
+    this.editor.style.height = `${availableHeight}px`;
+    this.editor.style.width = `${availableWidth}px`;
+
+    if (this.currentView === 'split') {
+      this.input.style.width = '50%';
+      this.output.style.width = '50%';
+    } else if (this.currentView === 'src') {
+      this.input.style.width = '100%';
+    } else if (this.currentView === 'html') {
+      this.output.style.width = '100%';
+    }
+  }
+
+  setContent(content, contentType ) {
+    this.input.value = content;
+    // if the contentType isn't undefined then we'll set it:
+    if (contentType) {
       this.inputContentType = contentType;
-      this.renderOutput();
+    }
+    this.renderOutput();
+  }
+
+  getContent() {
+    return this.input.value;
+  }
+
+  cleanMarkdown(md) {
+    return md.replace(/^```markdown\s+/, '').replace(/```$/, '');
+  }
+
+  async renderMarkdown(md) {
+
+    const markdown = md || this.input.value;
+    const html = this.md.render(markdown); 
+    this.output.innerHTML = "<div contenteditable='true'>" + html + "</div>";
+
+    // Convert all images to data URLs immediately after rendering
+    const contentDiv = this.output.querySelector('div[contenteditable="true"]');
+    const images = contentDiv.querySelectorAll('img');
+
+    // render images to data urls
+
+    for (const img of images) {
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Create new image and wait for it to load
+        const tempImg = new Image();
+        tempImg.crossOrigin = 'anonymous';
+
+        await new Promise((resolve, reject) => {
+          tempImg.onload = () => {
+            // Set canvas size to match image
+            canvas.width = tempImg.naturalWidth;
+            canvas.height = tempImg.naturalHeight;
+
+            // Draw image to canvas
+            ctx.drawImage(tempImg, 0, 0);
+
+            // Convert to data URL
+            const dataUrl = canvas.toDataURL('image/png', 1.0);
+
+            // Update original image
+            img.src = dataUrl;
+            resolve();
+          };
+          tempImg.onerror = reject;
+          tempImg.src = img.src;
+        });
+      } catch (error) {
+        console.error('Failed to convert image:', error);
+      }
+
     }
 
-    getContent() {
-      return this.input.value;
+    // end of images to data urls
+
+    // Initialize mermaid diagrams after all images are processed
+    mermaid.init(undefined, this.output.querySelectorAll('.mermaid'));
+  } // end of renderMarkdown
+
+  // todo rename sourceRemoveAllHR ()  ==> handled markdown or html via replace (---) or (<hr>, <hr/>) respectively
+  markdownRemoveAllHR() {
+    if (this.inputContentType === 'md') {
+      const markdown = this.getMarkdownSource();
+      const newMarkdown = markdown.replace(/---/g, '');
+      this.setContent(newMarkdown, this.inputContentType);
+    }
+  }
+
+  setView(view) {
+    this.currentView = view;
+
+    this.controls.querySelectorAll('button[data-view]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.view === view);
+    });
+
+    const copyMDButton = this.controls.querySelector('.copy-src-button');
+    const copyHTMLButton = this.controls.querySelector('.copy-html-button');
+
+    if (view === 'src') {
+      this.input.classList.remove('squibview-hidden');
+      this.output.classList.add('squibview-hidden');
+      this.input.style.width = '100%';
+      copyMDButton.classList.remove('squibview-hidden');
+      copyHTMLButton.classList.add('squibview-hidden');
+    } else if (view === 'html') {
+      this.input.classList.add('squibview-hidden');
+      this.output.classList.remove('squibview-hidden');
+      this.output.style.width = '100%';
+      copyMDButton.classList.add('squibview-hidden');
+      copyHTMLButton.classList.remove('squibview-hidden');
+    } else { // view == 'split'
+      this.input.classList.remove('squibview-hidden');
+      this.output.classList.remove('squibview-hidden');
+      this.input.style.width = '50%';
+      this.output.style.width = '50%';
+      copyMDButton.classList.remove('squibview-hidden');
+      copyHTMLButton.classList.remove('squibview-hidden');
     }
 
-    cleanMarkdown(md) {
-      return md.replace(/^```markdown\s+/, '').replace(/```$/, '');
-    }
+    this.adjustLayout();
+  }
 
-    async renderMarkdown() {
-      const html = this.md.render(this.input.value);
-      this.output.innerHTML = "<div contenteditable='true'>" + html + "</div>";
+  async copyContent() {
+    const copyButton = this.controls.querySelector('.copy-button');
+    copyButton.textContent = 'Copying...';
 
-      // Convert all images to data URLs immediately after rendering
+    try {
       const contentDiv = this.output.querySelector('div[contenteditable="true"]');
-      const images = contentDiv.querySelectorAll('img');
+      if (!contentDiv) {
+        throw new Error('Content div not found');
+      }
 
-      // render images to data urls
+      const clone = contentDiv.cloneNode(true);
 
-      for (const img of images) {
+      clone.querySelectorAll('pre code').forEach(block => {
+        const formattedCode = block.innerHTML;
+
+        const table = document.createElement('table');
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        table.style.border = 'none';
+
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.style.backgroundColor = '#f7f7f7';
+        td.style.padding = '12px';
+        td.style.fontFamily = 'Consolas, Monaco, "Courier New", monospace';
+        td.style.whiteSpace = 'pre';
+        td.style.border = 'none';
+
+        td.innerHTML = formattedCode.trim();
+
+        tr.appendChild(td);
+        table.appendChild(tr);
+        block.parentNode.replaceWith(table);
+      });
+
+      const svgElements = clone.querySelectorAll('svg');
+      for (const svg of svgElements) {
         try {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
+          const pngBlob = await this.svgToPng(svg);
+          const dataUrl = await new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(pngBlob);
+          });
 
-          // Create new image and wait for it to load
-          const tempImg = new Image();
-          tempImg.crossOrigin = 'anonymous';
+          const img = document.createElement('img');
+          img.src = dataUrl;
+          img.width = svg.clientWidth || svg.viewBox.baseVal.width || 100;
+          img.height = svg.clientHeight || svg.viewBox.baseVal.height || 100;
+          img.setAttribute('v:shapes', 'image' + Math.random().toString(36).substr(2, 9));
+          img.style.width = img.width + 'px';
+          img.style.height = img.height + 'px';
+          img.alt = "Converted diagram";
+          svg.parentNode.replaceChild(img, svg);
+        } catch (error) {
+          console.error('Failed to convert SVG:', error);
+        }
+      }
 
+
+      // Convert all images to data URLs
+      const imgElements = clone.querySelectorAll('img');
+      await Promise.all(imgElements.map(async img => {
+        console.log('Converting image:', img.src);
+
+        // Create canvas
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Create new image and wait for it to load completely
+        const tempImg = new Image();
+        tempImg.crossOrigin = 'anonymous';
+
+        try {
           await new Promise((resolve, reject) => {
-            tempImg.onload = () => {
-              // Set canvas size to match image
-              canvas.width = tempImg.naturalWidth;
-              canvas.height = tempImg.naturalHeight;
-
-              // Draw image to canvas
-              ctx.drawImage(tempImg, 0, 0);
-
-              // Convert to data URL
-              const dataUrl = canvas.toDataURL('image/png', 1.0);
-
-              // Update original image
-              img.src = dataUrl;
-              resolve();
-            };
+            tempImg.onload = resolve;
             tempImg.onerror = reject;
             tempImg.src = img.src;
           });
+
+          // Set dimensions
+          canvas.width = tempImg.offsetWidth || img.offsetWidth || 200;
+          canvas.height = tempImg.offsetHeight || img.offsetHeight || 200;
+
+          // Draw and convert
+          ctx.drawImage(tempImg, 0, 0);
+          const dataUrl = canvas.toDataURL('image/png', 1.0);
+
+          // Create and wait for new image with data URL
+          const newImg = new Image();
+          await new Promise((resolve, reject) => {
+            newImg.onload = () => {
+              newImg.alt = img.alt || 'Converted image';
+              newImg.width = canvas.width;
+              newImg.height = canvas.height;
+              newImg.style.cssText = img.style.cssText;
+              // Force image to be treated as embedded
+              newImg.setAttribute('data-embedded', 'true');
+              // Replace the old image
+              img.parentNode.replaceChild(newImg, img);
+              console.log('Successfully converted image to data URL');
+              resolve();
+            };
+            newImg.onerror = reject;
+            newImg.src = dataUrl;
+          });
         } catch (error) {
-          console.error('Failed to convert image:', error);
+          console.error('Error converting image:', error, img.src);
+          // Don't rethrow - we want to continue with other images
         }
-
-      }
-
-      // end of images to data urls
-
-      // Initialize mermaid diagrams after all images are processed
-      mermaid.init(undefined, this.output.querySelectorAll('.mermaid'));
-    } // end of renderMarkdown
-
-    // todo rename sourceRemoveAllHR ()  ==> handled markdown or html via replace (---) or (<hr>, <hr/>) respectively
-    markdownRemoveAllHR  () {
-      if (this.inputContentType === 'md') {
-        const markdown = this.getMarkdownSource();
-        const newMarkdown = markdown.replace(/---/g, '');
-        this.setContent(newMarkdown);
-      }
-    }
-
-    setView(view) {
-      this.currentView = view;
-
-      this.controls.querySelectorAll('button[data-view]').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.view === view);
-      });
-
-      const copyMDButton = this.controls.querySelector('.copy-src-button');
-      const copyHTMLButton = this.controls.querySelector('.copy-html-button');
-
-      if (view === 'src') {
-        this.input.classList.remove('squibview-hidden');
-        this.output.classList.add('squibview-hidden');
-        this.input.style.width = '100%';
-        copyMDButton.classList.remove('squibview-hidden');
-        copyHTMLButton.classList.add('squibview-hidden');
-      } else if (view === 'html') {
-        this.input.classList.add('squibview-hidden');
-        this.output.classList.remove('squibview-hidden');
-        this.output.style.width = '100%';
-        copyMDButton.classList.add('squibview-hidden');
-        copyHTMLButton.classList.remove('squibview-hidden');
-      } else { // view == 'split'
-        this.input.classList.remove('squibview-hidden');
-        this.output.classList.remove('squibview-hidden');
-        this.input.style.width = '50%';
-        this.output.style.width = '50%';
-        copyMDButton.classList.remove('squibview-hidden');
-        copyHTMLButton.classList.remove('squibview-hidden');
-      }
-
-      this.adjustLayout();
-    }
-
-    async copyContent() {
-      const copyButton = this.controls.querySelector('.copy-button');
-      copyButton.textContent = 'Copying...';
-
-      try {
-        const contentDiv = this.output.querySelector('div[contenteditable="true"]');
-        if (!contentDiv) {
-          throw new Error('Content div not found');
-        }
-
-        const clone = contentDiv.cloneNode(true);
-
-        clone.querySelectorAll('pre code').forEach(block => {
-          const formattedCode = block.innerHTML;
-
-          const table = document.createElement('table');
-          table.style.width = '100%';
-          table.style.borderCollapse = 'collapse';
-          table.style.border = 'none';
-
-          const tr = document.createElement('tr');
-          const td = document.createElement('td');
-          td.style.backgroundColor = '#f7f7f7';
-          td.style.padding = '12px';
-          td.style.fontFamily = 'Consolas, Monaco, "Courier New", monospace';
-          td.style.whiteSpace = 'pre';
-          td.style.border = 'none';
-
-          td.innerHTML = formattedCode.trim();
-
-          tr.appendChild(td);
-          table.appendChild(tr);
-          block.parentNode.replaceWith(table);
-        });
-
-        const svgElements = clone.querySelectorAll('svg');
-        for (const svg of svgElements) {
-          try {
-            const pngBlob = await this.svgToPng(svg);
-            const dataUrl = await new Promise(resolve => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result);
-              reader.readAsDataURL(pngBlob);
-            });
-
-            const img = document.createElement('img');
-            img.src = dataUrl;
-            img.width = svg.clientWidth || svg.viewBox.baseVal.width || 100;
-            img.height = svg.clientHeight || svg.viewBox.baseVal.height || 100;
-            img.setAttribute('v:shapes', 'image' + Math.random().toString(36).substr(2, 9));
-            img.style.width = img.width + 'px';
-            img.style.height = img.height + 'px';
-            img.alt = "Converted diagram";
-            svg.parentNode.replaceChild(img, svg);
-          } catch (error) {
-            console.error('Failed to convert SVG:', error);
-          }
-        }
+      }));
 
 
-        // Convert all images to data URLs
-        const imgElements = clone.querySelectorAll('img');
-        await Promise.all(imgElements.map(async img => {
-          console.log('Converting image:', img.src);
-
-          // Create canvas
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-
-          // Create new image and wait for it to load completely
-          const tempImg = new Image();
-          tempImg.crossOrigin = 'anonymous';
-
-          try {
-            await new Promise((resolve, reject) => {
-              tempImg.onload = resolve;
-              tempImg.onerror = reject;
-              tempImg.src = img.src;
-            });
-
-            // Set dimensions
-            canvas.width = tempImg.offsetWidth || img.offsetWidth || 200;
-            canvas.height = tempImg.offsetHeight || img.offsetHeight || 200;
-
-            // Draw and convert
-            ctx.drawImage(tempImg, 0, 0);
-            const dataUrl = canvas.toDataURL('image/png', 1.0);
-
-            // Create and wait for new image with data URL
-            const newImg = new Image();
-            await new Promise((resolve, reject) => {
-              newImg.onload = () => {
-                newImg.alt = img.alt || 'Converted image';
-                newImg.width = canvas.width;
-                newImg.height = canvas.height;
-                newImg.style.cssText = img.style.cssText;
-                // Force image to be treated as embedded
-                newImg.setAttribute('data-embedded', 'true');
-                // Replace the old image
-                img.parentNode.replaceChild(newImg, img);
-                console.log('Successfully converted image to data URL');
-                resolve();
-              };
-              newImg.onerror = reject;
-              newImg.src = dataUrl;
-            });
-          } catch (error) {
-            console.error('Error converting image:', error, img.src);
-            // Don't rethrow - we want to continue with other images
-          }
-        }));
-
-
-        const clipData = new ClipboardItem({
-          'text/html': new Blob([`
+      const clipData = new ClipboardItem({
+        'text/html': new Blob([`
             <html xmlns:v="urn:schemas-microsoft-com:vml"
                   xmlns:o="urn:schemas-microsoft-com:office:office"
                   xmlns:w="urn:schemas-microsoft-com:office:word">
@@ -400,245 +406,259 @@ class SquibView {
               </body>
             </html>
           `], { type: 'text/html' }),
-          'text/plain': new Blob([clone.innerText], { type: 'text/plain' })
-        });
-
-        await navigator.clipboard.write([clipData]);
-        copyButton.textContent = 'Copied!';
-      } catch (err) {
-        console.error('Copy failed:', err);
-        copyButton.textContent = 'Copy failed';
-      }
-
-      setTimeout(() => {
-        copyButton.textContent = 'Copy';
-      }, 2000);
-    }
-
-    svgToPng(svgElement) {
-      return new Promise((resolve, reject) => {
-        const svgString = new XMLSerializer().serializeToString(svgElement);
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const img = new Image();
-
-        const scale = 2;
-        const svgWidth = svgElement.clientWidth || svgElement.viewBox.baseVal.width || 100;
-        const svgHeight = svgElement.clientHeight || svgElement.viewBox.baseVal.height || 100;
-
-        canvas.width = svgWidth * scale;
-        canvas.height = svgHeight * scale;
-        ctx.scale(scale, scale);
-
-        img.onload = () => {
-          try {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0, svgWidth, svgHeight);
-            canvas.toBlob(blob => {
-              resolve(blob);
-            }, 'image/png', 1.0);
-          } catch (err) {
-            reject(err);
-          }
-        };
-
-        img.onerror = reject;
-        const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
-        img.src = svgDataUrl;
+        'text/plain': new Blob([clone.innerText], { type: 'text/plain' })
       });
+
+      await navigator.clipboard.write([clipData]);
+      copyButton.textContent = 'Copied!';
+    } catch (err) {
+      console.error('Copy failed:', err);
+      copyButton.textContent = 'Copy failed';
     }
 
-    controlsShow(show) {
-      this.controls.style.display = show ? '' : 'none';
-      this.options.showControls = show;
-      this.adjustLayout();
+    setTimeout(() => {
+      copyButton.textContent = 'Copy';
+    }, 2000);
+  }
+
+  svgToPng(svgElement) {
+    return new Promise((resolve, reject) => {
+      const svgString = new XMLSerializer().serializeToString(svgElement);
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      const scale = 2;
+      const svgWidth = svgElement.clientWidth || svgElement.viewBox.baseVal.width || 100;
+      const svgHeight = svgElement.clientHeight || svgElement.viewBox.baseVal.height || 100;
+
+      canvas.width = svgWidth * scale;
+      canvas.height = svgHeight * scale;
+      ctx.scale(scale, scale);
+
+      img.onload = () => {
+        try {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, svgWidth, svgHeight);
+          canvas.toBlob(blob => {
+            resolve(blob);
+          }, 'image/png', 1.0);
+        } catch (err) {
+          reject(err);
+        }
+      };
+
+      img.onerror = reject;
+      const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
+      img.src = svgDataUrl;
+    });
+  }
+
+  controlsShow(show) {
+    this.controls.style.display = show ? '' : 'none';
+    this.options.showControls = show;
+    this.adjustLayout();
+  }
+
+  titleShow(show) {
+    this.title.style.display = show ? '' : 'none';
+    this.options.titleShow = show;
+    this.adjustLayout();
+  }
+
+  titleSetContent(content) {
+    this.title.innerHTML = content;
+    this.options.titleContent = content;
+  }
+
+  titleGetContent() {
+    return this.title.innerHTML;
+  }
+
+  getMarkdownSource() {
+    return this.input.value;
+  }
+
+  getHTMLSource() {
+    return this.output.querySelector('div[contenteditable="true"]').innerHTML;
+  }
+
+  // Standalone function to toggle between Markdown preview and split view
+  toggleView() {
+    const editor = window.editor;
+    if (editor.currentView === 'src') {
+      editor.setView('split');
+    } else if (editor.currentView === 'split') {
+      editor.setView('html');
+    } else
+      editor.setView('src')
+
+    console.log(editor.currentView)
+  }
+
+  /**
+   * Creates an iframe that fills the entire parent element and injects provided HTML content.
+   * @param {HTMLElement} parentElement - The parent element to contain the iframe.
+   * @param {string} htmlContent - The HTML content to inject into the iframe.
+   */
+  insertContentInIframe(parentElement, htmlContent) {
+    // Create an iframe element
+    const iframe = document.createElement('iframe');
+
+    // Style the iframe to fill the parent completely
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.border = 'none';
+    iframe.style.display = 'block';
+
+    //iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+    // Append the iframe to the parent element
+    parentElement.innerHTML = '';
+    parentElement.appendChild(iframe);
+
+    // Access the iframe's document and write the HTML content into it
+    const iframeDoc = iframe.contentWindow.document;
+    iframeDoc.open();
+    iframeDoc.write(htmlContent);
+    iframeDoc.close();
+    this.output_iframe = iframe
+    this.output_ifraome_content = htmlContent;
+  }
+  // this function takes input as html and renders it in an iframe in the output div
+  // it write to the outputDiv that is a member of this object
+  renderHTML(src) {
+    const htmlContent = src;
+    const outputDiv = this.output;
+    this.insertContentInIframe(outputDiv, htmlContent);
+  }
+
+  renderOutput() {
+    switch (this.inputContentType) {
+      case 'html':
+        this.renderHTML(this.input.value)
+        break;
+      case 'reveal':
+        this.renderHTML(this.makeRevealJSFullPage(this.input.value))
+        break;
+      case 'csv': // comma separated
+      case 'tsv': // tab separated
+      case 'semisv': // semicolon separated
+      case 'ssv' : //space separated
+        // take the input and treat it as csv / tsv and convert it to markdown to render on the fly
+        const data = this.getContent();
+        // delimiter can be commma, tab, space, or semi-colon
+        let delimiter = ","; 
+        const delims = {"tsv":",", "semisv":";","ssv":" "};
+        if (this.inputContentType in delims)
+          delimiter = delims[this.inputContentType];
+        const markdownTable = this.csvOrTsvToMarkdownTable(data, delimiter);
+        this.renderMarkdown(markdownTable);
+        break;
+      case 'md':
+        this.renderMarkdown();
+        break;
+      default:
+        this.renderMarkdown();
+        console.log("Unsupported content type: ", this.inputContentType);
     }
+  }
 
-    titleShow(show) {
-      this.title.style.display = show ? '' : 'none';
-      this.options.titleShow = show;
-      this.adjustLayout();
-    }
+  async copySource() {
+    const copyButton = this.controls.querySelector('.copy-src-button');
+    copyButton.textContent = 'Copying...';
 
-    titleSetContent(content) {
-      this.title.innerHTML = content;
-      this.options.titleContent = content;
-    }
-
-    titleGetContent() {
-      return this.title.innerHTML;
-    }
-
-    getMarkdownSource() {
-      return this.input.value;
-    }
-
-    getHTMLSource() {
-      return this.output.querySelector('div[contenteditable="true"]').innerHTML;
-    }
-
-    // Standalone function to toggle between Markdown preview and split view
-    toggleView() {
-      const editor = window.editor;
-      if (editor.currentView === 'src') {
-        editor.setView('split');
-      } else if (editor.currentView === 'split') {
-        editor.setView('html');
-      } else
-        editor.setView('src')
-
-      console.log(editor.currentView)
-    }
-
-    /**
-     * Creates an iframe that fills the entire parent element and injects provided HTML content.
-     * @param {HTMLElement} parentElement - The parent element to contain the iframe.
-     * @param {string} htmlContent - The HTML content to inject into the iframe.
-     */
-    insertContentInIframe(parentElement, htmlContent) {
-      // Create an iframe element
-      const iframe = document.createElement('iframe');
-
-      // Style the iframe to fill the parent completely
-      iframe.style.width = '100%';
-      iframe.style.height = '100%';
-      iframe.style.border = 'none';
-      iframe.style.display = 'block';
-
-      //iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-      // Append the iframe to the parent element
-      parentElement.innerHTML = '';
-      parentElement.appendChild(iframe);
-
-      // Access the iframe's document and write the HTML content into it
-      const iframeDoc = iframe.contentWindow.document;
-      iframeDoc.open();
-      iframeDoc.write(htmlContent);
-      iframeDoc.close();
-      this.output_iframe = iframe
-      this.output_ifraome_content = htmlContent;
-    }
-    // this function takes input as html and renders it in an iframe in the output div
-    // it write to the outputDiv that is a member of this object
-    renderHTML(src) {
-      const htmlContent = src;
-      const outputDiv = this.output;
-      this.insertContentInIframe(outputDiv, htmlContent);
-    }
-
-    renderOutput() {
-      switch( this.inputContentType) {
-        case 'html':
-          this.renderHTML(this.input.value)
-          break;
-        case 'reveal':
-          this.renderHTML(this.makeRevealJSFullPage(this.input.value))
-          break;
-        case 'md':
-            this.renderMarkdown();
-          break;
-        default:
-            this.renderMarkdown();
-            console.log("Unsupported content type: ", this.inputContentType);
-      } 
-    }
-    
-    async copySource() {
-      const copyButton = this.controls.querySelector('.copy-src-button');
-      copyButton.textContent = 'Copying...';
+    try {
+      const markdownText = this.getMarkdownSource();
 
       try {
-        const markdownText = this.getMarkdownSource();
+        await navigator.clipboard.writeText(markdownText);
+      } catch (modernErr) {
+        const textarea = document.createElement('textarea');
+        textarea.value = markdownText;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
 
-        try {
-          await navigator.clipboard.writeText(markdownText);
-        } catch (modernErr) {
-          const textarea = document.createElement('textarea');
-          textarea.value = markdownText;
-          textarea.style.position = 'fixed';
-          textarea.style.opacity = '0';
-          document.body.appendChild(textarea);
-          textarea.select();
+        //const successful = document.execCommand('copy');
+        document.body.removeChild(textarea);
 
-          //const successful = document.execCommand('copy');
-          document.body.removeChild(textarea);
-
-          //if (!successful) throw new Error('Fallback copy failed');
-        }
-
-        copyButton.textContent = 'Copied!';
-      } catch (err) {
-        console.error('Copy Markdown failed:', err);
-        copyButton.textContent = 'Copy failed';
+        //if (!successful) throw new Error('Fallback copy failed');
       }
 
-      setTimeout(() => {
-        copyButton.textContent = 'Copy MD';
-      }, 2000);
+      copyButton.textContent = 'Copied!';
+    } catch (err) {
+      console.error('Copy Markdown failed:', err);
+      copyButton.textContent = 'Copy failed';
     }
 
-    async copyHTML() {
-      const copyButton = this.controls.querySelector('.copy-html-button');
-      copyButton.textContent = 'Copying...';
+    setTimeout(() => {
+      copyButton.textContent = 'Copy MD';
+    }, 2000);
+  }
 
-      try {
-        const contentDiv = this.output.querySelector('div[contenteditable="true"]');
-        if (!contentDiv) {
-          throw new Error('Content div not found');
+  async copyHTML() {
+    const copyButton = this.controls.querySelector('.copy-html-button');
+    copyButton.textContent = 'Copying...';
+
+    try {
+      const contentDiv = this.output.querySelector('div[contenteditable="true"]');
+      if (!contentDiv) {
+        throw new Error('Content div not found');
+      }
+
+      const clone = contentDiv.cloneNode(true);
+
+      // Process code blocks
+      clone.querySelectorAll('pre code').forEach(block => {
+        const formattedCode = block.innerHTML;
+
+        const table = document.createElement('table');
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        table.style.border = 'none';
+
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.style.backgroundColor = '#f7f7f7';
+        td.style.padding = '12px';
+        td.style.fontFamily = 'Consolas, Monaco, "Courier New", monospace';
+        td.style.whiteSpace = 'pre';
+        td.style.border = 'none';
+
+        td.innerHTML = formattedCode.trim();
+
+        tr.appendChild(td);
+        table.appendChild(tr);
+        block.parentNode.replaceWith(table);
+      });
+
+      // Convert SVG elements to PNG
+      const svgElements = clone.querySelectorAll('svg');
+      for (const svg of svgElements) {
+        try {
+          const pngBlob = await this.svgToPng(svg);
+          const dataUrl = await new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(pngBlob);
+          });
+
+          const img = document.createElement('img');
+          img.src = dataUrl;
+          img.width = svg.clientWidth || svg.viewBox.baseVal.width || 100;
+          img.height = svg.clientHeight || svg.viewBox.baseVal.height || 100;
+          img.setAttribute('v:shapes', 'image' + Math.random().toString(36).substr(2, 9));
+          img.style.width = img.width + 'px';
+          img.style.height = img.height + 'px';
+          img.alt = "Converted diagram";
+          svg.parentNode.replaceChild(img, svg);
+        } catch (error) {
+          console.error('Failed to convert SVG:', error);
         }
+      }
 
-        const clone = contentDiv.cloneNode(true);
-
-        // Process code blocks
-        clone.querySelectorAll('pre code').forEach(block => {
-          const formattedCode = block.innerHTML;
-
-          const table = document.createElement('table');
-          table.style.width = '100%';
-          table.style.borderCollapse = 'collapse';
-          table.style.border = 'none';
-
-          const tr = document.createElement('tr');
-          const td = document.createElement('td');
-          td.style.backgroundColor = '#f7f7f7';
-          td.style.padding = '12px';
-          td.style.fontFamily = 'Consolas, Monaco, "Courier New", monospace';
-          td.style.whiteSpace = 'pre';
-          td.style.border = 'none';
-
-          td.innerHTML = formattedCode.trim();
-
-          tr.appendChild(td);
-          table.appendChild(tr);
-          block.parentNode.replaceWith(table);
-        });
-
-        // Convert SVG elements to PNG
-        const svgElements = clone.querySelectorAll('svg');
-        for (const svg of svgElements) {
-          try {
-            const pngBlob = await this.svgToPng(svg);
-            const dataUrl = await new Promise(resolve => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result);
-              reader.readAsDataURL(pngBlob);
-            });
-
-            const img = document.createElement('img');
-            img.src = dataUrl;
-            img.width = svg.clientWidth || svg.viewBox.baseVal.width || 100;
-            img.height = svg.clientHeight || svg.viewBox.baseVal.height || 100;
-            img.setAttribute('v:shapes', 'image' + Math.random().toString(36).substr(2, 9));
-            img.style.width = img.width + 'px';
-            img.style.height = img.height + 'px';
-            img.alt = "Converted diagram";
-            svg.parentNode.replaceChild(img, svg);
-          } catch (error) {
-            console.error('Failed to convert SVG:', error);
-          }
-        }
-
-        const htmlContent = `
+      const htmlContent = `
           <html xmlns:v="urn:schemas-microsoft-com:vml"
                 xmlns:o="urn:schemas-microsoft-com:office:office"
                 xmlns:w="urn:schemas-microsoft-com:office:word">
@@ -668,136 +688,136 @@ class SquibView {
             </body>
           </html>`;
 
-        const platform = this.getPlatform();
+      const platform = this.getPlatform();
 
-        if (platform === 'macos') {
-          // macOS approach (previously working version)
-          try {
-            await navigator.clipboard.write([
-              new ClipboardItem({
-                'text/html': new Blob([htmlContent], { type: 'text/html' }),
-                'text/plain': new Blob([clone.innerText], { type: 'text/plain' })
-              })
-            ]);
-          } catch (modernErr) {
-            // Safari fallback
-            if (!this.copyToClipboard(htmlContent)) {
-              throw new Error('Fallback copy failed');
-            }
-          }
-        } else {
-          // Windows/Linux approach
-          const tempDiv = document.createElement('div');
-          tempDiv.style.position = 'fixed';
-          tempDiv.style.left = '-9999px';
-          tempDiv.style.top = '0';
-          tempDiv.innerHTML = htmlContent;
-          document.body.appendChild(tempDiv);
-
-          try {
-            await navigator.clipboard.write([
-              new ClipboardItem({
-                'text/html': new Blob([htmlContent], { type: 'text/html' }),
-                'text/plain': new Blob([clone.innerText], { type: 'text/plain' })
-              })
-            ]);
-          } catch (modernErr) {
-            const selection = window.getSelection();
-            const range = document.createRange();
-            range.selectNodeContents(tempDiv);
-            selection.removeAllRanges();
-            selection.addRange(range);
-
-            const successful = document.execCommand('copy');
-            if (!successful) {
-              throw new Error('Fallback copy failed');
-            }
-          } finally {
-            if (tempDiv && tempDiv.parentNode) {
-              document.body.removeChild(tempDiv);
-            }
+      if (platform === 'macos') {
+        // macOS approach (previously working version)
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              'text/html': new Blob([htmlContent], { type: 'text/html' }),
+              'text/plain': new Blob([clone.innerText], { type: 'text/plain' })
+            })
+          ]);
+        } catch (modernErr) {
+          // Safari fallback
+          if (!this.copyToClipboard(htmlContent)) {
+            throw new Error('Fallback copy failed');
           }
         }
+      } else {
+        // Windows/Linux approach
+        const tempDiv = document.createElement('div');
+        tempDiv.style.position = 'fixed';
+        tempDiv.style.left = '-9999px';
+        tempDiv.style.top = '0';
+        tempDiv.innerHTML = htmlContent;
+        document.body.appendChild(tempDiv);
 
-        copyButton.textContent = 'Copied!';
-      } catch (err) {
-        console.error('Copy HTML failed:', err);
-        copyButton.textContent = 'Copy failed';
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              'text/html': new Blob([htmlContent], { type: 'text/html' }),
+              'text/plain': new Blob([clone.innerText], { type: 'text/plain' })
+            })
+          ]);
+        } catch (modernErr) {
+          const selection = window.getSelection();
+          const range = document.createRange();
+          range.selectNodeContents(tempDiv);
+          selection.removeAllRanges();
+          selection.addRange(range);
+
+          const successful = document.execCommand('copy');
+          if (!successful) {
+            throw new Error('Fallback copy failed');
+          }
+        } finally {
+          if (tempDiv && tempDiv.parentNode) {
+            document.body.removeChild(tempDiv);
+          }
+        }
       }
 
-      setTimeout(() => {
-        copyButton.textContent = 'Copy Formatted';
-      }, 2000);
+      copyButton.textContent = 'Copied!';
+    } catch (err) {
+      console.error('Copy HTML failed:', err);
+      copyButton.textContent = 'Copy failed';
     }
 
-    copyToClipboard(string) {
-      let textarea;
-      let result;
+    setTimeout(() => {
+      copyButton.textContent = 'Copy Formatted';
+    }, 2000);
+  }
 
-      try {
-        textarea = document.createElement('textarea');
-        textarea.setAttribute('readonly', true);
-        textarea.setAttribute('contenteditable', true);
-        textarea.style.position = 'fixed';
-        textarea.style.left = '0';
-        textarea.style.top = '0';
-        textarea.style.opacity = '0';
-        textarea.value = string;
+  copyToClipboard(string) {
+    let textarea;
+    let result;
 
-        document.body.appendChild(textarea);
+    try {
+      textarea = document.createElement('textarea');
+      textarea.setAttribute('readonly', true);
+      textarea.setAttribute('contenteditable', true);
+      textarea.style.position = 'fixed';
+      textarea.style.left = '0';
+      textarea.style.top = '0';
+      textarea.style.opacity = '0';
+      textarea.value = string;
 
-        textarea.focus();
-        textarea.select();
+      document.body.appendChild(textarea);
 
-        const range = document.createRange();
-        range.selectNodeContents(textarea);
+      textarea.focus();
+      textarea.select();
 
-        const sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
+      const range = document.createRange();
+      range.selectNodeContents(textarea);
 
-        textarea.setSelectionRange(0, textarea.value.length);
-        result = document.execCommand('copy');
-      } catch (err) {
-        console.error(err);
-        result = null;
-      } finally {
-        if (textarea && textarea.parentNode) {
-          document.body.removeChild(textarea);
-        }
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+
+      textarea.setSelectionRange(0, textarea.value.length);
+      result = document.execCommand('copy');
+    } catch (err) {
+      console.error(err);
+      result = null;
+    } finally {
+      if (textarea && textarea.parentNode) {
+        document.body.removeChild(textarea);
       }
+    }
 
-      // manual copy fallback using prompt
+    // manual copy fallback using prompt
+    if (!result) {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const copyHotkey = isMac ? '⌘C' : 'CTRL+C';
+      result = prompt(`Press ${copyHotkey}`, string);
       if (!result) {
-        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-        const copyHotkey = isMac ? '⌘C' : 'CTRL+C';
-        result = prompt(`Press ${copyHotkey}`, string);
-        if (!result) {
-          return false;
-        }
+        return false;
       }
-      return true;
     }
+    return true;
+  }
 
-    getPlatform() {
-      const platform = navigator.platform.toLowerCase();
-      const userAgent = navigator.userAgent.toLowerCase();
+  getPlatform() {
+    const platform = navigator.platform.toLowerCase();
+    const userAgent = navigator.userAgent.toLowerCase();
 
-      if (platform.includes('mac') || userAgent.includes('mac')) {
-        return 'macos';
-      } else if (userAgent.includes('windows')) {
-        return 'windows';
-      } else if (userAgent.includes('linux')) {
-        return 'linux';
-      }
-      return 'unknown';
+    if (platform.includes('mac') || userAgent.includes('mac')) {
+      return 'macos';
+    } else if (userAgent.includes('windows')) {
+      return 'windows';
+    } else if (userAgent.includes('linux')) {
+      return 'linux';
     }
+    return 'unknown';
+  }
 
-    // Make a complete HTML page from a div (or any html snippet) with optional editability
-    makeHTMLPageFromDiv(inputDivHTML, editable = false) {
-      let editableAttr = editable ? 'contenteditable="true"' : '';
-      let s =
-        `<!DOCTYPE html>
+  // Make a complete HTML page from a div (or any html snippet) with optional editability
+  makeHTMLPageFromDiv(inputDivHTML, editable = false) {
+    let editableAttr = editable ? 'contenteditable="true"' : '';
+    let s =
+      `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -809,7 +829,6 @@ class SquibView {
   <style>
       body {
           font-family: Arial, sans-serif;
-          /* margin: 20px; */
           box-sizing: border-box;
           padding: 20px;
       }
@@ -841,15 +860,15 @@ class SquibView {
   ${inputDivHTML}
 </body>
 </html>`;
-      // now we need to remove the temp-script tag with the script in it.
-      // we do this with a regex search/replace
-      s = s.replaceAll("xscripx", "script");
-      console.log(editableAttr);
-      return s;
-    }
+    // now we need to remove the temp-script tag with the script in it.
+    // we do this with a regex search/replace
+    s = s.replaceAll("xscripx", "script");
+    console.log(editableAttr);
+    return s;
+  }
 
-    makeRevealJSFullPage(markdown, title = "Slide Presentation") {
-      return `<!DOCTYPE html>
+  makeRevealJSFullPage(markdown, title = "Slide Presentation") {
+    return `<!DOCTYPE html>
   <html lang="en">
   <head>
       <meta charset="utf-8">
@@ -884,7 +903,25 @@ class SquibView {
   </body>
   </html>`;
   }
-  
+
+  csvOrTsvToMarkdownTable(input, delimiter = ',') {
+    // Parse CSV/TSV content
+    const parsedData = Papa.parse(input, {
+      delimiter,
+      skipEmptyLines: true
+    });
+
+    const rows = parsedData.data;
+
+    if (rows.length === 0) return 'No data found.';
+
+    // Markdown table header
+    const header = `| ${rows[0].join(' | ')} |`;
+    const separator = `| ${rows[0].map(() => '---').join(' | ')} |`;
+    const tableRows = rows.slice(1).map(row => `| ${row.join(' | ')} |`).join('\n');
+
+    return `${header}\n${separator}\n${tableRows}`;
+  }
 
 
 }// end of class SquibView

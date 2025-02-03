@@ -463,7 +463,7 @@ var SquibView = /*#__PURE__*/function () {
     this.initializeLibraries();
     this.createStructure();
     this.initializeEventHandlers();
-    this.setContent(this.options.initialContent);
+    this.setContent(this.options.initialContent, this.options.inputContentType);
     this.setView(this.options.initialView);
     this.initializeResizeObserver();
   }
@@ -585,10 +585,12 @@ var SquibView = /*#__PURE__*/function () {
     }
   }, {
     key: "setContent",
-    value: function setContent(content) {
-      var contentType = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'md';
+    value: function setContent(content, contentType) {
       this.input.value = content;
-      this.inputContentType = contentType;
+      // if the contentType isn't undefined then we'll set it:
+      if (contentType) {
+        this.inputContentType = contentType;
+      }
       this.renderOutput();
     }
   }, {
@@ -604,19 +606,20 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "renderMarkdown",
     value: function () {
-      var _renderMarkdown = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
-        var html, contentDiv, images, _iterator2, _step2, _loop;
+      var _renderMarkdown = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee(md) {
+        var markdown, html, contentDiv, images, _iterator2, _step2, _loop;
         return _regeneratorRuntime().wrap(function _callee$(_context2) {
           while (1) switch (_context2.prev = _context2.next) {
             case 0:
-              html = this.md.render(this.input.value);
+              markdown = md || this.input.value;
+              html = this.md.render(markdown);
               this.output.innerHTML = "<div contenteditable='true'>" + html + "</div>";
 
               // Convert all images to data URLs immediately after rendering
               contentDiv = this.output.querySelector('div[contenteditable="true"]');
               images = contentDiv.querySelectorAll('img'); // render images to data urls
               _iterator2 = _createForOfIteratorHelper(images);
-              _context2.prev = 5;
+              _context2.prev = 6;
               _loop = /*#__PURE__*/_regeneratorRuntime().mark(function _loop() {
                 var img, canvas, ctx, tempImg;
                 return _regeneratorRuntime().wrap(function _loop$(_context) {
@@ -662,38 +665,38 @@ var SquibView = /*#__PURE__*/function () {
                 }, _loop, null, [[1, 10]]);
               });
               _iterator2.s();
-            case 8:
+            case 9:
               if ((_step2 = _iterator2.n()).done) {
-                _context2.next = 12;
+                _context2.next = 13;
                 break;
               }
-              return _context2.delegateYield(_loop(), "t0", 10);
-            case 10:
-              _context2.next = 8;
+              return _context2.delegateYield(_loop(), "t0", 11);
+            case 11:
+              _context2.next = 9;
               break;
-            case 12:
-              _context2.next = 17;
+            case 13:
+              _context2.next = 18;
               break;
-            case 14:
-              _context2.prev = 14;
-              _context2.t1 = _context2["catch"](5);
+            case 15:
+              _context2.prev = 15;
+              _context2.t1 = _context2["catch"](6);
               _iterator2.e(_context2.t1);
-            case 17:
-              _context2.prev = 17;
+            case 18:
+              _context2.prev = 18;
               _iterator2.f();
-              return _context2.finish(17);
-            case 20:
+              return _context2.finish(18);
+            case 21:
               // end of images to data urls
 
               // Initialize mermaid diagrams after all images are processed
               mermaid.init(undefined, this.output.querySelectorAll('.mermaid'));
-            case 21:
+            case 22:
             case "end":
               return _context2.stop();
           }
-        }, _callee, this, [[5, 14, 17, 20]]);
+        }, _callee, this, [[6, 15, 18, 21]]);
       }));
-      function renderMarkdown() {
+      function renderMarkdown(_x) {
         return _renderMarkdown.apply(this, arguments);
       }
       return renderMarkdown;
@@ -705,7 +708,7 @@ var SquibView = /*#__PURE__*/function () {
       if (this.inputContentType === 'md') {
         var markdown = this.getMarkdownSource();
         var newMarkdown = markdown.replace(/---/g, '');
-        this.setContent(newMarkdown);
+        this.setContent(newMarkdown, this.inputContentType);
       }
     }
   }, {
@@ -908,7 +911,7 @@ var SquibView = /*#__PURE__*/function () {
                     }
                   }, _callee2, null, [[5, 17]]);
                 }));
-                return function (_x) {
+                return function (_x2) {
                   return _ref.apply(this, arguments);
                 };
               }()));
@@ -1074,6 +1077,24 @@ var SquibView = /*#__PURE__*/function () {
           break;
         case 'reveal':
           this.renderHTML(this.makeRevealJSFullPage(this.input.value));
+          break;
+        case 'csv': // comma separated
+        case 'tsv': // tab separated
+        case 'semisv': // semicolon separated
+        case 'ssv':
+          //space separated
+          // take the input and treat it as csv / tsv and convert it to markdown to render on the fly
+          var data = this.getContent();
+          // delimiter can be commma, tab, space, or semi-colon
+          var delimiter = ",";
+          var delims = {
+            "tsv": ",",
+            "semisv": ";",
+            "ssv": " "
+          };
+          if (this.inputContentType in delims) delimiter = delims[this.inputContentType];
+          var markdownTable = this.csvOrTsvToMarkdownTable(data, delimiter);
+          this.renderMarkdown(markdownTable);
           break;
         case 'md':
           this.renderMarkdown();
@@ -1406,7 +1427,7 @@ var SquibView = /*#__PURE__*/function () {
     value: function makeHTMLPageFromDiv(inputDivHTML) {
       var editable = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
       var editableAttr = editable ? 'contenteditable="true"' : '';
-      var s = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Markdown Viewer with Graphics Support</title>\n  <link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css\">\n  <xscripx src=\"https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js\"></xscripx>\n  <xscripx src=\"https://unpkg.com/mermaid/dist/mermaid.min.js\"></xscripx>\n  <style>\n      body {\n          font-family: Arial, sans-serif;\n          /* margin: 20px; */\n          box-sizing: border-box;\n          padding: 20px;\n      }\n      .squibview-output {\n          width: 50%;\n          margin: auto;\n      }\n      pre {\n          background-color: #f4f4f4;\n          padding: 10px;\n          border-radius: 5px;\n          overflow-x: auto;\n      }\n      table {\n          width: 100%;\n          border-collapse: collapse;\n          margin: 20px 0;\n      }\n      table, th, td {\n          border: 1px solid black;\n      }\n      th, td {\n          padding: 8px;\n          text-align: left;\n      }\n  </style>\n</head>\n<body ".concat(editableAttr, ">\n  ").concat(inputDivHTML, "\n</body>\n</html>");
+      var s = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Markdown Viewer with Graphics Support</title>\n  <link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css\">\n  <xscripx src=\"https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js\"></xscripx>\n  <xscripx src=\"https://unpkg.com/mermaid/dist/mermaid.min.js\"></xscripx>\n  <style>\n      body {\n          font-family: Arial, sans-serif;\n          box-sizing: border-box;\n          padding: 20px;\n      }\n      .squibview-output {\n          width: 50%;\n          margin: auto;\n      }\n      pre {\n          background-color: #f4f4f4;\n          padding: 10px;\n          border-radius: 5px;\n          overflow-x: auto;\n      }\n      table {\n          width: 100%;\n          border-collapse: collapse;\n          margin: 20px 0;\n      }\n      table, th, td {\n          border: 1px solid black;\n      }\n      th, td {\n          padding: 8px;\n          text-align: left;\n      }\n  </style>\n</head>\n<body ".concat(editableAttr, ">\n  ").concat(inputDivHTML, "\n</body>\n</html>");
       // now we need to remove the temp-script tag with the script in it.
       // we do this with a regex search/replace
       s = s.replaceAll("xscripx", "script");
@@ -1421,10 +1442,34 @@ var SquibView = /*#__PURE__*/function () {
         return "<section data-markdown><script type=\"text/template\">".concat(slide.trim(), "</script></section>");
       }).join('\n'), "\n          </div>\n      </div>\n      <script src=\"https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.js\"></script>\n      <script src=\"https://cdn.jsdelivr.net/npm/reveal.js/plugin/markdown/markdown.js\"></script>\n      <script>\n          Reveal.initialize({\n              plugins: [ RevealMarkdown ]\n          });\n          \n          // Ensure Mermaid diagrams initialize correctly\n          document.addEventListener('DOMContentLoaded', () => {\n              mermaid.initialize({ startOnLoad: true , securityLevel: 'loose', theme: 'dark' });\n              document.querySelectorAll('.mermaid').forEach(el => {\n                  el.innerHTML = el.textContent;\n                  mermaid.init(undefined, el);\n              });\n          });\n      </script>\n  </body>\n  </html>");
     }
+  }, {
+    key: "csvOrTsvToMarkdownTable",
+    value: function csvOrTsvToMarkdownTable(input) {
+      var delimiter = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : ',';
+      // Parse CSV/TSV content
+      var parsedData = Papa.parse(input, {
+        delimiter: delimiter,
+        skipEmptyLines: true
+      });
+      var rows = parsedData.data;
+      if (rows.length === 0) return 'No data found.';
+
+      // Markdown table header
+      var header = "| ".concat(rows[0].join(' | '), " |");
+      var separator = "| ".concat(rows[0].map(function () {
+        return '---';
+      }).join(' | '), " |");
+      var tableRows = rows.slice(1).map(function (row) {
+        return "| ".concat(row.join(' | '), " |");
+      }).join('\n');
+      return "".concat(header, "\n").concat(separator, "\n").concat(tableRows);
+    }
   }]);
 }(); // end of class SquibView
 _defineProperty(SquibView, "defaultOptions", {
   initialContent: '',
+  inputContentType: 'md',
+  // 'md', 'html', 'reveal', 'csv' or 'tsv'
   showControls: true,
   titleShow: false,
   titleContent: '',

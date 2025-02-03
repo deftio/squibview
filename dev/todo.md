@@ -20,6 +20,7 @@ Features:
  || input | input_label | output      | output_label | render_cllb()  | copy_callb() | help_str {} ||
  || md    | "md"        | html        | "html"       | (md)=>html     | ()=>{}       | ..          ||
  || html  | "html"      | html/iframe | "html"       | (html)=>iframe | ()=>{}       | ..          ||
+ || slides| "slides"    | html/revealjs/iframe | "slides" | (slides)=>iframe | ()=>{}| ..          ||
  || react | "react"     | html        | "html"       | (react)        | ()=>{}       | ..          ||
  || csv   | "csv"       | html        | "html"       | (csv)=>html    | ()=>{}       | ..          ||
  

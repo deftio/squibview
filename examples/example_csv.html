@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+Visual Markdown Viewer with Graphics Support
+Author: @deftio
+
+Uses Markdown-it for parsing Markdown content, Highlight.js for syntax highlighting, and Mermaid for diagrams.
+
+Allows live editing of Markdown content with a split view of the rendered HTML output.
+Also supports Mermaid diagrams and SVG content within fenced code blocks.
+-->
+
+<head>
+  <meta charset="UTF-8" />
+  <title>SquibView Editor with Live Render Support</title>  
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>"/>
+
+  
+  <!-- load dependeancies -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/default.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
+  <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
+  <link rel="stylesheet" href="../dist/squibview.css"/>
+  <!-- end dependeancies -->
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 1% 4%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #editorContainer {
+      margin-top: 0.5em;
+      min-height: 0;
+      /* Important for Firefox */
+      height: 90vh;
+      display: flex;
+      flex-direction: column;
+      /* border : 1px solid lightgrey; */
+      border-radius: 5px;
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <div id="editorContainer"></div>
+
+  <script type="module">
+    import SquibView from '../dist/squibview.esm.min.js';
+    window.SquibView = SquibView;  // user can access SquibView from the console
+    console.log("SquibView version:", SquibView.version.version);
+
+    // This is the main code that creates the editor and sets the content
+    // it has nothing to do with the GraphicalMD editor
+    const editor = new SquibView('#editorContainer', {
+      titleShow: true,
+      titleContent: "SquibView (CSV Example) Editor  " + SquibView.version.version
+    });
+
+    window.editor = editor; // Make the editor instance accessible globally
+
+    (async filename => {
+      try {
+        editor.setContent(await (await fetch(filename)).text(), "csv");
+      } catch (error) {
+        console.error("Failed to load file:", error);
+      }
+    })("./sample-csv.csv");
+
+
+
+    // external test functions for playing around with the editor
+    function toggleTitle() {
+      const currentState = editor.title.style.display !== 'none';
+      editor.titleShow(!currentState);
+    }
+
+    function toggleControls() {
+      const currentState = editor.controls.style.display !== 'none';
+      editor.controlsShow(!currentState);
+    }
+
+
+  </script>
+</body>
+
+</html>
