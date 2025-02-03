@@ -56,14 +56,6 @@ Also supports Mermaid diagrams and SVG content within fenced code blocks.
 <body>
 
   
-  <!-- 
-    <div id="testControls">
-      <button onclick="toggleTitle()" style="margin-right: 10px; padding: 8px 16px; border-radius: 4px; border: 1px solid #2a57d3; background: white; color: #2a57d3; cursor: pointer;">Toggle Title</button>
-      <button onclick="toggleControls()" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #2a57d3; background: white; color: #2a57d3; cursor: pointer;">Toggle Controls</button>
-      <button onclick="toggleView()" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #2a57d3; background: white; color: #2a57d3; cursor: pointer;">Toggle View</button>
-      <hr>
-    </div>
-  -->
   <div id="editorContainer"></div>
 
   <script type="module">
@@ -82,24 +74,11 @@ Also supports Mermaid diagrams and SVG content within fenced code blocks.
 
     (async filename => {
       try {
-        editor.setContent( editor.makeRevealJSFullPage( await (await fetch(filename)).text()), "html");
+        editor.setContent(  await (await fetch(filename)).text(), "reveal");
       } catch (error) {
-        console.error("Failed to load Markdown:", error);
+        console.error("Failed to load file:", error);
       }
     })("./slides.md");
-
-
-
-    // external test functions for playing around with the editor
-    function toggleTitle() {
-      const currentState = editor.title.style.display !== 'none';
-      editor.titleShow(!currentState);
-    }
-
-    function toggleControls() {
-      const currentState = editor.controls.style.display !== 'none';
-      editor.controlsShow(!currentState);
-    }
 
 
   </script>

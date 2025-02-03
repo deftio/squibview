@@ -3,15 +3,17 @@
 
 Features:
 
-* make input ==> "src" rather than "md" which was the original design
+* make input fns, buttons ==> "src" rather than "md" which was the original design
 * add support for react as render type (as iframe) perhaps "react-standalone" and "react-embedded" 
 * enable syntax highlighting in "src"
 * add test suite
+    * started
 * add support for render plugins...
 * change source button to "source" or "src"
 * change output button to be set by the plugin
 * editor enableSyntaxHighlighting() # assumes a syntax highlighting editor is available
 * group all dependencies
+* add ability to run squibview as a library at cli (so one can transform md to html or slides to html etc)
 
 ## Render Plug-ins 
 

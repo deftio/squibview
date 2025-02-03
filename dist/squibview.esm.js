@@ -514,7 +514,7 @@ var SquibView = /*#__PURE__*/function () {
     key: "createStructure",
     value: function createStructure() {
       this.container.classList.add(this.options.baseClass);
-      this.container.innerHTML = "\n        <div class=\"".concat(this.options.baseClass, "-title\" ").concat(!this.options.titleShow ? 'style="display:none"' : '', ">\n          ").concat(this.options.titleContent, "\n        </div>\n        <div class=\"").concat(this.options.baseClass, "-controls\" ").concat(!this.options.showControls ? 'style="display:none"' : '', ">\n          <button data-view=\"md\">Markdown</button>\n          <button data-view=\"html\">Rendered</button>\n          <button data-view=\"split\">Split</button>\n          <button class=\"copy-md-button\">Copy MD</button>\n          <button class=\"copy-html-button\">Copy Formatted</button>\n        </div>\n        <div class=\"").concat(this.options.baseClass, "-editor\">\n          <textarea class=\"").concat(this.options.baseClass, "-input\"></textarea>\n          <div class=\"").concat(this.options.baseClass, "-output\"></div>\n        </div>\n      ");
+      this.container.innerHTML = "\n        <div class=\"".concat(this.options.baseClass, "-title\" ").concat(!this.options.titleShow ? 'style="display:none"' : '', ">\n          ").concat(this.options.titleContent, "\n        </div>\n        <div class=\"").concat(this.options.baseClass, "-controls\" ").concat(!this.options.showControls ? 'style="display:none"' : '', ">\n          <button data-view='src'>Markdown</button>\n          <button data-view=\"html\">Rendered</button>\n          <button data-view=\"split\">Split</button>\n          <button class=\"copy-src-button\">Copy MD</button>\n          <button class=\"copy-html-button\">Copy Formatted</button>\n        </div>\n        <div class=\"").concat(this.options.baseClass, "-editor\">\n          <textarea class=\"").concat(this.options.baseClass, "-input\"></textarea>\n          <div class=\"").concat(this.options.baseClass, "-output\"></div>\n        </div>\n      ");
       this.title = this.container.querySelector(".".concat(this.options.baseClass, "-title"));
       this.controls = this.container.querySelector(".".concat(this.options.baseClass, "-controls"));
       this.editor = this.container.querySelector(".".concat(this.options.baseClass, "-editor"));
@@ -530,19 +530,16 @@ var SquibView = /*#__PURE__*/function () {
           return _this.setView(button.dataset.view);
         });
       });
-      this.controls.querySelector('.copy-md-button').addEventListener('click', function () {
-        return _this.copyMarkdown();
+      this.controls.querySelector('.copy-src-button').addEventListener('click', function () {
+        return _this.copySource();
       });
       this.controls.querySelector('.copy-html-button').addEventListener('click', function () {
         return _this.copyHTML();
       });
+
+      //onchange() for input source
       this.input.addEventListener('input', function () {
-        // use input type to call the renderMarkdown or renderHTML function
-        if (_this.inputContentType === "html") {
-          _this.writeHTMLContent(_this.input.value);
-        } else {
-          _this.renderMarkdown();
-        }
+        _this.renderOutput();
       });
     }
   }, {
@@ -580,7 +577,7 @@ var SquibView = /*#__PURE__*/function () {
       if (this.currentView === 'split') {
         this.input.style.width = '50%';
         this.output.style.width = '50%';
-      } else if (this.currentView === 'md') {
+      } else if (this.currentView === 'src') {
         this.input.style.width = '100%';
       } else if (this.currentView === 'html') {
         this.output.style.width = '100%';
@@ -589,14 +586,10 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "setContent",
     value: function setContent(content) {
-      var contentType = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "md";
+      var contentType = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'md';
       this.input.value = content;
       this.inputContentType = contentType;
-      if (contentType === "md") {
-        this.renderMarkdown();
-      } else if (contentType === "html") {
-        this.writeHTMLContent(content);
-      }
+      this.renderOutput();
     }
   }, {
     key: "getContent",
@@ -705,10 +698,11 @@ var SquibView = /*#__PURE__*/function () {
       }
       return renderMarkdown;
     }() // end of renderMarkdown
+    // todo rename sourceRemoveAllHR ()  ==> handled markdown or html via replace (---) or (<hr>, <hr/>) respectively
   }, {
     key: "markdownRemoveAllHR",
     value: function markdownRemoveAllHR() {
-      if (this.inputContentType === "md") {
+      if (this.inputContentType === 'md') {
         var markdown = this.getMarkdownSource();
         var newMarkdown = markdown.replace(/---/g, '');
         this.setContent(newMarkdown);
@@ -721,9 +715,9 @@ var SquibView = /*#__PURE__*/function () {
       this.controls.querySelectorAll('button[data-view]').forEach(function (btn) {
         btn.classList.toggle('active', btn.dataset.view === view);
       });
-      var copyMDButton = this.controls.querySelector('.copy-md-button');
+      var copyMDButton = this.controls.querySelector('.copy-src-button');
       var copyHTMLButton = this.controls.querySelector('.copy-html-button');
-      if (view === 'md') {
+      if (view === 'src') {
         this.input.classList.remove('squibview-hidden');
         this.output.classList.add('squibview-hidden');
         this.input.style.width = '100%';
@@ -736,6 +730,7 @@ var SquibView = /*#__PURE__*/function () {
         copyMDButton.classList.add('squibview-hidden');
         copyHTMLButton.classList.remove('squibview-hidden');
       } else {
+        // view == 'split'
         this.input.classList.remove('squibview-hidden');
         this.output.classList.remove('squibview-hidden');
         this.input.style.width = '50%';
@@ -1023,11 +1018,11 @@ var SquibView = /*#__PURE__*/function () {
     key: "toggleView",
     value: function toggleView() {
       var editor = window.editor;
-      if (editor.currentView === 'md') {
+      if (editor.currentView === 'src') {
         editor.setView('split');
       } else if (editor.currentView === 'split') {
         editor.setView('html');
-      } else editor.setView('md');
+      } else editor.setView('src');
       console.log(editor.currentView);
     }
 
@@ -1064,21 +1059,39 @@ var SquibView = /*#__PURE__*/function () {
     // this function takes input as html and renders it in an iframe in the output div
     // it write to the outputDiv that is a member of this object
   }, {
-    key: "writeHTMLContent",
-    value: function writeHTMLContent(src) {
+    key: "renderHTML",
+    value: function renderHTML(src) {
       var htmlContent = src;
       var outputDiv = this.output;
       this.insertContentInIframe(outputDiv, htmlContent);
     }
   }, {
-    key: "copyMarkdown",
+    key: "renderOutput",
+    value: function renderOutput() {
+      switch (this.inputContentType) {
+        case 'html':
+          this.renderHTML(this.input.value);
+          break;
+        case 'reveal':
+          this.renderHTML(this.makeRevealJSFullPage(this.input.value));
+          break;
+        case 'md':
+          this.renderMarkdown();
+          break;
+        default:
+          this.renderMarkdown();
+          console.log("Unsupported content type: ", this.inputContentType);
+      }
+    }
+  }, {
+    key: "copySource",
     value: function () {
-      var _copyMarkdown = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee4() {
-        var copyButton, markdownText, textarea, successful;
+      var _copySource = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee4() {
+        var copyButton, markdownText, textarea;
         return _regeneratorRuntime().wrap(function _callee4$(_context6) {
           while (1) switch (_context6.prev = _context6.next) {
             case 0:
-              copyButton = this.controls.querySelector('.copy-md-button');
+              copyButton = this.controls.querySelector('.copy-src-button');
               copyButton.textContent = 'Copying...';
               _context6.prev = 2;
               markdownText = this.getMarkdownSource();
@@ -1086,7 +1099,7 @@ var SquibView = /*#__PURE__*/function () {
               _context6.next = 7;
               return navigator.clipboard.writeText(markdownText);
             case 7:
-              _context6.next = 21;
+              _context6.next = 18;
               break;
             case 9:
               _context6.prev = 9;
@@ -1097,36 +1110,34 @@ var SquibView = /*#__PURE__*/function () {
               textarea.style.opacity = '0';
               document.body.appendChild(textarea);
               textarea.select();
-              successful = document.execCommand('copy');
+
+              //const successful = document.execCommand('copy');
               document.body.removeChild(textarea);
-              if (successful) {
-                _context6.next = 21;
-                break;
-              }
-              throw new Error('Fallback copy failed');
-            case 21:
+
+              //if (!successful) throw new Error('Fallback copy failed');
+            case 18:
               copyButton.textContent = 'Copied!';
-              _context6.next = 28;
+              _context6.next = 25;
               break;
-            case 24:
-              _context6.prev = 24;
+            case 21:
+              _context6.prev = 21;
               _context6.t1 = _context6["catch"](2);
               console.error('Copy Markdown failed:', _context6.t1);
               copyButton.textContent = 'Copy failed';
-            case 28:
+            case 25:
               setTimeout(function () {
                 copyButton.textContent = 'Copy MD';
               }, 2000);
-            case 29:
+            case 26:
             case "end":
               return _context6.stop();
           }
-        }, _callee4, this, [[2, 24], [4, 9]]);
+        }, _callee4, this, [[2, 21], [4, 9]]);
       }));
-      function copyMarkdown() {
-        return _copyMarkdown.apply(this, arguments);
+      function copySource() {
+        return _copySource.apply(this, arguments);
       }
-      return copyMarkdown;
+      return copySource;
     }()
   }, {
     key: "copyHTML",
@@ -1331,11 +1342,6 @@ var SquibView = /*#__PURE__*/function () {
       return copyHTML;
     }()
   }, {
-    key: "getVersion",
-    value: function getVersion() {
-      return GraphicalMD.version;
-    }
-  }, {
     key: "copyToClipboard",
     value: function copyToClipboard(string) {
       var textarea;
@@ -1410,8 +1416,8 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "makeRevealJSFullPage",
     value: function makeRevealJSFullPage(markdown) {
-      var title = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "Reveal.js Markdown Presentation";
-      return "<!DOCTYPE html>\n  <html lang=\"en\">\n  <head>\n      <meta charset=\"utf-8\">\n      <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n      <title>".concat(title, "</title>\n      <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.css\">\n      <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/reveal.js/dist/theme/black.css\">\n      <script src=\"https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js\"></script>\n  </head>\n  <body>\n      <div class=\"reveal\">\n          <div class=\"slides\">\n              ").concat(markdown.split('---').map(function (slide) {
+      var title = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "Slide Presentation";
+      return "<!DOCTYPE html>\n  <html lang=\"en\">\n  <head>\n      <meta charset=\"utf-8\">\n      <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n      <title>".concat(title, "</title>\n      <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.css\">\n      <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/reveal.js/dist/theme/black.css\">\n      <script src=\"https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js\"></script>\n  </head>\n  <body>\n      <div class=\"reveal\" contenteditable=\"true\">\n          <div class=\"slides\">\n              ").concat(markdown.split('---').map(function (slide) {
         return "<section data-markdown><script type=\"text/template\">".concat(slide.trim(), "</script></section>");
       }).join('\n'), "\n          </div>\n      </div>\n      <script src=\"https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.js\"></script>\n      <script src=\"https://cdn.jsdelivr.net/npm/reveal.js/plugin/markdown/markdown.js\"></script>\n      <script>\n          Reveal.initialize({\n              plugins: [ RevealMarkdown ]\n          });\n          \n          // Ensure Mermaid diagrams initialize correctly\n          document.addEventListener('DOMContentLoaded', () => {\n              mermaid.initialize({ startOnLoad: true , securityLevel: 'loose', theme: 'dark' });\n              document.querySelectorAll('.mermaid').forEach(el => {\n                  el.innerHTML = el.textContent;\n                  mermaid.init(undefined, el);\n              });\n          });\n      </script>\n  </body>\n  </html>");
     }
@@ -1426,7 +1432,7 @@ _defineProperty(SquibView, "defaultOptions", {
   baseClass: 'squibview'
 });
 _defineProperty(SquibView, "version", {
-  version: "0.0.25",
+  version: "0.0.26",
   url: "https://github.com/deftio/squibview"
 });
 

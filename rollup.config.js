@@ -2,9 +2,30 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import babel from '@rollup/plugin-babel';
 import terser from '@rollup/plugin-terser';
-import css from 'rollup-plugin-css-only';
+import postcss from 'rollup-plugin-postcss';
+
+// on the next line we import the package.json file so we can access the "main" field but we need to tell
+// import its json file so it knows how to parse it
 
 const extensions = ['.js'];
+
+// This config creates the standalone build that bundles everything:
+const standaloneConfig = {
+  input: 'src/standalone.squibview.js',
+  output: {
+    file: 'dist/squibview.standalone.min.js',
+    format: 'umd',
+    name: 'SquibView',
+    inlineDynamicImports: true,  // Force a single chunk
+  },
+  plugins: [
+    resolve(),
+    commonjs(),
+    postcss(),  // or styles plugin if you prefer
+    babel({ babelHelpers: 'bundled', extensions: ['.js'] }),
+    terser({ ecma: 2021 })
+  ]
+};
 
 export default [
   // UMD Configuration
@@ -62,5 +83,6 @@ export default [
         presets: ['@babel/preset-env'],
       }),
     ],
-  }
+  },
+  standaloneConfig
 ];

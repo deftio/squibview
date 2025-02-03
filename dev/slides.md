@@ -1,4 +1,3 @@
-
 # How to Pitch a Company to a VC
 ## Introduction
 - What is a VC pitch?
@@ -14,11 +13,11 @@
 
 ---
 
-## The Solution ( Flowchart)
+## The Solution (Flowchart)
 
 ```mermaid
 graph TD;
-    A[User Problem] -->|Solution| B[Your Product];
+    A[User Problem] --> B[Your Product];
     B --> C[Market Adoption];
     C --> D[Revenue Growth];
 ```
@@ -55,6 +54,9 @@ Here is the crew that brings you Amazing Co:
 <svg width="500" height="200">
   <rect x="10" y="10" width="200" height="100" fill="blue"/>
   <text x="30" y="60" font-size="20" fill="white">Our Core Team</text>
+  <text>Billy Bob</text>
+  <text>Gloria Sue</text>
+  <text>Filo Flip</text>
 </svg>
 
 ---
@@ -74,6 +76,7 @@ Here is the crew that brings you Amazing Co:
 - Contact details
 
 ---
+
 ## Q&A
 - Open floor for questions
 

@@ -19,7 +19,7 @@ class SquibView {
     };
 
     static version = {
-      version: "0.0.25",
+      version: "0.0.26",
       url : "https://github.com/deftio/squibview"
     };
 
@@ -88,10 +88,10 @@ class SquibView {
           ${this.options.titleContent}
         </div>
         <div class="${this.options.baseClass}-controls" ${!this.options.showControls ? 'style="display:none"' : ''}>
-          <button data-view="md">Markdown</button>
+          <button data-view='src'>Markdown</button>
           <button data-view="html">Rendered</button>
           <button data-view="split">Split</button>
-          <button class="copy-md-button">Copy MD</button>
+          <button class="copy-src-button">Copy MD</button>
           <button class="copy-html-button">Copy Formatted</button>
         </div>
         <div class="${this.options.baseClass}-editor">
@@ -112,19 +112,12 @@ class SquibView {
         button.addEventListener('click', () => this.setView(button.dataset.view));
       });
 
-      this.controls.querySelector('.copy-md-button').addEventListener('click', () => this.copyMarkdown());
+      this.controls.querySelector('.copy-src-button').addEventListener('click', () => this.copySource());
       this.controls.querySelector('.copy-html-button').addEventListener('click', () => this.copyHTML());
 
-      this.input.addEventListener('input', () => {
-        // use input type to call the renderMarkdown or renderHTML function
-        if (this.inputContentType === "html") {
-          this.writeHTMLContent(this.input.value)
-        } else {
-          this.renderMarkdown()
-        }
-      });
+      //onchange() for input source
+      this.input.addEventListener('input', () => { this.renderOutput(); });
     }
-
     initializeResizeObserver() {
       const resizeObserver = new ResizeObserver(entries => {
         for (let entry of entries) {
@@ -149,21 +142,17 @@ class SquibView {
       if (this.currentView === 'split') {
         this.input.style.width = '50%';
         this.output.style.width = '50%';
-      } else if (this.currentView === 'md') {
+      } else if (this.currentView === 'src') {
         this.input.style.width = '100%';
       } else if (this.currentView === 'html') {
         this.output.style.width = '100%';
       }
     }
 
-    setContent(content, contentType = "md") {
+    setContent(content, contentType = 'md') {
       this.input.value = content;
       this.inputContentType = contentType;
-      if (contentType === "md") {
-        this.renderMarkdown();
-      } else if (contentType === "html") {
-        this.writeHTMLContent(content);
-      }
+      this.renderOutput();
     }
 
     getContent() {
@@ -224,8 +213,9 @@ class SquibView {
       mermaid.init(undefined, this.output.querySelectorAll('.mermaid'));
     } // end of renderMarkdown
 
+    // todo rename sourceRemoveAllHR ()  ==> handled markdown or html via replace (---) or (<hr>, <hr/>) respectively
     markdownRemoveAllHR  () {
-      if (this.inputContentType === "md") {
+      if (this.inputContentType === 'md') {
         const markdown = this.getMarkdownSource();
         const newMarkdown = markdown.replace(/---/g, '');
         this.setContent(newMarkdown);
@@ -239,10 +229,10 @@ class SquibView {
         btn.classList.toggle('active', btn.dataset.view === view);
       });
 
-      const copyMDButton = this.controls.querySelector('.copy-md-button');
+      const copyMDButton = this.controls.querySelector('.copy-src-button');
       const copyHTMLButton = this.controls.querySelector('.copy-html-button');
 
-      if (view === 'md') {
+      if (view === 'src') {
         this.input.classList.remove('squibview-hidden');
         this.output.classList.add('squibview-hidden');
         this.input.style.width = '100%';
@@ -254,7 +244,7 @@ class SquibView {
         this.output.style.width = '100%';
         copyMDButton.classList.add('squibview-hidden');
         copyHTMLButton.classList.remove('squibview-hidden');
-      } else {
+      } else { // view == 'split'
         this.input.classList.remove('squibview-hidden');
         this.output.classList.remove('squibview-hidden');
         this.input.style.width = '50%';
@@ -490,12 +480,12 @@ class SquibView {
     // Standalone function to toggle between Markdown preview and split view
     toggleView() {
       const editor = window.editor;
-      if (editor.currentView === 'md') {
+      if (editor.currentView === 'src') {
         editor.setView('split');
       } else if (editor.currentView === 'split') {
         editor.setView('html');
       } else
-        editor.setView('md')
+        editor.setView('src')
 
       console.log(editor.currentView)
     }
@@ -530,14 +520,31 @@ class SquibView {
     }
     // this function takes input as html and renders it in an iframe in the output div
     // it write to the outputDiv that is a member of this object
-    writeHTMLContent(src) {
+    renderHTML(src) {
       const htmlContent = src;
       const outputDiv = this.output;
       this.insertContentInIframe(outputDiv, htmlContent);
     }
 
-    async copyMarkdown() {
-      const copyButton = this.controls.querySelector('.copy-md-button');
+    renderOutput() {
+      switch( this.inputContentType) {
+        case 'html':
+          this.renderHTML(this.input.value)
+          break;
+        case 'reveal':
+          this.renderHTML(this.makeRevealJSFullPage(this.input.value))
+          break;
+        case 'md':
+            this.renderMarkdown();
+          break;
+        default:
+            this.renderMarkdown();
+            console.log("Unsupported content type: ", this.inputContentType);
+      } 
+    }
+    
+    async copySource() {
+      const copyButton = this.controls.querySelector('.copy-src-button');
       copyButton.textContent = 'Copying...';
 
       try {
@@ -553,10 +560,10 @@ class SquibView {
           document.body.appendChild(textarea);
           textarea.select();
 
-          const successful = document.execCommand('copy');
+          //const successful = document.execCommand('copy');
           document.body.removeChild(textarea);
 
-          if (!successful) throw new Error('Fallback copy failed');
+          //if (!successful) throw new Error('Fallback copy failed');
         }
 
         copyButton.textContent = 'Copied!';
@@ -723,10 +730,6 @@ class SquibView {
       }, 2000);
     }
 
-    getVersion() {
-      return GraphicalMD.version;
-    }
-
     copyToClipboard(string) {
       let textarea;
       let result;
@@ -845,7 +848,7 @@ class SquibView {
       return s;
     }
 
-    makeRevealJSFullPage(markdown, title = "Reveal.js Markdown Presentation") {
+    makeRevealJSFullPage(markdown, title = "Slide Presentation") {
       return `<!DOCTYPE html>
   <html lang="en">
   <head>
@@ -857,7 +860,7 @@ class SquibView {
       <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
   </head>
   <body>
-      <div class="reveal">
+      <div class="reveal" contenteditable="true">
           <div class="slides">
               ${markdown.split('---').map(slide => `<section data-markdown><script type="text/template">${slide.trim()}</script></section>`).join('\n')}
           </div>
