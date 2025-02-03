@@ -520,7 +520,7 @@
       key: "createStructure",
       value: function createStructure() {
         this.container.classList.add(this.options.baseClass);
-        this.container.innerHTML = "\n        <div class=\"".concat(this.options.baseClass, "-title\" ").concat(!this.options.titleShow ? 'style="display:none"' : '', ">\n          ").concat(this.options.titleContent, "\n        </div>\n        <div class=\"").concat(this.options.baseClass, "-controls\" ").concat(!this.options.showControls ? 'style="display:none"' : '', ">\n          <button data-view='src'>Markdown</button>\n          <button data-view=\"html\">Rendered</button>\n          <button data-view=\"split\">Split</button>\n          <button class=\"copy-src-button\">Copy MD</button>\n          <button class=\"copy-html-button\">Copy Formatted</button>\n        </div>\n        <div class=\"").concat(this.options.baseClass, "-editor\">\n          <textarea class=\"").concat(this.options.baseClass, "-input\"></textarea>\n          <div class=\"").concat(this.options.baseClass, "-output\"></div>\n        </div>\n      ");
+        this.container.innerHTML = "\n        <div class=\"".concat(this.options.baseClass, "-title\" ").concat(!this.options.titleShow ? 'style="display:none"' : '', ">\n          ").concat(this.options.titleContent, "\n        </div>\n        <div class=\"").concat(this.options.baseClass, "-controls\" ").concat(!this.options.showControls ? 'style="display:none"' : '', ">\n          <button data-view='src'>Source</button>\n          <button data-view=\"html\">Rendered</button>\n          <button data-view=\"split\">Split</button>\n          <button class=\"copy-src-button\">Copy Source</button>\n          <button class=\"copy-html-button\">Copy Rendered</button>\n        </div>\n        <div class=\"").concat(this.options.baseClass, "-editor\">\n          <textarea class=\"").concat(this.options.baseClass, "-input\"></textarea>\n          <div class=\"").concat(this.options.baseClass, "-output\"></div>\n        </div>\n      ");
         this.title = this.container.querySelector(".".concat(this.options.baseClass, "-title"));
         this.controls = this.container.querySelector(".".concat(this.options.baseClass, "-controls"));
         this.editor = this.container.querySelector(".".concat(this.options.baseClass, "-editor"));
@@ -1153,7 +1153,7 @@
                 copyButton.textContent = 'Copy failed';
               case 25:
                 setTimeout(function () {
-                  copyButton.textContent = 'Copy MD';
+                  copyButton.textContent = 'Copy Source';
                 }, 2000);
               case 26:
               case "end":

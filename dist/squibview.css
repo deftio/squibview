@@ -58,12 +58,12 @@ text.error-text {
     padding: 1em;
     font-family: monospace;
     font-size: 1em;
+    resize: none;
 }
 
 .squibview-output {
     padding: 1em;
     overflow: auto;
-    border-left: 1px solid #ccc;
 }
 
 .squibview-hidden {

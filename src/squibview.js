@@ -89,11 +89,11 @@ class SquibView {
           ${this.options.titleContent}
         </div>
         <div class="${this.options.baseClass}-controls" ${!this.options.showControls ? 'style="display:none"' : ''}>
-          <button data-view='src'>Markdown</button>
+          <button data-view='src'>Source</button>
           <button data-view="html">Rendered</button>
           <button data-view="split">Split</button>
-          <button class="copy-src-button">Copy MD</button>
-          <button class="copy-html-button">Copy Formatted</button>
+          <button class="copy-src-button">Copy Source</button>
+          <button class="copy-html-button">Copy Rendered</button>
         </div>
         <div class="${this.options.baseClass}-editor">
           <textarea class="${this.options.baseClass}-input"></textarea>
@@ -593,7 +593,7 @@ class SquibView {
     }
 
     setTimeout(() => {
-      copyButton.textContent = 'Copy MD';
+      copyButton.textContent = 'Copy Source';
     }, 2000);
   }
 
