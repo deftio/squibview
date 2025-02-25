@@ -11,9 +11,13 @@ Features:
 * add support for render plugins...
 * change source button to "source" or "src"
 * change output button to be set by the plugin
+* add undo / redo support with versions in src editor (or rendered editor) (<< , >>)
+* live sync from rendered ==> src
 * editor enableSyntaxHighlighting() # assumes a syntax highlighting editor is available
 * group all dependencies
 * add ability to run squibview as a library at cli (so one can transform md to html or slides to html etc)
+* create extra functions / ui for plugins 
+** for markdown, add heading up / heading down buttons
 
 ## Render Plug-ins 
 

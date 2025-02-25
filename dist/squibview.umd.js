@@ -466,12 +466,22 @@
       if (!this.container) {
         throw new Error('Container element not found');
       }
+
+      // Initialize undo/redo buffer we should also have a way to clear it or access an abitrary version of it
+      this.revisions = {
+        buffer: [],
+        index: 0
+      };
+
+      // iniit all the libs and 
       this.initializeLibraries();
       this.createStructure();
       this.initializeEventHandlers();
-      this.setContent(this.options.initialContent, this.options.inputContentType);
-      this.setView(this.options.initialView);
-      this.initializeResizeObserver();
+      this.initializeResizeObserver(); // resize container if needed
+
+      // set content
+      if (this.options.initialContent) this.setContent(this.options.initialContent, this.options.inputContentType);
+      this.setView(this.options.initialView); // src / rendered / split
     }
     return _createClass(SquibView, [{
       key: "initializeLibraries",
@@ -545,7 +555,7 @@
 
         //onchange() for input source
         this.input.addEventListener('input', function () {
-          _this.renderOutput();
+          _this.setContent();
         });
       }
     }, {
@@ -591,13 +601,74 @@
       }
     }, {
       key: "setContent",
-      value: function setContent(content, contentType) {
+      value: function setContent() {
+        var content = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.input.value;
+        var contentType = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.inputContentType;
+        var saveRevision = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
         this.input.value = content;
-        // if the contentType isn't undefined then we'll set it:
-        if (contentType) {
-          this.inputContentType = contentType;
+        this.inputContentType = contentType;
+        // push the content to the revisions
+        if (saveRevision) {
+          this.revisions.buffer.push({
+            content: content,
+            contentType: contentType
+          });
+          this.revisions.index = this.revisions.buffer.length - 1;
+          // remove all the revisions after the current index
+          this.revisions.buffer = this.revisions.buffer.slice(0, this.revisions.index + 1);
         }
+        // render it
         this.renderOutput();
+      }
+
+      // if possible undo the last change else do nothing
+    }, {
+      key: "revisionUndo",
+      value: function revisionUndo() {
+        // if possible undo the last change else do nothing, use the revisions buffer and index
+        if (this.revisions.buffer.length > 0 && this.revisions.index > 0) {
+          this.revisions.index--;
+          var lastChange = this.revisions.buffer[this.revisions.index];
+          this.input.value = lastChange.content;
+          this.inputContentType = lastChange.contentType;
+          //console.log(this.revisions.index);
+          this.renderOutput();
+        }
+      }
+      // if possible redo the last change else do nothing
+    }, {
+      key: "revisionRedo",
+      value: function revisionRedo() {
+        if (this.revisions.index < this.revisions.buffer.length - 1) {
+          this.revisions.index++;
+          var lastChange = this.revisions.buffer[this.revisions.index];
+          this.input.value = lastChange.content;
+          this.inputContentType = lastChange.contentType;
+          //console.log(this.revisions.index);
+          this.renderOutput();
+        }
+      }
+    }, {
+      key: "revisionSet",
+      value: function revisionSet(index) {
+        if (index >= 0 && index < this.revisions.buffer.length) {
+          this.revisions.index = index;
+          var lastChange = this.revisions.buffer[this.revisions.index];
+          this.input.value = lastChange.content;
+          this.inputContentType = lastChange.contentType;
+          //console.log(this.revisions.index);
+          this.renderOutput();
+        }
+      }
+    }, {
+      key: "revisionNumRevsions",
+      value: function revisionNumRevsions() {
+        return this.revisions.buffer.length;
+      }
+    }, {
+      key: "revisionGetCurrentIndex",
+      value: function revisionGetCurrentIndex() {
+        return this.revisions.index;
       }
     }, {
       key: "getContent",
@@ -716,6 +787,50 @@
           var newMarkdown = markdown.replace(/---/g, '');
           this.setContent(newMarkdown, this.inputContentType);
         }
+      }
+      /**
+       * Adjusts the heading levels in Markdown text by a specified offset.
+       * 
+       * @param {string} markdown - The Markdown text to process
+       * @param {number} offset - The amount to adjust heading levels by (positive to increase, negative to decrease)
+       * @returns {string} - The Markdown text with adjusted heading levels
+       */
+    }, {
+      key: "markdownAdjustHeadings",
+      value: function markdownAdjustHeadings(markdown, offset) {
+        // Early exit if offset is 0 or invalid input
+        if (offset === 0 || typeof markdown !== 'string') {
+          return markdown;
+        }
+
+        // Split the input into lines
+        var lines = markdown.split('\n');
+
+        // Process each line
+        var modifiedLines = lines.map(function (line) {
+          // Regex to match heading lines: starts with 1-6 hash symbols followed by a space
+          var headingMatch = line.match(/^(#{1,6})\s/);
+          if (!headingMatch) {
+            // Not a heading, return unchanged
+            return line;
+          }
+          var currentHeadingLevel = headingMatch[1].length;
+          // Calculate new heading level with bounds checking (min 1, max 6)
+          var newHeadingLevel = Math.min(Math.max(currentHeadingLevel + offset, 1), 6);
+
+          // Replace the heading prefix with the new level
+          return '#'.repeat(newHeadingLevel) + line.substring(currentHeadingLevel);
+        });
+
+        // Join the lines back together
+        return modifiedLines.join('\n');
+      }
+    }, {
+      key: "markdownEditorAdjustHeadings",
+      value: function markdownEditorAdjustHeadings(offset) {
+        var markdown = this.getMarkdownSource();
+        var newMarkdown = this.markdownAdjustHeadings(markdown, offset);
+        this.setContent(newMarkdown, this.inputContentType);
       }
     }, {
       key: "setView",

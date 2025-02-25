@@ -32,12 +32,22 @@ class SquibView {
       throw new Error('Container element not found');
     }
 
+    // Initialize undo/redo buffer we should also have a way to clear it or access an abitrary version of it
+    this.revisions = {buffer : [], index : 0};
+  
+    // iniit all the libs and 
     this.initializeLibraries();
     this.createStructure();
     this.initializeEventHandlers();
-    this.setContent(this.options.initialContent, this.options.inputContentType);
-    this.setView(this.options.initialView);
-    this.initializeResizeObserver();
+    this.initializeResizeObserver();  // resize container if needed
+
+    // set content
+    if (this.options.initialContent)
+      this.setContent(this.options.initialContent, this.options.inputContentType);
+    this.setView(this.options.initialView);  // src / rendered / split
+    
+
+    
   }
 
   initializeLibraries() {
@@ -106,6 +116,8 @@ class SquibView {
     this.editor = this.container.querySelector(`.${this.options.baseClass}-editor`);
     this.input = this.container.querySelector(`.${this.options.baseClass}-input`);
     this.output = this.container.querySelector(`.${this.options.baseClass}-output`);
+
+    
   }
 
   initializeEventHandlers() {
@@ -117,7 +129,7 @@ class SquibView {
     this.controls.querySelector('.copy-html-button').addEventListener('click', () => this.copyHTML());
 
     //onchange() for input source
-    this.input.addEventListener('input', () => { this.renderOutput(); });
+    this.input.addEventListener('input', () => { this.setContent(); });
   }
   initializeResizeObserver() {
     const resizeObserver = new ResizeObserver(entries => {
@@ -150,13 +162,59 @@ class SquibView {
     }
   }
 
-  setContent(content, contentType ) {
+  setContent(content = this.input.value, contentType = this.inputContentType, saveRevision = true) {
     this.input.value = content;
-    // if the contentType isn't undefined then we'll set it:
-    if (contentType) {
-      this.inputContentType = contentType;
+    this.inputContentType = contentType;
+    // push the content to the revisions
+    if (saveRevision) {
+      this.revisions.buffer.push({ content, contentType });
+      this.revisions.index = this.revisions.buffer.length - 1;  
+      // remove all the revisions after the current index
+      this.revisions.buffer = this.revisions.buffer.slice(0, this.revisions.index + 1);
     }
+    // render it
     this.renderOutput();
+  }
+
+  // if possible undo the last change else do nothing
+  revisionUndo() {
+    // if possible undo the last change else do nothing, use the revisions buffer and index
+    if (this.revisions.buffer.length > 0 && this.revisions.index > 0) {
+      this.revisions.index--;
+      const lastChange = this.revisions.buffer[this.revisions.index];
+      this.input.value = lastChange.content;
+      this.inputContentType = lastChange.contentType;
+      //console.log(this.revisions.index);
+      this.renderOutput();
+
+    }
+  }
+  // if possible redo the last change else do nothing
+  revisionRedo() {
+    if (this.revisions.index < this.revisions.buffer.length - 1) {
+      this.revisions.index++;
+      const lastChange = this.revisions.buffer[this.revisions.index];
+      this.input.value = lastChange.content;
+      this.inputContentType = lastChange.contentType;
+      //console.log(this.revisions.index);
+      this.renderOutput();
+    }
+  }
+  revisionSet(index) {
+    if (index >= 0 && index < this.revisions.buffer.length) {
+      this.revisions.index = index;
+      const lastChange = this.revisions.buffer[this.revisions.index];
+      this.input.value = lastChange.content;
+      this.inputContentType = lastChange.contentType;
+      //console.log(this.revisions.index);
+      this.renderOutput();
+    }
+  }
+  revisionNumRevsions() {
+    return this.revisions.buffer.length;
+  }
+  revisionGetCurrentIndex() {
+    return this.revisions.index;
   }
 
   getContent() {
@@ -170,7 +228,7 @@ class SquibView {
   async renderMarkdown(md) {
 
     const markdown = md || this.input.value;
-    const html = this.md.render(markdown); 
+    const html = this.md.render(markdown);
     this.output.innerHTML = "<div contenteditable='true'>" + html + "</div>";
 
     // Convert all images to data URLs immediately after rendering
@@ -226,6 +284,48 @@ class SquibView {
       const newMarkdown = markdown.replace(/---/g, '');
       this.setContent(newMarkdown, this.inputContentType);
     }
+  }
+  /**
+   * Adjusts the heading levels in Markdown text by a specified offset.
+   * 
+   * @param {string} markdown - The Markdown text to process
+   * @param {number} offset - The amount to adjust heading levels by (positive to increase, negative to decrease)
+   * @returns {string} - The Markdown text with adjusted heading levels
+   */
+  markdownAdjustHeadings(markdown, offset) {
+    // Early exit if offset is 0 or invalid input
+    if (offset === 0 || typeof markdown !== 'string') {
+      return markdown;
+    }
+
+    // Split the input into lines
+    const lines = markdown.split('\n');
+
+    // Process each line
+    const modifiedLines = lines.map(line => {
+      // Regex to match heading lines: starts with 1-6 hash symbols followed by a space
+      const headingMatch = line.match(/^(#{1,6})\s/);
+
+      if (!headingMatch) {
+        // Not a heading, return unchanged
+        return line;
+      }
+
+      const currentHeadingLevel = headingMatch[1].length;
+      // Calculate new heading level with bounds checking (min 1, max 6)
+      const newHeadingLevel = Math.min(Math.max(currentHeadingLevel + offset, 1), 6);
+
+      // Replace the heading prefix with the new level
+      return '#'.repeat(newHeadingLevel) + line.substring(currentHeadingLevel);
+    });
+
+    // Join the lines back together
+    return modifiedLines.join('\n');
+  }
+  markdownEditorAdjustHeadings(offset) {
+    const markdown = this.getMarkdownSource();
+    const newMarkdown = this.markdownAdjustHeadings(markdown, offset);
+    this.setContent(newMarkdown, this.inputContentType);
   }
 
   setView(view) {
@@ -543,12 +643,12 @@ class SquibView {
       case 'csv': // comma separated
       case 'tsv': // tab separated
       case 'semisv': // semicolon separated
-      case 'ssv' : //space separated
+      case 'ssv': //space separated
         // take the input and treat it as csv / tsv and convert it to markdown to render on the fly
         const data = this.getContent();
         // delimiter can be commma, tab, space, or semi-colon
-        let delimiter = ","; 
-        const delims = {"tsv":",", "semisv":";","ssv":" "};
+        let delimiter = ",";
+        const delims = { "tsv": ",", "semisv": ";", "ssv": " " };
         if (this.inputContentType in delims)
           delimiter = delims[this.inputContentType];
         const markdownTable = this.csvOrTsvToMarkdownTable(data, delimiter);
