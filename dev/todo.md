@@ -38,7 +38,8 @@ plugin:
     input_label : "markdown", // this is what appears on view source, copy source the button 
     input_langauge_syntax : "markdown", // how the source editor should highlight if enabled
     output_type : "html",
-    output_label : "html
+    output_label : "html,
+    // ... add in plugin functions
     render_cb : (input_buf) => { .. return {"output" : str, "err" : "none", "err_msg" : "str" }} // if none than default md
     copy_cb : (buputbuf) => { .. return {"output" : str, "err": "none"}}  .. if none then default copy
     help_str :  { ..}
