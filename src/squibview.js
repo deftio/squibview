@@ -46,8 +46,6 @@ class SquibView {
       this.setContent(this.options.initialContent, this.options.inputContentType);
     this.setView(this.options.initialView);  // src / rendered / split
     
-
-    
   }
 
   initializeLibraries() {
