@@ -456,6 +456,7 @@ var SquibView = /*#__PURE__*/function () {
     var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
     _classCallCheck(this, SquibView);
     this.options = _objectSpread2(_objectSpread2({}, SquibView.defaultOptions), options);
+    this.options.show_md_buttons = this.options.show_md_buttons && this.options.inputContentType === 'md';
     this.container = typeof element === 'string' ? document.querySelector(element) : element;
     if (!this.container) {
       throw new Error('Container element not found');
@@ -524,7 +525,8 @@ var SquibView = /*#__PURE__*/function () {
     key: "createStructure",
     value: function createStructure() {
       this.container.classList.add(this.options.baseClass);
-      this.container.innerHTML = "\n        <div class=\"".concat(this.options.baseClass, "-title\" ").concat(!this.options.titleShow ? 'style="display:none"' : '', ">\n          ").concat(this.options.titleContent, "\n        </div>\n        <div class=\"").concat(this.options.baseClass, "-controls\" ").concat(!this.options.showControls ? 'style="display:none"' : '', ">\n          <button data-view='src'>Source</button>\n          <button data-view=\"html\">Rendered</button>\n          <button data-view=\"split\">Split</button>\n          <button class=\"copy-src-button\">Copy Source</button>\n          <button class=\"copy-html-button\">Copy Rendered</button>\n        </div>\n        <div class=\"").concat(this.options.baseClass, "-editor\">\n          <textarea class=\"").concat(this.options.baseClass, "-input\"></textarea>\n          <div class=\"").concat(this.options.baseClass, "-output\"></div>\n        </div>\n      ");
+      this.md_buttons = this.options.show_md_buttons ? "<button  onclick=\"editor.markdownRemoveAllHR()\">Remove HR</button>\n  <button  onclick=\"editor.markdownEditorAdjustHeadings(-1)\">H-</button>\n  <button  onclick=\"editor.markdownEditorAdjustHeadings(+1)\">H+</button>\n  <button  onclick=\"editor.revisionUndo()\">&#x21A9</button>\n  <button  onclick=\"editor.revisionRedo()\">&#x21AA</button>" : "";
+      this.container.innerHTML = "\n        <div class=\"".concat(this.options.baseClass, "-title\" ").concat(!this.options.titleShow ? 'style="display:none"' : '', ">\n          ").concat(this.options.titleContent, "\n        </div>\n        <div class=\"").concat(this.options.baseClass, "-controls\" ").concat(!this.options.showControls ? 'style="display:none"' : '', ">\n          <button data-view='src'>Source</button>\n          <button data-view=\"html\">Rendered</button>\n          <button data-view=\"split\">Split</button>\n          <button class=\"copy-src-button\">Copy Source</button>\n          <button class=\"copy-html-button\">Copy Rendered</button>\n          <span>").concat(this.md_buttons, "</span>\n        </div>\n        <div class=\"").concat(this.options.baseClass, "-editor\">\n          <textarea class=\"").concat(this.options.baseClass, "-input\"></textarea>\n          <div class=\"").concat(this.options.baseClass, "-output\"></div>\n        </div>\n      ");
       this.title = this.container.querySelector(".".concat(this.options.baseClass, "-title"));
       this.controls = this.container.querySelector(".".concat(this.options.baseClass, "-controls"));
       this.editor = this.container.querySelector(".".concat(this.options.baseClass, "-editor"));
@@ -1589,7 +1591,8 @@ _defineProperty(SquibView, "defaultOptions", {
   titleShow: false,
   titleContent: '',
   initialView: 'split',
-  baseClass: 'squibview'
+  baseClass: 'squibview',
+  show_md_buttons: true
 });
 _defineProperty(SquibView, "version", {
   version: "0.0.27",

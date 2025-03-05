@@ -64,12 +64,13 @@ Also supports Mermaid diagrams and SVG content within fenced code blocks.
   
   <h2>SquibView <span id="version"></span></h2>
   <div class="squibview-controls">
+    <!-- 
   <button  onclick="editor.markdownRemoveAllHR()">Remove HR</button>
   <button  onclick="editor.markdownEditorAdjustHeadings(-1)">H-</button>
   <button  onclick="editor.markdownEditorAdjustHeadings(+1)">H+</button>
   <button  onclick="editor.revisionUndo()">&#x21A9</button>
   <button  onclick="editor.revisionRedo()">&#x21AA</button>
-  <!-- pick a revision (show list and then activate), so we need to get the total number and then let the user pick from drop down
+  pick a revision (show list and then activate), so we need to get the total number and then let the user pick from drop down
     so we need to make  from 1 to n (really 0 to n-1) and then we need to get the index of the selected item.
     this is generated dynamically based on editor.  revisionNumRevsions()
     <select id="revisionSelect" onchange="editor.revisionSetRevision(this.value)">
@@ -93,7 +94,8 @@ Also supports Mermaid diagrams and SVG content within fenced code blocks.
     // it has nothing to do with the GraphicalMD editor
     const editor = new SquibView('#editorContainer', {
       titleShow: false,
-      titleContent: "SquibView Editor " + SquibView.version.version
+      titleContent: "SquibView Editor " + SquibView.version.version,
+      show_md_buttons: true
     });
 
     window.editor = editor; // Make the editor instance accessible globally

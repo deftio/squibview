@@ -16,9 +16,11 @@ class SquibView {
     titleShow: false,
     titleContent: '',
     initialView: 'split',
-    baseClass: 'squibview'
+    baseClass: 'squibview',
+    show_md_buttons: true
   };
 
+  
   static version = {
     version: "0.0.27",
     url: "https://github.com/deftio/squibview"
@@ -26,6 +28,9 @@ class SquibView {
 
   constructor(element, options = {}) {
     this.options = { ...SquibView.defaultOptions, ...options };
+
+    this.options.show_md_buttons = this.options.show_md_buttons && this.options.inputContentType === 'md';
+    
     this.container = typeof element === 'string' ? document.querySelector(element) : element;
 
     if (!this.container) {
@@ -92,6 +97,12 @@ class SquibView {
   createStructure() {
     this.container.classList.add(this.options.baseClass);
 
+    this.md_buttons= this.options.show_md_buttons ? `<button  onclick="editor.markdownRemoveAllHR()">Remove HR</button>
+  <button  onclick="editor.markdownEditorAdjustHeadings(-1)">H-</button>
+  <button  onclick="editor.markdownEditorAdjustHeadings(+1)">H+</button>
+  <button  onclick="editor.revisionUndo()">&#x21A9</button>
+  <button  onclick="editor.revisionRedo()">&#x21AA</button>` : "";
+
     this.container.innerHTML = `
         <div class="${this.options.baseClass}-title" ${!this.options.titleShow ? 'style="display:none"' : ''}>
           ${this.options.titleContent}
@@ -102,6 +113,7 @@ class SquibView {
           <button data-view="split">Split</button>
           <button class="copy-src-button">Copy Source</button>
           <button class="copy-html-button">Copy Rendered</button>
+          <span>${this.md_buttons}</span>
         </div>
         <div class="${this.options.baseClass}-editor">
           <textarea class="${this.options.baseClass}-input"></textarea>
