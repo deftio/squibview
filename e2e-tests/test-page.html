@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SquibView E2E Tests</title>
+  <link rel="stylesheet" href="../dist/squibview.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .test-container {
+      margin-bottom: 30px;
+      border: 1px solid #ddd;
+      padding: 10px;
+    }
+    h1, h2 {
+      color: #333;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>SquibView E2E Tests</h1>
+  
+  <div class="test-container">
+    <h2>Markdown with Images Test</h2>
+    <div id="markdown-test" style="height: 500px;"></div>
+  </div>
+  
+  <div class="test-container">
+    <h2>HTML Rendering Test</h2>
+    <div id="html-test" style="height: 500px;"></div>
+  </div>
+  
+  <div class="test-container">
+    <h2>CSV Rendering Test</h2>
+    <div id="csv-test" style="height: 500px;"></div>
+  </div>
+  
+  <div class="test-container">
+    <h2>RevealJS Test</h2>
+    <div id="reveal-test" style="height: 500px;"></div>
+  </div>
+  
+  <div class="test-container">
+    <h2>Copy/Clipboard Test</h2>
+    <div id="copy-test" style="height: 500px;"></div>
+    <div id="copy-result"></div>
+  </div>
+
+  <!-- Load required scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="../dist/squibview.standalone.min.js"></script>
+  <script>
+    // Wait for DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      // For legacy references
+      window.editor = null;
+      // Example markdown with image
+      const markdownContent = `# Markdown Test
+      
+This is a test with an image:
+
+![Example Image](https://via.placeholder.com/150)
+
+## Code Block Test
+
+\`\`\`javascript
+function hello() {
+  console.log("Hello SquibView!");
+}
+\`\`\`
+
+## Table Test
+
+| Header 1 | Header 2 |
+|----------|----------|
+| Cell 1   | Cell 2   |
+| Cell 3   | Cell 4   |
+
+## Mermaid Diagram Test
+
+\`\`\`mermaid
+graph TD;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
+\`\`\`
+`;
+
+      // HTML content
+      const htmlContent = `
+<h1>HTML Test</h1>
+<p>This is <strong>HTML</strong> content with some <em>formatting</em>.</p>
+<ul>
+  <li>Item 1</li>
+  <li>Item 2</li>
+  <li>Item 3</li>
+</ul>
+<img src="https://via.placeholder.com/150" alt="Placeholder Image">
+`;
+
+      // CSV content
+      const csvContent = `Name,Age,City
+John Doe,30,New York
+Jane Smith,25,San Francisco
+Bob Johnson,45,Chicago
+Alice Williams,35,Boston`;
+
+      // RevealJS content
+      const revealContent = `# Slide 1
+This is the first slide
+
+---
+
+# Slide 2
+This is the second slide with a bullet list
+* Item 1
+* Item 2
+
+---
+
+# Slide 3
+This is the third slide with an image
+![Example Image](https://via.placeholder.com/150)
+`;
+
+      // Initialize editors
+      window.mdEditor = new SquibView('#markdown-test', {
+        initialContent: markdownContent,
+        inputContentType: 'md',
+        initialView: 'split',
+        titleContent: 'Markdown Editor'
+      });
+      
+      window.htmlEditor = new SquibView('#html-test', {
+        initialContent: htmlContent,
+        inputContentType: 'html',
+        initialView: 'split',
+        titleContent: 'HTML Editor'
+      });
+      
+      window.csvEditor = new SquibView('#csv-test', {
+        initialContent: csvContent,
+        inputContentType: 'csv',
+        initialView: 'split',
+        titleContent: 'CSV Editor'
+      });
+      
+      window.revealEditor = new SquibView('#reveal-test', {
+        initialContent: revealContent,
+        inputContentType: 'reveal',
+        initialView: 'html',
+        titleContent: 'RevealJS Editor'
+      });
+      
+      window.copyEditor = new SquibView('#copy-test', {
+        initialContent: markdownContent,
+        inputContentType: 'md',
+        initialView: 'split',
+        titleContent: 'Copy Test Editor'
+      });
+      
+      // Set editor to mdEditor for backward compatibility
+      window.editor = window.mdEditor;
+    });
+  </script>
+</body>
+</html>

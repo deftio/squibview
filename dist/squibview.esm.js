@@ -452,6 +452,21 @@ function _unsupportedIterableToArray(r, a) {
  by deftio (c) 2024
 */
 var SquibView = /*#__PURE__*/function () {
+  /**
+   * Creates a new SquibView instance.
+   * 
+   * @param {HTMLElement|string} element - The DOM element or selector where the editor will be mounted
+   * @param {Object} options - Configuration options for the editor
+   * @param {string} [options.initialContent=''] - Initial content to load
+   * @param {string} [options.inputContentType='md'] - Type of the initial content ('md', 'html', 'reveal', 'csv', 'tsv')
+   * @param {boolean} [options.showControls=true] - Whether to show the control buttons
+   * @param {boolean} [options.titleShow=false] - Whether to show the title section
+   * @param {string} [options.titleContent=''] - Content for the title section
+   * @param {string} [options.initialView='split'] - Initial view mode ('src', 'html', 'split')
+   * @param {string} [options.baseClass='squibview'] - Base CSS class for styling
+   * @param {boolean} [options.show_md_buttons=true] - Whether to show markdown-specific buttons
+   * @throws {Error} Throws if the container element is not found
+   */
   function SquibView(element) {
     var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
     _classCallCheck(this, SquibView);
@@ -478,6 +493,14 @@ var SquibView = /*#__PURE__*/function () {
     if (this.options.initialContent) this.setContent(this.options.initialContent, this.options.inputContentType);
     this.setView(this.options.initialView); // src / rendered / split
   }
+
+  /**
+   * Initializes the required libraries for rendering content.
+   * Sets up Mermaid for diagrams and markdown-it for Markdown processing.
+   * Configures custom renderers for fenced code blocks.
+   * 
+   * @private
+   */
   return _createClass(SquibView, [{
     key: "initializeLibraries",
     value: function initializeLibraries() {
@@ -521,6 +544,13 @@ var SquibView = /*#__PURE__*/function () {
         return defaultFence(tokens, idx, options, env, self);
       };
     }
+
+    /**
+     * Creates the DOM structure for the editor.
+     * Sets up the title bar, controls, and editor areas.
+     * 
+     * @private
+     */
   }, {
     key: "createStructure",
     value: function createStructure() {
@@ -533,6 +563,13 @@ var SquibView = /*#__PURE__*/function () {
       this.input = this.container.querySelector(".".concat(this.options.baseClass, "-input"));
       this.output = this.container.querySelector(".".concat(this.options.baseClass, "-output"));
     }
+
+    /**
+     * Sets up event listeners for user interactions.
+     * Handles view changes, copy functionality, and input changes.
+     * 
+     * @private
+     */
   }, {
     key: "initializeEventHandlers",
     value: function initializeEventHandlers() {
@@ -554,6 +591,12 @@ var SquibView = /*#__PURE__*/function () {
         _this.setContent();
       });
     }
+
+    /**
+     * Sets up a resize observer to adjust the layout when the container size changes.
+     * 
+     * @private
+     */
   }, {
     key: "initializeResizeObserver",
     value: function initializeResizeObserver() {
@@ -576,6 +619,12 @@ var SquibView = /*#__PURE__*/function () {
       });
       resizeObserver.observe(this.container);
     }
+
+    /**
+     * Adjusts the layout of the editor components based on the current view and container size.
+     * 
+     * @private
+     */
   }, {
     key: "adjustLayout",
     value: function adjustLayout() {
@@ -595,6 +644,14 @@ var SquibView = /*#__PURE__*/function () {
         this.output.style.width = '100%';
       }
     }
+
+    /**
+     * Sets the content of the editor and renders it.
+     * 
+     * @param {string} [content=this.input.value] - The content to set
+     * @param {string} [contentType=this.inputContentType] - The type of content ('md', 'html', 'reveal', 'csv', 'tsv')
+     * @param {boolean} [saveRevision=true] - Whether to save this change to the revision history
+     */
   }, {
     key: "setContent",
     value: function setContent() {
@@ -617,7 +674,10 @@ var SquibView = /*#__PURE__*/function () {
       this.renderOutput();
     }
 
-    // if possible undo the last change else do nothing
+    /**
+     * Undoes the last change if possible.
+     * Decrements the revision index and restores the content from that revision.
+     */
   }, {
     key: "revisionUndo",
     value: function revisionUndo() {
@@ -631,7 +691,11 @@ var SquibView = /*#__PURE__*/function () {
         this.renderOutput();
       }
     }
-    // if possible redo the last change else do nothing
+
+    /**
+     * Redoes a previously undone change if possible.
+     * Increments the revision index and restores the content from that revision.
+     */
   }, {
     key: "revisionRedo",
     value: function revisionRedo() {
@@ -644,6 +708,12 @@ var SquibView = /*#__PURE__*/function () {
         this.renderOutput();
       }
     }
+
+    /**
+     * Sets the revision to a specific index in the history.
+     * 
+     * @param {number} index - The revision index to set
+     */
   }, {
     key: "revisionSet",
     value: function revisionSet(index) {
@@ -656,29 +726,62 @@ var SquibView = /*#__PURE__*/function () {
         this.renderOutput();
       }
     }
+
+    /**
+     * Returns the total number of revisions in the history.
+     * 
+     * @returns {number} The number of revisions
+     */
   }, {
     key: "revisionNumRevsions",
     value: function revisionNumRevsions() {
       return this.revisions.buffer.length;
     }
+
+    /**
+     * Returns the current index in the revision history.
+     * 
+     * @returns {number} The current revision index
+     */
   }, {
     key: "revisionGetCurrentIndex",
     value: function revisionGetCurrentIndex() {
       return this.revisions.index;
     }
+
+    /**
+     * Gets the current content from the input textarea.
+     * 
+     * @returns {string} The current content
+     */
   }, {
     key: "getContent",
     value: function getContent() {
       return this.input.value;
     }
+
+    /**
+     * Cleans markdown content by removing markdown code fence markers.
+     * 
+     * @param {string} md - The markdown content to clean
+     * @returns {string} The cleaned markdown content
+     */
   }, {
     key: "cleanMarkdown",
     value: function cleanMarkdown(md) {
       return md.replace(/^```markdown\s+/, '').replace(/```$/, '');
     }
+
+    /**
+     * Renders Markdown content to HTML and processes the result.
+     * Converts images to data URLs and initializes Mermaid diagrams.
+     * 
+     * @param {string} [md] - The Markdown content to render, defaults to current input value
+     * @returns {Promise<void>} A promise that resolves when rendering is complete
+     */
   }, {
     key: "renderMarkdown",
-    value: function () {
+    value: (function () {
       var _renderMarkdown = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee(md) {
         var markdown, html, contentDiv, images, _iterator2, _step2, _loop;
         return _regeneratorRuntime().wrap(function _callee$(_context2) {
@@ -774,7 +877,11 @@ var SquibView = /*#__PURE__*/function () {
       }
       return renderMarkdown;
     }() // end of renderMarkdown
-    // todo rename sourceRemoveAllHR ()  ==> handled markdown or html via replace (---) or (<hr>, <hr/>) respectively
+    /**
+     * Removes all horizontal rules (---) from the Markdown content.
+     * Only works when the current content type is Markdown.
+     */
+    )
   }, {
     key: "markdownRemoveAllHR",
     value: function markdownRemoveAllHR() {
@@ -821,6 +928,11 @@ var SquibView = /*#__PURE__*/function () {
       // Join the lines back together
       return modifiedLines.join('\n');
     }
+    /**
+     * Adjusts heading levels in the current Markdown content.
+     * 
+     * @param {number} offset - The amount to adjust heading levels by (positive to increase, negative to decrease)
+     */
   }, {
     key: "markdownEditorAdjustHeadings",
     value: function markdownEditorAdjustHeadings(offset) {
@@ -828,6 +940,12 @@ var SquibView = /*#__PURE__*/function () {
       var newMarkdown = this.markdownAdjustHeadings(markdown, offset);
       this.setContent(newMarkdown, this.inputContentType);
     }
+
+    /**
+     * Sets the current view mode of the editor.
+     * 
+     * @param {string} view - The view mode to set: 'src' (source only), 'html' (rendered only), or 'split' (both)
+     */
   }, {
     key: "setView",
     value: function setView(view) {
@@ -860,9 +978,16 @@ var SquibView = /*#__PURE__*/function () {
       }
       this.adjustLayout();
     }
+
+    /**
+     * Copies the rendered content to the clipboard with formatting.
+     * Processes code blocks, SVG elements, and images to ensure they copy correctly.
+     * 
+     * @returns {Promise<void>} A promise that resolves when copying is complete
+     */
   }, {
     key: "copyContent",
-    value: function () {
+    value: (function () {
       var _copyContent = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee3() {
         var _this3 = this;
         var copyButton, contentDiv, clone, svgElements, _iterator3, _step3, _loop2, imgElements, clipData;
@@ -1067,6 +1192,13 @@ var SquibView = /*#__PURE__*/function () {
       }
       return copyContent;
     }()
+    /**
+     * Converts an SVG element to a PNG blob.
+     * 
+     * @param {SVGElement} svgElement - The SVG element to convert
+     * @returns {Promise<Blob>} A promise that resolves with the PNG blob
+     */
+    )
   }, {
     key: "svgToPng",
     value: function svgToPng(svgElement) {
@@ -1097,6 +1229,12 @@ var SquibView = /*#__PURE__*/function () {
         img.src = svgDataUrl;
       });
     }
+
+    /**
+     * Shows or hides the control buttons.
+     * 
+     * @param {boolean} show - Whether to show the controls
+     */
   }, {
     key: "controlsShow",
     value: function controlsShow(show) {
@@ -1104,6 +1242,12 @@ var SquibView = /*#__PURE__*/function () {
       this.options.showControls = show;
       this.adjustLayout();
     }
+
+    /**
+     * Shows or hides the title section.
+     * 
+     * @param {boolean} show - Whether to show the title
+     */
   }, {
     key: "titleShow",
     value: function titleShow(show) {
@@ -1111,29 +1255,57 @@ var SquibView = /*#__PURE__*/function () {
       this.options.titleShow = show;
       this.adjustLayout();
     }
+
+    /**
+     * Sets the content of the title section.
+     * 
+     * @param {string} content - The HTML content for the title
+     */
   }, {
     key: "titleSetContent",
     value: function titleSetContent(content) {
       this.title.innerHTML = content;
       this.options.titleContent = content;
     }
+
+    /**
+     * Gets the content of the title section.
+     * 
+     * @returns {string} The HTML content of the title
+     */
   }, {
     key: "titleGetContent",
     value: function titleGetContent() {
       return this.title.innerHTML;
     }
+
+    /**
+     * Gets the current markdown source from the input textarea.
+     * 
+     * @returns {string} The markdown source
+     */
   }, {
     key: "getMarkdownSource",
     value: function getMarkdownSource() {
       return this.input.value;
     }
+
+    /**
+     * Gets the HTML source from the rendered output.
+     * 
+     * @returns {string} The HTML content
+     */
   }, {
     key: "getHTMLSource",
     value: function getHTMLSource() {
       return this.output.querySelector('div[contenteditable="true"]').innerHTML;
     }
 
-    // Standalone function to toggle between Markdown preview and split view
+    /**
+     * Toggles between the different view modes (source, rendered, split).
+     * Cycles through: source -> split -> rendered -> source.
+     * Note: This function relies on a global editor variable.
+     */
   }, {
     key: "toggleView",
     value: function toggleView() {
@@ -1176,8 +1348,11 @@ var SquibView = /*#__PURE__*/function () {
       this.output_iframe = iframe;
       this.output_ifraome_content = htmlContent;
     }
-    // this function takes input as html and renders it in an iframe in the output div
-    // it write to the outputDiv that is a member of this object
+    /**
+     * Renders HTML content in an iframe within the output div.
+     * 
+     * @param {string} src - The HTML source content to render
+     */
   }, {
     key: "renderHTML",
     value: function renderHTML(src) {
@@ -1185,6 +1360,11 @@ var SquibView = /*#__PURE__*/function () {
       var outputDiv = this.output;
       this.insertContentInIframe(outputDiv, htmlContent);
     }
+
+    /**
+     * Renders the current content based on its type.
+     * Handles different content types: HTML, RevealJS, CSV/TSV, and Markdown.
+     */
   }, {
     key: "renderOutput",
     value: function renderOutput() {
@@ -1221,9 +1401,16 @@ var SquibView = /*#__PURE__*/function () {
           console.log("Unsupported content type: ", this.inputContentType);
       }
     }
+
+    /**
+     * Copies the source content to the clipboard.
+     * Attempts to use the modern Clipboard API with fallbacks for older browsers.
+     * 
+     * @returns {Promise<void>} A promise that resolves when copying is complete
+     */
   }, {
     key: "copySource",
-    value: function () {
+    value: (function () {
       var _copySource = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee4() {
         var copyButton, markdownText, textarea;
         return _regeneratorRuntime().wrap(function _callee4$(_context6) {
@@ -1276,7 +1463,7 @@ var SquibView = /*#__PURE__*/function () {
         return _copySource.apply(this, arguments);
       }
       return copySource;
-    }()
+    }())
   }, {
     key: "copyHTML",
     value: function () {
@@ -1479,6 +1666,12 @@ var SquibView = /*#__PURE__*/function () {
       }
       return copyHTML;
     }()
+    /**
+     * Copies text to clipboard using various fallback methods.
+     * 
+     * @param {string} string - The text to copy to the clipboard
+     * @returns {boolean} Whether the copy operation was successful
+     */
   }, {
     key: "copyToClipboard",
     value: function copyToClipboard(string) {
@@ -1523,6 +1716,12 @@ var SquibView = /*#__PURE__*/function () {
       }
       return true;
     }
+
+    /**
+     * Detects the user's operating system platform.
+     * 
+     * @returns {string} The detected platform: 'macos', 'windows', 'linux', or 'unknown'
+     */
   }, {
     key: "getPlatform",
     value: function getPlatform() {
@@ -1538,7 +1737,13 @@ var SquibView = /*#__PURE__*/function () {
       return 'unknown';
     }
 
-    // Make a complete HTML page from a div (or any html snippet) with optional editability
+    /**
+     * Creates a complete HTML page from a HTML snippet/div content.
+     * 
+     * @param {string} inputDivHTML - The HTML content to include in the page
+     * @param {boolean} [editable=false] - Whether the content should be editable
+     * @returns {string} A complete HTML page as a string
+     */
   }, {
     key: "makeHTMLPageFromDiv",
     value: function makeHTMLPageFromDiv(inputDivHTML) {
@@ -1551,6 +1756,15 @@ var SquibView = /*#__PURE__*/function () {
       console.log(editableAttr);
       return s;
     }
+
+    /**
+     * Creates a RevealJS presentation page from markdown content.
+     * Splits the markdown on '---' delimiters to create slides.
+     * 
+     * @param {string} markdown - The markdown content to convert to slides
+     * @param {string} [title="Slide Presentation"] - The title for the presentation
+     * @returns {string} A complete HTML page with RevealJS for presenting slides
+     */
   }, {
     key: "makeRevealJSFullPage",
     value: function makeRevealJSFullPage(markdown) {
@@ -1559,6 +1773,14 @@ var SquibView = /*#__PURE__*/function () {
         return "<section data-markdown><script type=\"text/template\">".concat(slide.trim(), "</script></section>");
       }).join('\n'), "\n          </div>\n      </div>\n      <script src=\"https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.js\"></script>\n      <script src=\"https://cdn.jsdelivr.net/npm/reveal.js/plugin/markdown/markdown.js\"></script>\n      <script>\n          Reveal.initialize({\n              plugins: [ RevealMarkdown ]\n          });\n          \n          // Ensure Mermaid diagrams initialize correctly\n          document.addEventListener('DOMContentLoaded', () => {\n              mermaid.initialize({ startOnLoad: true , securityLevel: 'loose', theme: 'dark' });\n              document.querySelectorAll('.mermaid').forEach(el => {\n                  el.innerHTML = el.textContent;\n                  mermaid.init(undefined, el);\n              });\n          });\n      </script>\n  </body>\n  </html>");
     }
+
+    /**
+     * Converts CSV/TSV content to a markdown table.
+     * 
+     * @param {string} input - The CSV/TSV string to convert
+     * @param {string} [delimiter=','] - The delimiter used in the input (comma, tab, etc.)
+     * @returns {string} A markdown formatted table
+     */
   }, {
     key: "csvOrTsvToMarkdownTable",
     value: function csvOrTsvToMarkdownTable(input) {

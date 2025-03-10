@@ -84,22 +84,31 @@ function setupDomEnvironment() {
 describe('SquibView Tests', () => {
   let container;
   let squibView;
+  let consoleLogMock;
+  let consoleWarnMock;
+  let consoleErrorMock;
 
   beforeEach(() => {
+    // Reset the document body
+    document.body.innerHTML = '';
     container = setupDomEnvironment();
     jest.clearAllMocks();
     
     // Mock console methods to reduce output noise
-    jest.spyOn(console, 'log').mockImplementation(() => {});
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    consoleLogMock = jest.spyOn(console, 'log').mockImplementation(() => {});
+    consoleWarnMock = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    consoleErrorMock = jest.spyOn(console, 'error').mockImplementation(() => {});
+    
+    // Mock timers for setTimeout
+    jest.useFakeTimers();
   });
 
   afterEach(() => {
     document.body.innerHTML = '';
-    console.log.mockRestore();
-    console.warn.mockRestore();
-    console.error.mockRestore();
+    consoleLogMock.mockRestore();
+    consoleWarnMock.mockRestore();
+    consoleErrorMock.mockRestore();
+    jest.useRealTimers();
   });
 
   // Test initialization and version
@@ -153,6 +162,34 @@ describe('SquibView Tests', () => {
       expect(container.querySelector('.squibview-output')).not.toBeNull();
       expect(container.querySelector('.squibview-title')).not.toBeNull();
     });
+    
+    test('should initialize with MD buttons when inputContentType is md', () => {
+      const options = {
+        inputContentType: 'md',
+        show_md_buttons: true
+      };
+      
+      squibView = new SquibView(container, options);
+      expect(squibView.options.show_md_buttons).toBe(true);
+      
+      // Verify MD buttons in structure
+      expect(squibView.md_buttons).toContain('markdownRemoveAllHR()');
+      expect(squibView.md_buttons).toContain('markdownEditorAdjustHeadings(-1)');
+      expect(squibView.md_buttons).toContain('markdownEditorAdjustHeadings(+1)');
+    });
+    
+    test('should not show MD buttons when inputContentType is not md', () => {
+      const options = {
+        inputContentType: 'html',
+        show_md_buttons: true
+      };
+      
+      squibView = new SquibView(container, options);
+      
+      // Should be false since inputContentType is not 'md'
+      expect(squibView.options.show_md_buttons).toBe(false);
+      expect(squibView.md_buttons).toBe("");
+    });
 
     test('should initialize with initial content if provided', () => {
       const options = {
@@ -168,6 +205,59 @@ describe('SquibView Tests', () => {
       squibView = new SquibView(container);
       expect(global.mermaid.initialize).toHaveBeenCalled();
       expect(global.markdownit).toHaveBeenCalled();
+    });
+    
+    test('should customize markdown fence rendering for mermaid and svg', () => {
+      // Setup markdown-it mock with a more detailed implementation
+      const mockRender = jest.fn();
+      const mockRenderToken = jest.fn();
+      
+      // Create a token with mermaid info
+      const mermaidToken = {
+        info: 'mermaid',
+        content: 'graph TD; A-->B;'
+      };
+      
+      // Create a token with svg info
+      const svgToken = {
+        info: 'svg',
+        content: '<svg><circle cx="50" cy="50" r="40" /></svg>'
+      };
+      
+      // Create a token with regular code info
+      const codeToken = {
+        info: 'javascript',
+        content: 'const x = 1;'
+      };
+      
+      // Mock markdownit to return a more complete mock
+      global.markdownit = jest.fn().mockReturnValue({
+        render: mockRender,
+        renderer: {
+          rules: {
+            fence: null
+          },
+          renderToken: mockRenderToken
+        }
+      });
+      
+      // Initialize with our mocks
+      squibView = new SquibView(container);
+      
+      // Get the custom fence renderer that was set
+      const fenceRenderer = squibView.md.renderer.rules.fence;
+      
+      // Test with a mermaid token
+      const mermaidResult = fenceRenderer([mermaidToken], 0, {}, {}, { renderToken: mockRenderToken });
+      expect(mermaidResult).toBe('<div class="mermaid">graph TD; A-->B;</div>');
+      
+      // Test with an SVG token
+      const svgResult = fenceRenderer([svgToken], 0, {}, {}, { renderToken: mockRenderToken });
+      expect(svgResult).toBe('<svg><circle cx="50" cy="50" r="40" /></svg>');
+      
+      // Test with a regular code token (should use the default renderer)
+      fenceRenderer([codeToken], 0, {}, {}, { renderToken: mockRenderToken });
+      expect(mockRenderToken).toHaveBeenCalled();
     });
   });
 
@@ -466,14 +556,20 @@ describe('SquibView Tests', () => {
       
       // Mock iframe-related methods
       squibView.insertContentInIframe = jest.fn();
-      squibView.renderMarkdown = jest.fn();
     });
     
     test('should render markdown content', () => {
+      // Create a real implementation of renderMarkdown for testing
+      const realRenderMarkdown = squibView.renderMarkdown;
+      squibView.renderMarkdown = jest.fn();
+      
       squibView.inputContentType = 'md';
       squibView.setContent('# Test Markdown');
       
       expect(squibView.renderMarkdown).toHaveBeenCalled();
+      
+      // Restore original implementation
+      squibView.renderMarkdown = realRenderMarkdown;
     });
     
     test('should render HTML content', () => {
@@ -495,6 +591,7 @@ describe('SquibView Tests', () => {
     
     test('should render CSV content as markdown table', () => {
       squibView.csvOrTsvToMarkdownTable = jest.fn().mockReturnValue('| Header |\n| --- |\n| Data |');
+      squibView.renderMarkdown = jest.fn();
       
       squibView.inputContentType = 'csv';
       squibView.setContent('Header\nData');
@@ -505,6 +602,7 @@ describe('SquibView Tests', () => {
     
     test('should render TSV content with tab delimiter', () => {
       squibView.csvOrTsvToMarkdownTable = jest.fn().mockReturnValue('| Header |\n| --- |\n| Data |');
+      squibView.renderMarkdown = jest.fn();
       
       squibView.inputContentType = 'tsv';
       squibView.setContent('Header\nData');
@@ -513,11 +611,90 @@ describe('SquibView Tests', () => {
     });
     
     test('should handle unsupported content types', () => {
+      squibView.renderMarkdown = jest.fn();
+      
       squibView.inputContentType = 'unknown';
       squibView.setContent('Test content');
       
       // Should default to markdown rendering
       expect(squibView.renderMarkdown).toHaveBeenCalled();
+    });
+    
+    test('should call render markdown with basic content', async () => {
+      // Use a simpler test that focuses on the method call without complex mocking
+      
+      // Create a simple mock for render function
+      const renderMock = jest.spyOn(squibView.md, 'render').mockReturnValue('<p>Rendered content</p>');
+      
+      // Override the image processing part which is hard to test
+      const origQuerySelector = squibView.output.querySelector;
+      squibView.output.querySelector = jest.fn().mockReturnValue({ querySelectorAll: () => [] });
+      
+      // Call the method - here we use the real implementation but avoid image processing
+      await squibView.renderMarkdown('# Test markdown');
+      
+      // Expectations
+      expect(renderMock).toHaveBeenCalledWith('# Test markdown');
+      
+      // Cleanup
+      renderMock.mockRestore();
+      squibView.output.querySelector = origQuerySelector;
+    });
+    
+    test('should render with different content types', () => {
+      // Save original implementations
+      const origRenderMarkdown = squibView.renderMarkdown;
+      const origRenderHTML = squibView.renderHTML;
+      
+      // Mock the rendering methods
+      squibView.renderMarkdown = jest.fn();
+      squibView.renderHTML = jest.fn();
+      squibView.makeRevealJSFullPage = jest.fn().mockReturnValue('<html>Reveal content</html>');
+      squibView.csvOrTsvToMarkdownTable = jest.fn().mockReturnValue('| Header |\n| --- |\n| Data |');
+      
+      // Test with HTML type
+      squibView.inputContentType = 'html';
+      squibView.renderOutput();
+      expect(squibView.renderHTML).toHaveBeenCalled();
+      
+      // Test with reveal type
+      squibView.inputContentType = 'reveal';
+      squibView.renderOutput();
+      expect(squibView.makeRevealJSFullPage).toHaveBeenCalled();
+      expect(squibView.renderHTML).toHaveBeenCalledTimes(2); // called again
+      
+      // Test with CSV type
+      squibView.inputContentType = 'csv';
+      squibView.renderOutput();
+      expect(squibView.csvOrTsvToMarkdownTable).toHaveBeenCalled();
+      expect(squibView.renderMarkdown).toHaveBeenCalled();
+      
+      // Test with TSV type
+      squibView.inputContentType = 'tsv';
+      squibView.renderOutput();
+      expect(squibView.csvOrTsvToMarkdownTable).toHaveBeenCalledWith(expect.anything(), ',');
+      expect(squibView.renderMarkdown).toHaveBeenCalledTimes(2); // called again
+      
+      // Test with semisv type
+      squibView.inputContentType = 'semisv';
+      squibView.renderOutput();
+      expect(squibView.csvOrTsvToMarkdownTable).toHaveBeenCalledWith(expect.anything(), ';');
+      expect(squibView.renderMarkdown).toHaveBeenCalledTimes(3); // called again
+      
+      // Test with ssv type
+      squibView.inputContentType = 'ssv';
+      squibView.renderOutput();
+      expect(squibView.csvOrTsvToMarkdownTable).toHaveBeenCalledWith(expect.anything(), ' ');
+      expect(squibView.renderMarkdown).toHaveBeenCalledTimes(4); // called again
+      
+      // Restore original implementations
+      squibView.renderMarkdown = origRenderMarkdown;
+      squibView.renderHTML = origRenderHTML;
+    });
+    
+    test('should have an svgToPng method', () => {
+      // Just test the method exists rather than complex async behaviors
+      expect(typeof squibView.svgToPng).toBe('function');
     });
   });
 
@@ -669,9 +846,55 @@ describe('SquibView Tests', () => {
       expect(result).toContain('RevealMarkdown');
     });
     
-    test('should have a method for iframe insertion', () => {
-      // Simply verify the method exists and is a function
+    test('should use default title for RevealJS when not provided', () => {
+      const markdown = '# Slide Content';
+      
+      const result = squibView.makeRevealJSFullPage(markdown);
+      
+      expect(result).toContain('<title>Slide Presentation</title>'); // Default title
+    });
+    
+    test('should have a method for iframe creation', () => {
+      // Just verify the method exists and has proper structure
       expect(typeof squibView.insertContentInIframe).toBe('function');
+    });
+    
+    test('should render HTML content in an iframe', () => {
+      // Set up a spy on insertContentInIframe
+      squibView.insertContentInIframe = jest.fn();
+      
+      // HTML content to render
+      const htmlContent = '<html><body><h1>Test Content</h1></body></html>';
+      
+      // Call renderHTML
+      squibView.renderHTML(htmlContent);
+      
+      // Verify that insertContentInIframe was called with the right arguments
+      expect(squibView.insertContentInIframe).toHaveBeenCalledWith(
+        squibView.output, 
+        htmlContent
+      );
+    });
+    
+    test('should create HTML pages with script tags properly', () => {
+      // Test makeHTMLPageFromDiv with script tag conversion
+      const divContent = '<div>Test with scripts</div>';
+      const result = squibView.makeHTMLPageFromDiv(divContent);
+      
+      // Check script tag conversion from xscripx to script
+      expect(result).toContain('<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>');
+      expect(result).toContain('<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>');
+      
+      // Test with editable content
+      const editableResult = squibView.makeHTMLPageFromDiv(divContent, true);
+      expect(editableResult).toContain('contenteditable="true"');
+      
+      // Test RevealJS page creation
+      const revealResult = squibView.makeRevealJSFullPage('# Slide 1\n---\n# Slide 2', 'Custom Title');
+      expect(revealResult).toContain('<title>Custom Title</title>');
+      expect(revealResult).toContain('<section data-markdown>');
+      expect(revealResult).toContain('# Slide 1');
+      expect(revealResult).toContain('# Slide 2');
     });
   });
   
@@ -684,7 +907,8 @@ describe('SquibView Tests', () => {
       const controls = document.createElement('div');
       controls.innerHTML = `
         <button class="copy-src-button">Copy Source</button>
-        <button class="copy-html-button">Copy HTML</button>
+        <button class="copy-html-button">Copy Formatted</button>
+        <button class="copy-button">Copy</button>
       `;
       
       // Replace the controls element entirely, rather than trying to append to it
@@ -698,39 +922,77 @@ describe('SquibView Tests', () => {
       expect(typeof squibView.copyToClipboard).toBe('function');
     });
     
-    test('should have a clipboard fallback method', () => {
-      // Test the existence and basic behavior of the clipboard fallback method
+    test('should have clipboard with simpler mocking approach', async () => {
+      // Mock just the critical parts 
+      navigator.clipboard.writeText = jest.fn().mockResolvedValue(undefined);
+      navigator.clipboard.write = jest.fn().mockResolvedValue(undefined);
       
-      // Mock execCommand to return true
-      const execCommandSpy = jest.spyOn(document, 'execCommand').mockReturnValue(true);
+      // Setup simpler mocks to avoid complex DOM operations
+      squibView.getMarkdownSource = jest.fn().mockReturnValue('# Test Markdown');
       
-      // Mock document.createElement to prevent actual DOM manipulation
-      const createElementSpy = jest.spyOn(document, 'createElement').mockImplementation(() => {
-        return {
-          value: '',
-          style: {},
-          setAttribute: jest.fn(),
-          select: jest.fn(),
-          setSelectionRange: jest.fn(),
-          focus: jest.fn()
-        };
+      // Add a simplified mock for output structure
+      squibView.output.innerHTML = '<div contenteditable="true"><p>Test HTML</p></div>';
+      
+      // Test copySource
+      await squibView.copySource();
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('# Test Markdown');
+      
+      // Test setTimeout
+      jest.advanceTimersByTime(2500);
+      expect(squibView.controls.querySelector('.copy-src-button').textContent).toBe('Copy Source');
+      
+      // Test copyHTML
+      await squibView.copyHTML();
+      expect(navigator.clipboard.write).toHaveBeenCalled();
+      
+      // Simple test for getPlatform - just check it returns a string
+      expect(typeof squibView.getPlatform()).toBe('string');
+    });
+    
+    test('should test platform detection functions', () => {
+      // Mac
+      Object.defineProperty(navigator, 'platform', { 
+        value: 'MacIntel',
+        configurable: true 
       });
+      Object.defineProperty(navigator, 'userAgent', { 
+        value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+        configurable: true 
+      });
+      expect(squibView.getPlatform()).toBe('macos');
       
-      // Mock appendChild/removeChild to prevent actual DOM manipulation
-      const appendChildSpy = jest.spyOn(document.body, 'appendChild').mockImplementation(() => {});
-      const removeChildSpy = jest.spyOn(document.body, 'removeChild').mockImplementation(() => {});
+      // Windows
+      Object.defineProperty(navigator, 'platform', { 
+        value: 'Win32',
+        configurable: true 
+      });
+      Object.defineProperty(navigator, 'userAgent', { 
+        value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        configurable: true 
+      });
+      expect(squibView.getPlatform()).toBe('windows');
       
-      // Call the method with simple string
-      const result = squibView.copyToClipboard('test');
+      // Linux
+      Object.defineProperty(navigator, 'platform', { 
+        value: 'Linux x86_64',
+        configurable: true 
+      });
+      Object.defineProperty(navigator, 'userAgent', { 
+        value: 'Mozilla/5.0 (X11; Linux x86_64)',
+        configurable: true 
+      });
+      expect(squibView.getPlatform()).toBe('linux');
       
-      // Basic expectation - method should use execCommand
-      expect(execCommandSpy).toHaveBeenCalledWith('copy');
-      
-      // Clean up
-      execCommandSpy.mockRestore();
-      createElementSpy.mockRestore();
-      appendChildSpy.mockRestore();
-      removeChildSpy.mockRestore();
+      // Unknown
+      Object.defineProperty(navigator, 'platform', { 
+        value: 'Unknown',
+        configurable: true 
+      });
+      Object.defineProperty(navigator, 'userAgent', { 
+        value: 'Unknown/1.0',
+        configurable: true 
+      });
+      expect(squibView.getPlatform()).toBe('unknown');
     });
   });
   
