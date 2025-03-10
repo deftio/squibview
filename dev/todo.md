@@ -54,3 +54,15 @@ https://cdn.jsdelivr.net/npm/ace-builds@1.37.5/css/ace.min.css
 " rel="stylesheet">
 
 https://ace.c9.io/#nav=embedding 
+
+
+write a file called feedback.md in the /dev folder which outlines how I can improve squibview.js.  The feedback I am looking for is how to improve 
+  this component, how to make react and vue components from the core vanilla js component.  How to add live feedback (squibview takes "source" text / 
+  md / csv et and renders it to an editable div that is rendered.  But I want to be able to edit the rendered content and update the source.  Also the
+   undo/redo is naively implemented.  I want to be more compact so it doesn't take a lot of memory - as of now every change is stored as a full copy 
+  rather than a diff in the rendered output.  Can you look at how to implement this and make library and algorithmic recommndations.  Also in markdown
+   mode there are special buttons to increase/decrease headings, undo/redo, and remove ---.  Can you make this more modular and provide ways to add 
+  extra buttons to other source modes (html, csv, etc) that make sense?   Also right now the rendering types (md, csv, html, etc) are hardcoded.  I 
+  feel like these should be made a plugin system in that md->html takes an md_rendrerer() and md_reverse_render(), exta functions for operating on md 
+  like the heading increase/decrease, etc.  Undo/redo should be univesral to the squibview component.  Other source types (csv, html, etc) would also 
+  be have their rendering engines passed in rather than hard coded.  The task is just to make detailed recommendations but not touch the code.

@@ -1601,7 +1601,7 @@
     show_md_buttons: true
   });
   _defineProperty(SquibView, "version", {
-    version: "0.0.27",
+    version: "0.0.28",
     url: "https://github.com/deftio/squibview"
   });
 
