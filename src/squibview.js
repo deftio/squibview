@@ -26,6 +26,21 @@ class SquibView {
     url: "https://github.com/deftio/squibview"
   };
 
+  /**
+   * Creates a new SquibView instance.
+   * 
+   * @param {HTMLElement|string} element - The DOM element or selector where the editor will be mounted
+   * @param {Object} options - Configuration options for the editor
+   * @param {string} [options.initialContent=''] - Initial content to load
+   * @param {string} [options.inputContentType='md'] - Type of the initial content ('md', 'html', 'reveal', 'csv', 'tsv')
+   * @param {boolean} [options.showControls=true] - Whether to show the control buttons
+   * @param {boolean} [options.titleShow=false] - Whether to show the title section
+   * @param {string} [options.titleContent=''] - Content for the title section
+   * @param {string} [options.initialView='split'] - Initial view mode ('src', 'html', 'split')
+   * @param {string} [options.baseClass='squibview'] - Base CSS class for styling
+   * @param {boolean} [options.show_md_buttons=true] - Whether to show markdown-specific buttons
+   * @throws {Error} Throws if the container element is not found
+   */
   constructor(element, options = {}) {
     this.options = { ...SquibView.defaultOptions, ...options };
 
@@ -53,6 +68,13 @@ class SquibView {
     
   }
 
+  /**
+   * Initializes the required libraries for rendering content.
+   * Sets up Mermaid for diagrams and markdown-it for Markdown processing.
+   * Configures custom renderers for fenced code blocks.
+   * 
+   * @private
+   */
   initializeLibraries() {
     mermaid.initialize({
       startOnLoad: false,
@@ -94,6 +116,12 @@ class SquibView {
     };
   }
 
+  /**
+   * Creates the DOM structure for the editor.
+   * Sets up the title bar, controls, and editor areas.
+   * 
+   * @private
+   */
   createStructure() {
     this.container.classList.add(this.options.baseClass);
 
@@ -130,6 +158,12 @@ class SquibView {
     
   }
 
+  /**
+   * Sets up event listeners for user interactions.
+   * Handles view changes, copy functionality, and input changes.
+   * 
+   * @private
+   */
   initializeEventHandlers() {
     this.controls.querySelectorAll('button[data-view]').forEach(button => {
       button.addEventListener('click', () => this.setView(button.dataset.view));
@@ -141,6 +175,12 @@ class SquibView {
     //onchange() for input source
     this.input.addEventListener('input', () => { this.setContent(); });
   }
+  
+  /**
+   * Sets up a resize observer to adjust the layout when the container size changes.
+   * 
+   * @private
+   */
   initializeResizeObserver() {
     const resizeObserver = new ResizeObserver(entries => {
       for (let entry of entries) {
@@ -152,6 +192,11 @@ class SquibView {
     resizeObserver.observe(this.container);
   }
 
+  /**
+   * Adjusts the layout of the editor components based on the current view and container size.
+   * 
+   * @private
+   */
   adjustLayout() {
     const containerRect = this.container.getBoundingClientRect();
     const titleHeight = this.title.offsetHeight;
@@ -172,6 +217,13 @@ class SquibView {
     }
   }
 
+  /**
+   * Sets the content of the editor and renders it.
+   * 
+   * @param {string} [content=this.input.value] - The content to set
+   * @param {string} [contentType=this.inputContentType] - The type of content ('md', 'html', 'reveal', 'csv', 'tsv')
+   * @param {boolean} [saveRevision=true] - Whether to save this change to the revision history
+   */
   setContent(content = this.input.value, contentType = this.inputContentType, saveRevision = true) {
     this.input.value = content;
     this.inputContentType = contentType;
@@ -186,7 +238,10 @@ class SquibView {
     this.renderOutput();
   }
 
-  // if possible undo the last change else do nothing
+  /**
+   * Undoes the last change if possible.
+   * Decrements the revision index and restores the content from that revision.
+   */
   revisionUndo() {
     // if possible undo the last change else do nothing, use the revisions buffer and index
     if (this.revisions.buffer.length > 0 && this.revisions.index > 0) {
@@ -199,7 +254,11 @@ class SquibView {
 
     }
   }
-  // if possible redo the last change else do nothing
+  
+  /**
+   * Redoes a previously undone change if possible.
+   * Increments the revision index and restores the content from that revision.
+   */
   revisionRedo() {
     if (this.revisions.index < this.revisions.buffer.length - 1) {
       this.revisions.index++;
@@ -210,6 +269,12 @@ class SquibView {
       this.renderOutput();
     }
   }
+  
+  /**
+   * Sets the revision to a specific index in the history.
+   * 
+   * @param {number} index - The revision index to set
+   */
   revisionSet(index) {
     if (index >= 0 && index < this.revisions.buffer.length) {
       this.revisions.index = index;
@@ -220,23 +285,52 @@ class SquibView {
       this.renderOutput();
     }
   }
+  
+  /**
+   * Returns the total number of revisions in the history.
+   * 
+   * @returns {number} The number of revisions
+   */
   revisionNumRevsions() {
     return this.revisions.buffer.length;
   }
+  
+  /**
+   * Returns the current index in the revision history.
+   * 
+   * @returns {number} The current revision index
+   */
   revisionGetCurrentIndex() {
     return this.revisions.index;
   }
 
+  /**
+   * Gets the current content from the input textarea.
+   * 
+   * @returns {string} The current content
+   */
   getContent() {
     return this.input.value;
   }
 
+  /**
+   * Cleans markdown content by removing markdown code fence markers.
+   * 
+   * @param {string} md - The markdown content to clean
+   * @returns {string} The cleaned markdown content
+   */
   cleanMarkdown(md) {
     return md.replace(/^```markdown\s+/, '').replace(/```$/, '');
   }
 
+  /**
+   * Renders Markdown content to HTML and processes the result.
+   * Converts images to data URLs and initializes Mermaid diagrams.
+   * 
+   * @param {string} [md] - The Markdown content to render, defaults to current input value
+   * @returns {Promise<void>} A promise that resolves when rendering is complete
+   */
   async renderMarkdown(md) {
-
     const markdown = md || this.input.value;
     const html = this.md.render(markdown);
     this.output.innerHTML = "<div contenteditable='true'>" + html + "</div>";
@@ -246,7 +340,6 @@ class SquibView {
     const images = contentDiv.querySelectorAll('img');
 
     // render images to data urls
-
     for (const img of images) {
       try {
         const canvas = document.createElement('canvas');
@@ -278,16 +371,17 @@ class SquibView {
       } catch (error) {
         console.error('Failed to convert image:', error);
       }
-
     }
-
     // end of images to data urls
 
     // Initialize mermaid diagrams after all images are processed
     mermaid.init(undefined, this.output.querySelectorAll('.mermaid'));
   } // end of renderMarkdown
 
-  // todo rename sourceRemoveAllHR ()  ==> handled markdown or html via replace (---) or (<hr>, <hr/>) respectively
+  /**
+   * Removes all horizontal rules (---) from the Markdown content.
+   * Only works when the current content type is Markdown.
+   */
   markdownRemoveAllHR() {
     if (this.inputContentType === 'md') {
       const markdown = this.getMarkdownSource();
@@ -332,12 +426,22 @@ class SquibView {
     // Join the lines back together
     return modifiedLines.join('\n');
   }
+  /**
+   * Adjusts heading levels in the current Markdown content.
+   * 
+   * @param {number} offset - The amount to adjust heading levels by (positive to increase, negative to decrease)
+   */
   markdownEditorAdjustHeadings(offset) {
     const markdown = this.getMarkdownSource();
     const newMarkdown = this.markdownAdjustHeadings(markdown, offset);
     this.setContent(newMarkdown, this.inputContentType);
   }
 
+  /**
+   * Sets the current view mode of the editor.
+   * 
+   * @param {string} view - The view mode to set: 'src' (source only), 'html' (rendered only), or 'split' (both)
+   */
   setView(view) {
     this.currentView = view;
 
@@ -372,6 +476,12 @@ class SquibView {
     this.adjustLayout();
   }
 
+  /**
+   * Copies the rendered content to the clipboard with formatting.
+   * Processes code blocks, SVG elements, and images to ensure they copy correctly.
+   * 
+   * @returns {Promise<void>} A promise that resolves when copying is complete
+   */
   async copyContent() {
     const copyButton = this.controls.querySelector('.copy-button');
     copyButton.textContent = 'Copying...';
@@ -531,6 +641,12 @@ class SquibView {
     }, 2000);
   }
 
+  /**
+   * Converts an SVG element to a PNG blob.
+   * 
+   * @param {SVGElement} svgElement - The SVG element to convert
+   * @returns {Promise<Blob>} A promise that resolves with the PNG blob
+   */
   svgToPng(svgElement) {
     return new Promise((resolve, reject) => {
       const svgString = new XMLSerializer().serializeToString(svgElement);
@@ -564,36 +680,70 @@ class SquibView {
     });
   }
 
+  /**
+   * Shows or hides the control buttons.
+   * 
+   * @param {boolean} show - Whether to show the controls
+   */
   controlsShow(show) {
     this.controls.style.display = show ? '' : 'none';
     this.options.showControls = show;
     this.adjustLayout();
   }
 
+  /**
+   * Shows or hides the title section.
+   * 
+   * @param {boolean} show - Whether to show the title
+   */
   titleShow(show) {
     this.title.style.display = show ? '' : 'none';
     this.options.titleShow = show;
     this.adjustLayout();
   }
 
+  /**
+   * Sets the content of the title section.
+   * 
+   * @param {string} content - The HTML content for the title
+   */
   titleSetContent(content) {
     this.title.innerHTML = content;
     this.options.titleContent = content;
   }
 
+  /**
+   * Gets the content of the title section.
+   * 
+   * @returns {string} The HTML content of the title
+   */
   titleGetContent() {
     return this.title.innerHTML;
   }
 
+  /**
+   * Gets the current markdown source from the input textarea.
+   * 
+   * @returns {string} The markdown source
+   */
   getMarkdownSource() {
     return this.input.value;
   }
 
+  /**
+   * Gets the HTML source from the rendered output.
+   * 
+   * @returns {string} The HTML content
+   */
   getHTMLSource() {
     return this.output.querySelector('div[contenteditable="true"]').innerHTML;
   }
 
-  // Standalone function to toggle between Markdown preview and split view
+  /**
+   * Toggles between the different view modes (source, rendered, split).
+   * Cycles through: source -> split -> rendered -> source.
+   * Note: This function relies on a global editor variable.
+   */
   toggleView() {
     const editor = window.editor;
     if (editor.currentView === 'src') {
@@ -634,14 +784,21 @@ class SquibView {
     this.output_iframe = iframe
     this.output_ifraome_content = htmlContent;
   }
-  // this function takes input as html and renders it in an iframe in the output div
-  // it write to the outputDiv that is a member of this object
+  /**
+   * Renders HTML content in an iframe within the output div.
+   * 
+   * @param {string} src - The HTML source content to render
+   */
   renderHTML(src) {
     const htmlContent = src;
     const outputDiv = this.output;
     this.insertContentInIframe(outputDiv, htmlContent);
   }
 
+  /**
+   * Renders the current content based on its type.
+   * Handles different content types: HTML, RevealJS, CSV/TSV, and Markdown.
+   */
   renderOutput() {
     switch (this.inputContentType) {
       case 'html':
@@ -673,6 +830,12 @@ class SquibView {
     }
   }
 
+  /**
+   * Copies the source content to the clipboard.
+   * Attempts to use the modern Clipboard API with fallbacks for older browsers.
+   * 
+   * @returns {Promise<void>} A promise that resolves when copying is complete
+   */
   async copySource() {
     const copyButton = this.controls.querySelector('.copy-src-button');
     copyButton.textContent = 'Copying...';
@@ -860,6 +1023,12 @@ class SquibView {
     }, 2000);
   }
 
+  /**
+   * Copies text to clipboard using various fallback methods.
+   * 
+   * @param {string} string - The text to copy to the clipboard
+   * @returns {boolean} Whether the copy operation was successful
+   */
   copyToClipboard(string) {
     let textarea;
     let result;
@@ -909,6 +1078,11 @@ class SquibView {
     return true;
   }
 
+  /**
+   * Detects the user's operating system platform.
+   * 
+   * @returns {string} The detected platform: 'macos', 'windows', 'linux', or 'unknown'
+   */
   getPlatform() {
     const platform = navigator.platform.toLowerCase();
     const userAgent = navigator.userAgent.toLowerCase();
@@ -923,7 +1097,13 @@ class SquibView {
     return 'unknown';
   }
 
-  // Make a complete HTML page from a div (or any html snippet) with optional editability
+  /**
+   * Creates a complete HTML page from a HTML snippet/div content.
+   * 
+   * @param {string} inputDivHTML - The HTML content to include in the page
+   * @param {boolean} [editable=false] - Whether the content should be editable
+   * @returns {string} A complete HTML page as a string
+   */
   makeHTMLPageFromDiv(inputDivHTML, editable = false) {
     let editableAttr = editable ? 'contenteditable="true"' : '';
     let s =
@@ -977,6 +1157,14 @@ class SquibView {
     return s;
   }
 
+  /**
+   * Creates a RevealJS presentation page from markdown content.
+   * Splits the markdown on '---' delimiters to create slides.
+   * 
+   * @param {string} markdown - The markdown content to convert to slides
+   * @param {string} [title="Slide Presentation"] - The title for the presentation
+   * @returns {string} A complete HTML page with RevealJS for presenting slides
+   */
   makeRevealJSFullPage(markdown, title = "Slide Presentation") {
     return `<!DOCTYPE html>
   <html lang="en">
@@ -1014,6 +1202,13 @@ class SquibView {
   </html>`;
   }
 
+  /**
+   * Converts CSV/TSV content to a markdown table.
+   * 
+   * @param {string} input - The CSV/TSV string to convert
+   * @param {string} [delimiter=','] - The delimiter used in the input (comma, tab, etc.)
+   * @returns {string} A markdown formatted table
+   */
   csvOrTsvToMarkdownTable(input, delimiter = ',') {
     // Parse CSV/TSV content
     const parsedData = Papa.parse(input, {
