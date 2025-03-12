@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SquibView - Plugin System Example</title>
+  <link rel="icon"
+  href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
+  
+  <!-- Load Required Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it@13.0.1/dist/markdown-it.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/lib/highlight.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@9.4.0/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/turndown@7.1.1/dist/turndown.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tiny-emitter@2.1.0/dist/tinyemitter.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/diff-match-patch@1.0.5/index.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.js"></script>
+  
+  <!-- SquibView CSS -->
+  <link rel="stylesheet" href="../dist/squibview.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/github.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+  
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    header {
+      background-color: #f5f5f5;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    h1 {
+      margin-top: 0;
+      color: #333;
+    }
+    
+    .description {
+      background-color: #e9f7fe;
+      border-left: 4px solid #3498db;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 0 5px 5px 0;
+    }
+    
+    .editor-container {
+      background-color: #fff;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 10px;
+      margin-bottom: 20px;
+      min-height: 600px;
+    }
+    
+    .examples-nav {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+    }
+    
+    .nav-button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+    
+    .nav-button:hover {
+      background-color: #3e8e41;
+    }
+    
+    .plugin-controls {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+    }
+    
+    .plugin-button {
+      padding: 8px 15px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .plugin-button:hover {
+      background-color: #2980b9;
+    }
+    
+    #status-message {
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 4px;
+      background-color: #f8f9fa;
+      display: none;
+    }
+    
+    .info {
+      background-color: #e9f7fe;
+      border-left: 4px solid #3498db;
+    }
+    
+    .success {
+      background-color: #e9fef5;
+      border-left: 4px solid #2ecc71;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>SquibView - Plugin System Example</h1>
+      <p>This example demonstrates how to extend SquibView with custom renderers and operations using the new plugin architecture.</p>
+    </header>
+    
+    <div class="description">
+      <h3>Custom Features Available:</h3>
+      <ol>
+        <li><strong>KaTeX Math Renderer:</strong> Adds support for mathematical expressions with KaTeX syntax</li>
+        <li><strong>Word Counter:</strong> Adds a button to count words, characters, and sentences</li>
+        <li><strong>Text Case Converter:</strong> Adds buttons to convert text to UPPERCASE or lowercase</li>
+      </ol>
+      <p>Use the buttons below to activate these plugins and extend SquibView's functionality.</p>
+    </div>
+    
+    <div class="plugin-controls">
+      <button id="activate-math" class="plugin-button">Activate Math Plugin</button>
+      <button id="activate-wordcount" class="plugin-button">Activate Word Counter</button>
+      <button id="activate-case" class="plugin-button">Activate Case Converter</button>
+    </div>
+    
+    <div id="status-message"></div>
+    
+    <div class="editor-container">
+      <div id="editor" style="width: 100%; height: 500px;"></div>
+    </div>
+    
+    <div class="examples-nav">
+      <a href="index.html" class="nav-button">Back to Examples</a>
+    </div>
+  </div>
+  
+  <!-- Load SquibView UMD module -->
+  <script src="../dist/squibview.umd.min.js"></script>
+  
+  <script>
+    // Initial sample content with various features to demonstrate plugins
+    const initialContent = `# Plugin System Demo
+
+## Math Expressions (KaTeX Plugin)
+
+After activating the KaTeX plugin, the following math expressions will render:
+
+$$E = mc^2$$
+
+Inline math: $a^2 + b^2 = c^2$
+
+Matrix example:
+
+$$
+\\begin{pmatrix} 
+a & b \\\\ 
+c & d 
+\\end{pmatrix}
+$$
+
+## Text Statistics (Word Counter Plugin)
+
+This paragraph can be analyzed by the word counter plugin. It will count words, characters, and estimate reading time. The quick brown fox jumps over the lazy dog. This sentence has exactly ten words. How many words do you think are in this entire paragraph?
+
+## Case Conversion
+
+THESE WORDS ARE IN UPPERCASE. 
+
+these words are in lowercase.
+
+Mixed Case Text Can Be Converted Too.
+`;
+
+    // Initialize SquibView
+    document.addEventListener('DOMContentLoaded', function() {
+      // Create a variable to reference the editor
+      window.editor = new SquibView('#editor', {
+        initialContent: initialContent,
+        inputContentType: 'md',
+        showControls: true,
+        initialView: 'split'
+      });
+      
+      // Get status message element
+      const statusMessage = document.getElementById('status-message');
+      
+      // Show status message function
+      function showStatus(message, type = 'info') {
+        statusMessage.textContent = message;
+        statusMessage.className = type;
+        statusMessage.style.display = 'block';
+        
+        setTimeout(() => {
+          statusMessage.style.display = 'none';
+        }, 5000);
+      }
+      
+      // KaTeX Math Plugin
+      document.getElementById('activate-math').addEventListener('click', function() {
+        // Create KaTeX math renderer plugin
+        const mathRenderer = {
+          render: (source) => {
+            const html = editor.renderers.md.sourceToOutput(source);
+            
+            // Custom rendering to process KaTeX math expressions
+            const div = document.createElement('div');
+            div.innerHTML = html;
+            
+            // Process block math: $$...$$
+            const blockMathRegex = /\$\$([\s\S]+?)\$\$/g;
+            let content = div.innerHTML;
+            content = content.replace(blockMathRegex, (match, p1) => {
+              try {
+                return '<div class="math-block">' + katex.renderToString(p1, { displayMode: true }) + '</div>';
+              } catch (e) {
+                console.error('KaTeX error:', e);
+                return '<div class="math-error">Math rendering error</div>';
+              }
+            });
+            
+            // Process inline math: $...$
+            const inlineMathRegex = /\$([^\$]+?)\$/g;
+            content = content.replace(inlineMathRegex, (match, p1) => {
+              try {
+                return katex.renderToString(p1, { displayMode: false });
+              } catch (e) {
+                console.error('KaTeX error:', e);
+                return '<span class="math-error">Math error</span>';
+              }
+            });
+            
+            div.innerHTML = content;
+            editor.output.innerHTML = "<div contenteditable='true'>" + div.innerHTML + "</div>";
+            
+            // Initialize mermaid diagrams
+            mermaid.init(undefined, editor.output.querySelectorAll('.mermaid'));
+          },
+          sourceToOutput: (source) => {
+            // This would be the same as the render function but returning the HTML instead
+            const html = editor.renderers.md.sourceToOutput(source);
+            
+            // Same processing as in render
+            const div = document.createElement('div');
+            div.innerHTML = html;
+            
+            // Process block math: $$...$$
+            const blockMathRegex = /\$\$([\s\S]+?)\$\$/g;
+            let content = div.innerHTML;
+            content = content.replace(blockMathRegex, (match, p1) => {
+              try {
+                return '<div class="math-block">' + katex.renderToString(p1, { displayMode: true }) + '</div>';
+              } catch (e) {
+                return '<div class="math-error">Math rendering error</div>';
+              }
+            });
+            
+            // Process inline math: $...$
+            const inlineMathRegex = /\$([^\$]+?)\$/g;
+            content = content.replace(inlineMathRegex, (match, p1) => {
+              try {
+                return katex.renderToString(p1, { displayMode: false });
+              } catch (e) {
+                return '<span class="math-error">Math error</span>';
+              }
+            });
+            
+            return content;
+          },
+          outputToSource: (output) => {
+            // Use the default Markdown converter
+            return editor.htmlToMarkdown(output);
+          }
+        };
+        
+        // Override the markdown renderer
+        const origRenderer = editor.renderers.md;
+        editor.registerRenderer('md', {
+          ...origRenderer,
+          render: mathRenderer.render,
+          sourceToOutput: mathRenderer.sourceToOutput,
+          outputToSource: mathRenderer.outputToSource
+        });
+        
+        // Force re-render
+        editor.renderOutput();
+        
+        showStatus('KaTeX Math Plugin activated! Math expressions will now render.', 'success');
+      });
+      
+      // Word Counter Plugin
+      document.getElementById('activate-wordcount').addEventListener('click', function() {
+        // Word counter function
+        function countWordsAndStats(text) {
+          const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
+          const charCount = text.length;
+          const sentenceCount = text.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
+          const readingTime = Math.ceil(wordCount / 200); // Average reading speed of 200 wpm
+          
+          return {
+            words: wordCount,
+            chars: charCount,
+            sentences: sentenceCount,
+            readingTime: readingTime
+          };
+        }
+        
+        // Get original renderer
+        const origRenderer = editor.renderers.md;
+        
+        // Add word counter operation
+        const enhancedRenderer = {
+          ...origRenderer,
+          operations: {
+            ...origRenderer.operations,
+            countWords: (src) => {
+              const stats = countWordsAndStats(src);
+              alert(`Text Statistics:
+- Words: ${stats.words}
+- Characters: ${stats.chars}
+- Sentences: ${stats.sentences}
+- Estimated reading time: ${stats.readingTime} minute(s)`);
+              return src; // Return unchanged
+            }
+          },
+          buttons: [
+            ...origRenderer.buttons,
+            { label: 'Count Words', action: 'countWords', title: 'Count words, characters and sentences' }
+          ]
+        };
+        
+        // Register the enhanced renderer
+        editor.registerRenderer('md', enhancedRenderer);
+        
+        showStatus('Word Counter Plugin activated! A "Count Words" button has been added.', 'success');
+      });
+      
+      // Case Converter Plugin
+      document.getElementById('activate-case').addEventListener('click', function() {
+        // Get original renderer
+        const origRenderer = editor.renderers.md;
+        
+        // Add case conversion operations
+        const enhancedRenderer = {
+          ...origRenderer,
+          operations: {
+            ...origRenderer.operations,
+            uppercase: (src) => {
+              return src.toUpperCase();
+            },
+            lowercase: (src) => {
+              return src.toLowerCase();
+            }
+          },
+          buttons: [
+            ...origRenderer.buttons,
+            { label: 'UPPERCASE', action: 'uppercase', title: 'Convert text to uppercase' },
+            { label: 'lowercase', action: 'lowercase', title: 'Convert text to lowercase' }
+          ]
+        };
+        
+        // Register the enhanced renderer
+        editor.registerRenderer('md', enhancedRenderer);
+        
+        showStatus('Case Converter Plugin activated! UPPERCASE and lowercase buttons have been added.', 'success');
+      });
+    });
+  </script>
+</body>
+</html>

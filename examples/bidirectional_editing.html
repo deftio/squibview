@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SquibView - Bidirectional Editing Example</title>
+  <link rel="icon"
+  href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
+  
+  <!-- Load Required Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it@13.0.1/dist/markdown-it.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/lib/highlight.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@9.4.0/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/turndown@7.1.1/dist/turndown.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tiny-emitter@2.1.0/dist/tinyemitter.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/diff-match-patch@1.0.5/index.min.js"></script>
+  
+  <!-- SquibView CSS -->
+  <link rel="stylesheet" href="../dist/squibview.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/github.min.css">
+  
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    header {
+      background-color: #f5f5f5;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    h1 {
+      margin-top: 0;
+      color: #333;
+    }
+    
+    .description {
+      background-color: #e9f7fe;
+      border-left: 4px solid #3498db;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 0 5px 5px 0;
+    }
+    
+    .editor-container {
+      background-color: #fff;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 10px;
+      margin-bottom: 20px;
+      min-height: 600px;
+    }
+    
+    .examples-nav {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+    }
+    
+    .nav-button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+    
+    .nav-button:hover {
+      background-color: #3e8e41;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>SquibView - Bidirectional Editing Example</h1>
+      <p>This example demonstrates the new bidirectional editing feature, which allows you to edit content in both the source and rendered views.</p>
+    </header>
+    
+    <div class="description">
+      <h3>How to use:</h3>
+      <ol>
+        <li>Try editing the content in <strong>source view</strong> and see it update in the rendered pane</li>
+        <li>Switch to <strong>split view</strong> and edit text directly in the rendered pane</li>
+        <li>Notice how changes in the rendered pane are synchronized back to the source</li>
+        <li>Try making a table or list in the source and then editing it in the rendered view</li>
+      </ol>
+      <p><strong>Note:</strong> The HTML-to-Markdown conversion uses Turndown library which preserves most formatting but may not be perfect with complex elements.</p>
+    </div>
+    
+    <div class="editor-container">
+      <div id="editor" style="width: 100%; height: 500px;"></div>
+    </div>
+    
+    <div class="examples-nav">
+      <a href="index.html" class="nav-button">Back to Examples</a>
+    </div>
+  </div>
+  
+  <!-- Load SquibView UMD module -->
+  <script src="../dist/squibview.umd.min.js"></script>
+  
+  <script>
+    // Initial sample content with various Markdown features
+    const initialContent = `# Bidirectional Editing Demo
+
+## Edit in both source and rendered views
+
+This is a demonstration of bidirectional editing in SquibView. You can edit this text in both the **source view** and the **rendered view**.
+
+### Try editing this list:
+
+- Item one
+- Item two 
+- Item three
+
+### Or this table:
+
+| Name | Age | Occupation |
+|------|-----|------------|
+| John | 32  | Developer  |
+| Mary | 28  | Designer   |
+| Alex | 45  | Manager    |
+
+### Or even this code:
+
+\`\`\`javascript
+function greet(name) {
+  return "Hello, " + name + "!";
+}
+
+console.log(greet("World"));
+\`\`\`
+
+> You can edit this blockquote in the rendered view too!
+
+`;
+
+    // Initialize SquibView
+    document.addEventListener('DOMContentLoaded', function() {
+      // Create a variable to reference the editor
+      window.editor = new SquibView('#editor', {
+        initialContent: initialContent,
+        inputContentType: 'md',
+        showControls: true,
+        initialView: 'split'
+      });
+      
+      // Add an event listener to log content changes
+      editor.events.on('content:change', function(content, contentType) {
+        console.log('Content changed:', contentType);
+      });
+    });
+  </script>
+</body>
+</html>
