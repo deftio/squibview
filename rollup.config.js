@@ -37,17 +37,25 @@ export default [
         format: 'umd',
         name: 'SquibView',
         sourcemap: true,
+        // Ensure all modules are included in main bundle rather than lazy-loaded
+        inlineDynamicImports: true,
       },
       {
         file: 'dist/squibview.umd.min.js',
         format: 'umd',
         name: 'SquibView',
         sourcemap: true,
+        // Ensure all modules are included in main bundle rather than lazy-loaded
+        inlineDynamicImports: true,
         plugins: [terser()],
       }
     ],
     plugins: [
-      resolve({ extensions }),
+      resolve({ 
+        extensions,
+        // Ensure node_modules dependencies are resolved
+        preferBuiltins: false
+      }),
       commonjs(),
       babel({
         extensions,
@@ -65,14 +73,106 @@ export default [
         file: 'dist/squibview.esm.js',
         format: 'es',
         sourcemap: true,
+        // Ensure all modules are included in main bundle rather than lazy-loaded
+        inlineDynamicImports: true,
       },
       {
         file: 'dist/squibview.esm.min.js',
         format: 'es',
         sourcemap: true,
+        // Ensure all modules are included in main bundle rather than lazy-loaded
+        inlineDynamicImports: true,
         plugins: [terser()],
       }
     ],
+    plugins: [
+      resolve({ 
+        extensions,
+        // Ensure node_modules dependencies are resolved
+        preferBuiltins: false
+      }),
+      commonjs(),
+      babel({
+        extensions,
+        exclude: 'node_modules/**',
+        babelHelpers: 'bundled',
+        presets: ['@babel/preset-env'],
+      }),
+    ],
+  },
+  // React Wrapper
+  {
+    input: 'src/SquibViewReact.js',
+    output: [
+      {
+        file: 'dist/squibview-react.js',
+        format: 'es',
+        sourcemap: true,
+      },
+      {
+        file: 'dist/squibview-react.min.js',
+        format: 'es',
+        sourcemap: true,
+        plugins: [terser()],
+      }
+    ],
+    external: ['react', './squibview.js'],
+    plugins: [
+      resolve({ extensions }),
+      commonjs(),
+      babel({
+        extensions,
+        exclude: 'node_modules/**',
+        babelHelpers: 'bundled',
+        presets: ['@babel/preset-env', '@babel/preset-react'],
+      }),
+    ],
+  },
+  // Vue Wrapper
+  {
+    input: 'src/SquibViewVue.js',
+    output: [
+      {
+        file: 'dist/squibview-vue.js',
+        format: 'es',
+        sourcemap: true,
+      },
+      {
+        file: 'dist/squibview-vue.min.js',
+        format: 'es',
+        sourcemap: true,
+        plugins: [terser()],
+      }
+    ],
+    external: ['vue', './squibview.js'],
+    plugins: [
+      resolve({ extensions }),
+      commonjs(),
+      babel({
+        extensions,
+        exclude: 'node_modules/**',
+        babelHelpers: 'bundled',
+        presets: ['@babel/preset-env'],
+      }),
+    ],
+  },
+  // HTML to Markdown Converter
+  {
+    input: 'src/HtmlToMarkdown.js',
+    output: [
+      {
+        file: 'dist/html-to-markdown.js',
+        format: 'es',
+        sourcemap: true,
+      },
+      {
+        file: 'dist/html-to-markdown.min.js',
+        format: 'es',
+        sourcemap: true,
+        plugins: [terser()],
+      }
+    ],
+    external: ['turndown'],
     plugins: [
       resolve({ extensions }),
       commonjs(),
