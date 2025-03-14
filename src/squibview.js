@@ -193,7 +193,7 @@ class SquibView {
   };
 
   static version = {
-    version: "0.0.29",
+    version: "0.0.29a",
     url: "https://github.com/deftio/squibview"
   };
 
@@ -331,12 +331,112 @@ class SquibView {
     this.md.renderer.rules.fence = (tokens, idx, options, env, self) => {
       const token = tokens[idx];
       const info = token.info.trim();
+      
+      // Handle Mermaid diagrams
       if (info === 'mermaid') {
         return '<div class="mermaid">' + token.content + '</div>';
       }
+      
+      // Handle SVG directly
       if (info === 'svg') {
         return token.content;
       }
+      
+      // Handle GeoJSON maps
+      if (info === 'geojson') {
+        const geojsonId = 'geojson-' + Math.random().toString(36).substring(2, 15);
+        return `<div id="${geojsonId}" class="geojson-map" style="width: 100%; height: 300px;"></div>
+                <script>
+                  (function() {
+                    const initMap = function() {
+                      if (typeof L !== 'undefined') {
+                        const mapContainer = document.getElementById('${geojsonId}');
+                        if (mapContainer && !mapContainer.dataset.initialized) {
+                          const map = L.map('${geojsonId}').setView([0, 0], 2);
+                          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                          }).addTo(map);
+                          
+                          try {
+                            const geojsonData = ${token.content};
+                            const geojsonLayer = L.geoJSON(geojsonData).addTo(map);
+                            map.fitBounds(geojsonLayer.getBounds(), { padding: [20, 20] });
+                            mapContainer.dataset.initialized = 'true';
+                          } catch (e) {
+                            console.error('Error parsing GeoJSON:', e);
+                            mapContainer.innerHTML = '<div class="error">Error parsing GeoJSON: ' + e.message + '</div>';
+                          }
+                        }
+                      } else {
+                        // Leaflet not loaded yet, load it
+                        const link = document.createElement('link');
+                        link.rel = 'stylesheet';
+                        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+                        document.head.appendChild(link);
+                        
+                        const script = document.createElement('script');
+                        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+                        script.onload = initMap;
+                        document.head.appendChild(script);
+                      }
+                    };
+                    
+                    // Try to initialize immediately, or wait for document to load
+                    if (document.readyState === 'complete') {
+                      initMap();
+                    } else {
+                      window.addEventListener('load', initMap);
+                    }
+                  })();
+                </script>`;
+      }
+      
+      // Handle mathematical expressions
+      if (info === 'math') {
+        // Create unique ID for this math block
+        const mathId = 'math-' + Math.random().toString(36).substring(2, 15);
+        
+        return `<div id="${mathId}" class="math-display">$$${token.content}$$</div>
+                <script>
+                  (function() {
+                    function initMathJax() {
+                      if (typeof MathJax === 'undefined') {
+                        // Load MathJax script
+                        var script = document.createElement('script');
+                        script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+                        script.async = true;
+                        
+                        script.onload = function() {
+                          // Configure MathJax
+                          window.MathJax = {
+                            tex: {
+                              inlineMath: [['$', '$']],
+                              displayMath: [['$$', '$$']]
+                            },
+                            svg: { fontCache: 'global' }
+                          };
+                          // Render math
+                          MathJax.typeset();
+                        };
+                        
+                        document.head.appendChild(script);
+                      } else {
+                        // MathJax already loaded
+                        MathJax.typeset();
+                      }
+                    }
+                    
+                    // Initialize either now or when page loads
+                    if (document.readyState === 'complete') {
+                      initMathJax();
+                    } else {
+                      window.addEventListener('load', initMathJax);
+                    }
+                  })();
+                </script>`;
+      }
+      
+      // Default rendering for other code blocks
       return defaultFence(tokens, idx, options, env, self);
     };
   }
@@ -473,11 +573,9 @@ class SquibView {
         <button data-view="split">Split</button>
         <button class="copy-src-button">Copy Source</button>
         <button class="copy-html-button">Copy Rendered</button>
-        <div class="${this.options.baseClass}-type-buttons"></div>
-        <div class="${this.options.baseClass}-universal-buttons">
-          <button class="revision-undo" title="Undo">&#x21A9;</button>
-          <button class="revision-redo" title="Redo">&#x21AA;</button>
-        </div>
+        <button class="revision-undo" title="Undo">&#x21A9;</button>
+        <button class="revision-redo" title="Redo">&#x21AA;</button>
+        <span class="${this.options.baseClass}-type-buttons"></span>
       </div>
       <div class="${this.options.baseClass}-editor">
         <textarea class="${this.options.baseClass}-input"></textarea>
@@ -597,7 +695,7 @@ class SquibView {
   }
   
   /**
-   * Preserves special content blocks like Mermaid diagrams and SVG from original source
+   * Preserves special content blocks like Mermaid diagrams, SVG, GeoJSON and math from original source
    * @param {string} originalSource - The original markdown source
    * @param {string} newSource - The new source after HTML-to-Markdown conversion
    * @returns {string} - Source with special blocks preserved
@@ -634,36 +732,62 @@ class SquibView {
       });
     }
     
+    // Extract GeoJSON blocks: ```geojson ... ```
+    const geojsonRegex = /```geojson\s*([\s\S]*?)```/g;
+    let geojsonMatch;
+    while ((geojsonMatch = geojsonRegex.exec(originalSource)) !== null) {
+      specialBlocks.push({
+        type: 'geojson',
+        content: geojsonMatch[0],
+        startIndex: geojsonMatch.index,
+        endIndex: geojsonMatch.index + geojsonMatch[0].length
+      });
+    }
+    
+    // Extract Math blocks: ```math ... ```
+    const mathRegex = /```math\s*([\s\S]*?)```/g;
+    let mathMatch;
+    while ((mathMatch = mathRegex.exec(originalSource)) !== null) {
+      specialBlocks.push({
+        type: 'math',
+        content: mathMatch[0],
+        startIndex: mathMatch.index,
+        endIndex: mathMatch.index + mathMatch[0].length
+      });
+    }
+    
     // Find corresponding locations in new source and preserve the special blocks
     // This is a heuristic approach - we look for markers that might indicate where
     // the special content was converted to something else
     
     let modifiedSource = newSource;
     
-    // Look for div or svg elements in the newSource which likely represent our special blocks
-    const divRegex = /<div[^>]*class=['"]?mermaid['"]?[^>]*>([\s\S]*?)<\/div>/g;
+    // Look for elements in the newSource which likely represent our special blocks
+    const mermaidDivRegex = /<div[^>]*class=['"]?mermaid['"]?[^>]*>([\s\S]*?)<\/div>/g;
     const svgTagRegex = /<svg[^>]*>[\s\S]*?<\/svg>/g;
+    const geojsonDivRegex = /<div[^>]*class=['"]?geojson-map['"]?[^>]*>[\s\S]*?<\/div>/g;
+    const mathDivRegex = /<div[^>]*class=['"]?math-display['"]?[^>]*>[\s\S]*?<\/div>/g;
     
     // Replace mermaid divs with original mermaid code blocks
-    let divMatch;
+    let mermaidDivMatch;
     let mermaidIndex = 0;
-    while ((divMatch = divRegex.exec(modifiedSource)) !== null) {
+    while ((mermaidDivMatch = mermaidDivRegex.exec(modifiedSource)) !== null) {
       // Find the next available mermaid block
       const mermaidBlocks = specialBlocks.filter(block => block.type === 'mermaid');
       if (mermaidIndex < mermaidBlocks.length) {
         // Replace the div with the original mermaid code block
         modifiedSource = 
-          modifiedSource.substring(0, divMatch.index) + 
+          modifiedSource.substring(0, mermaidDivMatch.index) + 
           mermaidBlocks[mermaidIndex].content + 
-          modifiedSource.substring(divMatch.index + divMatch[0].length);
+          modifiedSource.substring(mermaidDivMatch.index + mermaidDivMatch[0].length);
         
         mermaidIndex++;
       }
     }
     
     // Replace SVG tags with original SVG code blocks
-    let svgIndex = 0;
     let svgTagMatch;
+    let svgIndex = 0;
     while ((svgTagMatch = svgTagRegex.exec(modifiedSource)) !== null) {
       // Find the next available SVG block
       const svgBlocks = specialBlocks.filter(block => block.type === 'svg');
@@ -675,6 +799,40 @@ class SquibView {
           modifiedSource.substring(svgTagMatch.index + svgTagMatch[0].length);
         
         svgIndex++;
+      }
+    }
+    
+    // Replace GeoJSON divs with original GeoJSON code blocks
+    let geojsonDivMatch;
+    let geojsonIndex = 0;
+    while ((geojsonDivMatch = geojsonDivRegex.exec(modifiedSource)) !== null) {
+      // Find the next available GeoJSON block
+      const geojsonBlocks = specialBlocks.filter(block => block.type === 'geojson');
+      if (geojsonIndex < geojsonBlocks.length) {
+        // Replace the div with the original GeoJSON code block
+        modifiedSource = 
+          modifiedSource.substring(0, geojsonDivMatch.index) + 
+          geojsonBlocks[geojsonIndex].content + 
+          modifiedSource.substring(geojsonDivMatch.index + geojsonDivMatch[0].length);
+        
+        geojsonIndex++;
+      }
+    }
+    
+    // Replace Math divs with original Math code blocks
+    let mathDivMatch;
+    let mathIndex = 0;
+    while ((mathDivMatch = mathDivRegex.exec(modifiedSource)) !== null) {
+      // Find the next available math block
+      const mathBlocks = specialBlocks.filter(block => block.type === 'math');
+      if (mathIndex < mathBlocks.length) {
+        // Replace the div with the original math code block
+        modifiedSource = 
+          modifiedSource.substring(0, mathDivMatch.index) + 
+          mathBlocks[mathIndex].content + 
+          modifiedSource.substring(mathDivMatch.index + mathDivMatch[0].length);
+        
+        mathIndex++;
       }
     }
     

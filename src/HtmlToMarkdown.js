@@ -78,6 +78,68 @@ export default class HtmlToMarkdown {
       }
     });
     
+    // Preserve GeoJSON map blocks
+    this.turndownService.addRule('geojson', {
+      filter: node => {
+        return node.nodeName === 'DIV' && 
+               node.classList.contains('geojson-map');
+      },
+      replacement: (content, node) => {
+        // Generate a unique ID for this GeoJSON block
+        const blockId = 'geojson_' + Math.random().toString(36).substring(2, 10);
+        
+        // Try to extract the GeoJSON data from the script element
+        let geojsonContent = '';
+        try {
+          // The actual GeoJSON would be in a script tag or in a data attribute
+          // Here we'll use a placeholder since the actual data is hard to extract
+          geojsonContent = node.dataset.geojson || '{"type":"FeatureCollection","features":[]}';
+        } catch(e) {
+          console.error('Error extracting GeoJSON data:', e);
+        }
+        
+        if (this._specialBlocks) {
+          this._specialBlocks.set(blockId, {
+            type: 'geojson',
+            content: geojsonContent
+          });
+        }
+        
+        return `\n<div data-special-block="${blockId}" class="geojson-container">\n` +
+               geojsonContent + 
+               `\n</div>\n`;
+      }
+    });
+    
+    // Preserve Math blocks
+    this.turndownService.addRule('math', {
+      filter: node => {
+        return node.nodeName === 'DIV' && 
+               node.classList.contains('math-display');
+      },
+      replacement: (content, node) => {
+        // Generate a unique ID for this math block
+        const blockId = 'math_' + Math.random().toString(36).substring(2, 10);
+        
+        // Get the raw math content (might be wrapped in $$...$$ in the original)
+        let mathContent = node.textContent;
+        
+        // Remove $$ delimiters if present
+        mathContent = mathContent.replace(/^\$\$([\s\S]*)\$\$$/, '$1');
+        
+        if (this._specialBlocks) {
+          this._specialBlocks.set(blockId, {
+            type: 'math',
+            content: mathContent
+          });
+        }
+        
+        return `\n<div data-special-block="${blockId}" class="math-container">\n` +
+               mathContent + 
+               `\n</div>\n`;
+      }
+    });
+    
     // Special handling for code blocks
     this.turndownService.addRule('codeBlock', {
       filter: node => {
@@ -232,6 +294,25 @@ export default class HtmlToMarkdown {
       return match;
     });
     
+    // Convert GeoJSON blocks
+    const geojsonBlockRegex = /<div data-special-block="geojson_[^"]*" class="geojson-container">\s*([\s\S]*?)\s*<\/div>/g;
+    markdown = markdown.replace(geojsonBlockRegex, (match, content) => {
+      try {
+        // Ensure content is valid JSON before creating the code block
+        JSON.parse(content);
+        return `\n\`\`\`geojson\n${content.trim()}\n\`\`\`\n`;
+      } catch (e) {
+        console.error('Invalid GeoJSON data:', e);
+        return `\n\`\`\`geojson\n{"type":"FeatureCollection","features":[]}\n\`\`\`\n`;
+      }
+    });
+    
+    // Convert Math blocks
+    const mathBlockRegex = /<div data-special-block="math_[^"]*" class="math-container">\s*([\s\S]*?)\s*<\/div>/g;
+    markdown = markdown.replace(mathBlockRegex, (match, content) => {
+      return `\n\`\`\`math\n${content.trim()}\n\`\`\`\n`;
+    });
+    
     // Second pass: Restore blocks from original source if possible
     if (originalSource) {
       // Extract code blocks from original source
@@ -244,7 +325,7 @@ export default class HtmlToMarkdown {
         const type = match[1];
         const content = match[2];
         
-        if (type === 'mermaid' || type === 'svg') {
+        if (type === 'mermaid' || type === 'svg' || type === 'geojson' || type === 'math') {
           originalBlocks.push({
             type,
             content: match[0],
@@ -258,6 +339,8 @@ export default class HtmlToMarkdown {
       
       let mermaidIndex = 0;
       let svgIndex = 0;
+      let geojsonIndex = 0;
+      let mathIndex = 0;
       
       // Replace mermaid blocks
       markdown = markdown.replace(/```mermaid\s*([\s\S]*?)```/g, (match, content) => {
@@ -273,6 +356,24 @@ export default class HtmlToMarkdown {
         const svgBlocks = originalBlocks.filter(b => b.type === 'svg');
         if (svgIndex < svgBlocks.length) {
           return svgBlocks[svgIndex++].content;
+        }
+        return match;
+      });
+      
+      // Replace GeoJSON blocks
+      markdown = markdown.replace(/```geojson\s*([\s\S]*?)```/g, (match, content) => {
+        const geojsonBlocks = originalBlocks.filter(b => b.type === 'geojson');
+        if (geojsonIndex < geojsonBlocks.length) {
+          return geojsonBlocks[geojsonIndex++].content;
+        }
+        return match;
+      });
+      
+      // Replace Math blocks
+      markdown = markdown.replace(/```math\s*([\s\S]*?)```/g, (match, content) => {
+        const mathBlocks = originalBlocks.filter(b => b.type === 'math');
+        if (mathIndex < mathBlocks.length) {
+          return mathBlocks[mathIndex++].content;
         }
         return match;
       });
