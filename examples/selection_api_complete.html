@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SquibView Selection API - Complete Demo</title>
+    <link rel="stylesheet" href="../dist/squibview.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        
+        .demo-section {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .controls-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+            padding: 15px;
+            background-color: #edf2f7;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+        
+        button {
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        #selection-info {
+            margin: 15px 0;
+            padding: 15px;
+            background-color: #e8f4fd;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+            min-height: 40px;
+        }
+        
+        .code-block {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        
+        .options-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .option-group {
+            min-width: 150px;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 0;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+        
+        .tab.active {
+            background-color: #fff;
+            border-bottom: 1px solid #fff;
+            position: relative;
+            bottom: -1px;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-top: none;
+            background-color: #fff;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>SquibView Selection API Demo</h1>
+    
+    <p>This comprehensive demo showcases the Selection API capabilities in SquibView, demonstrating the various approaches for handling text selections.</p>
+    
+    <div class="tabs">
+        <div class="tab active" data-tab="demo">Interactive Demo</div>
+        <div class="tab" data-tab="api">API Reference</div>
+        <div class="tab" data-tab="code">Example Code</div>
+    </div>
+    
+    <div id="demo" class="tab-content active">
+        <div class="demo-section">
+            <h2>Selection Handling Demo</h2>
+            
+            <div class="options-container">
+                <div class="option-group">
+                    <h3>Text Transformations</h3>
+                    <label><input type="checkbox" id="option-uppercase"> UPPERCASE</label><br>
+                    <label><input type="checkbox" id="option-lowercase"> lowercase</label><br>
+                    <label><input type="checkbox" id="option-capitalize"> Capitalize Words</label><br>
+                </div>
+                
+                <div class="option-group">
+                    <h3>Formatting</h3>
+                    <label><input type="checkbox" id="option-bold"> Bold</label><br>
+                    <label><input type="checkbox" id="option-italic"> Italic</label><br>
+                    <label><input type="checkbox" id="option-highlight"> Highlight</label><br>
+                </div>
+                
+                <div class="option-group">
+                    <h3>Special Actions</h3>
+                    <label><input type="checkbox" id="option-count"> Count Words</label><br>
+                    <label><input type="checkbox" id="option-non-editable"> Make Non-Editable</label><br>
+                    <label><input type="checkbox" id="option-auto-replace" checked> Auto-Replace</label><br>
+                </div>
+            </div>
+            
+            <div class="controls-panel">
+                <button id="apply-btn">Apply to Selection</button>
+                <button id="clear-btn">Clear Selection</button>
+                <button id="handler-toggle">Turn Handler Off</button>
+            </div>
+            
+            <div id="selection-info">
+                <p>Select text in either panel to see details here.</p>
+            </div>
+            
+            <div id="editor"></div>
+        </div>
+    </div>
+    
+    <div id="api" class="tab-content">
+        <div class="demo-section">
+            <h2>Selection API Reference</h2>
+            
+            <h3>Main Selection Methods</h3>
+            <ul>
+                <li><code>onTextSelected(callback)</code> - Register a callback for text selection events</li>
+                <li><code>getCurrentSelection()</code> - Get the current text selection</li>
+                <li><code>replaceSelectedText(replacement, selectionData)</code> - Replace selected text</li>
+                <li><code>setSelectionEditable(editable, selectionData)</code> - Control editability of selected text</li>
+                <li><code>clearSelection()</code> - Clear the current selection</li>
+            </ul>
+            
+            <h3>Selection Handler</h3>
+            <ul>
+                <li><code>onReplaceSelectedText</code> - Getter/setter for handling selection events</li>
+                <li>When set, automatically processes selections and optionally replaces them</li>
+                <li>Return a string to replace selection or undefined/null to make no changes</li>
+            </ul>
+            
+            <h3>Selection Data Structure</h3>
+            <div class="code-block">
+<pre>// Source panel selection
+{
+  panel: 'source',
+  text: 'selected text',
+  range: {
+    start: 10,  // Character position
+    end: 22     // Character position
+  }
+}
+
+// Rendered panel selection
+{
+  panel: 'rendered',
+  text: 'selected text',
+  range: DOMRange,  // DOM Range object
+  element: HTMLElement  // The contenteditable element
+}</pre>
+            </div>
+        </div>
+    </div>
+    
+    <div id="code" class="tab-content">
+        <div class="demo-section">
+            <h2>Example Code</h2>
+            
+            <h3>Using the Callback Approach</h3>
+            <div class="code-block">
+<pre>// Register a selection callback
+const unsubscribe = editor.onTextSelected(selectionData => {
+  console.log(`Selected: ${selectionData.text} in ${selectionData.panel} panel`);
+  
+  // Example: Bold the selected text
+  if (selectionData.panel === 'source') {
+    editor.replaceSelectedText(`**${selectionData.text}**`, selectionData);
+  } else {
+    editor.replaceSelectedText(`<strong>${selectionData.text}</strong>`, selectionData);
+  }
+});
+
+// Later, to unsubscribe:
+unsubscribe();</pre>
+            </div>
+            
+            <h3>Using the Handler Approach</h3>
+            <div class="code-block">
+<pre>// Set up a selection handler
+editor.onReplaceSelectedText = function(selectionData) {
+  // Process selection
+  if (selectionData.text === 'TODO') {
+    return '✅ DONE';  // Replace with this text
+  }
+  
+  if (selectionData.text.match(/^[a-z]/)) {
+    // Capitalize first letter
+    return selectionData.text.charAt(0).toUpperCase() + 
+           selectionData.text.slice(1);
+  }
+  
+  // Return undefined to not replace anything
+};
+
+// Remove the handler
+editor.onReplaceSelectedText = null;</pre>
+            </div>
+            
+            <h3>Using Manual Selection Check</h3>
+            <div class="code-block">
+<pre>document.getElementById('bold-button').addEventListener('click', () => {
+  const selection = editor.getCurrentSelection();
+  
+  if (selection) {
+    if (selection.panel === 'source') {
+      editor.replaceSelectedText(`**${selection.text}**`, selection);
+    } else {
+      editor.replaceSelectedText(`<strong>${selection.text}</strong>`, selection);
+    }
+  } else {
+    alert('Please select some text first');
+  }
+});</pre>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Load required libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@12.3.2/dist/markdown-it.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.5.1/lib/core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.5.1/lib/languages/javascript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.5.1/lib/languages/python.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@9.1.7/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+    
+    <!-- Load SquibView -->
+    <script src="../dist/squibview.umd.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab switching
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.tab).classList.add('active');
+                });
+            });
+            
+            // Sample markdown content
+            const initialContent = `# Selection API Demo
+
+This demo showcases SquibView's text selection API and various ways to work with selected text.
+
+## Interactive Features
+
+- Select any text in this document to see the selection details
+- Use the checkboxes above to control how selections are processed
+- Try the different approaches to text selection handling
+
+## Examples to Try
+
+1. Select this sentence and click "Apply to Selection" to transform it
+2. todo: this is an incomplete task (select it with auto-replace on)
+3. make me uppercase please
+4. MAKE ME LOWERCASE PLEASE
+5. capitalize each word in this phrase
+
+## Code Samples
+
+\`\`\`javascript
+// Example code for working with selections
+editor.onTextSelected(selectionData => {
+  console.log(\`Selected: \${selectionData.text}\`);
+  
+  // Process the selection
+  if (selectionData.text.includes('TODO')) {
+    editor.replaceSelectedText('✅ DONE', selectionData);
+  }
+});
+\`\`\`
+
+## Selection Event Handler vs Callback
+
+The Selection API offers two main approaches:
+
+1. **Event callback**: Register a function to be called on selection
+2. **Replacement handler**: Define a function that processes selections and optionally returns replacement text
+
+Both approaches have their uses depending on your needs.
+
+> Select text within this blockquote to see the Selection API in action!
+
+`;
+
+            // Initialize SquibView
+            const editor = new SquibView('#editor', {
+                initialContent: initialContent,
+                inputContentType: 'md',
+                initialView: 'split'
+            });
+            
+            // Elements
+            const selectionInfo = document.getElementById('selection-info');
+            const applyBtn = document.getElementById('apply-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const handlerToggleBtn = document.getElementById('handler-toggle');
+            
+            // Options
+            const optionUppercase = document.getElementById('option-uppercase');
+            const optionLowercase = document.getElementById('option-lowercase');
+            const optionCapitalize = document.getElementById('option-capitalize');
+            const optionBold = document.getElementById('option-bold');
+            const optionItalic = document.getElementById('option-italic');
+            const optionHighlight = document.getElementById('option-highlight');
+            const optionCount = document.getElementById('option-count');
+            const optionNonEditable = document.getElementById('option-non-editable');
+            const optionAutoReplace = document.getElementById('option-auto-replace');
+            
+            // Store last selection
+            let lastSelection = null;
+            
+            // Create text processing function
+            function processText(text, selectionData) {
+                let processedText = text;
+                
+                // Case transformations
+                if (optionUppercase.checked && !optionLowercase.checked) {
+                    processedText = processedText.toUpperCase();
+                } else if (optionLowercase.checked && !optionUppercase.checked) {
+                    processedText = processedText.toLowerCase();
+                }
+                
+                // Capitalize words
+                if (optionCapitalize.checked) {
+                    processedText = processedText.split(' ')
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(' ');
+                }
+                
+                // Format text
+                if (optionBold.checked) {
+                    if (selectionData.panel === 'source') {
+                        processedText = `**${processedText}**`;
+                    } else {
+                        processedText = `<strong>${processedText}</strong>`;
+                    }
+                }
+                
+                if (optionItalic.checked) {
+                    if (selectionData.panel === 'source') {
+                        processedText = `*${processedText}*`;
+                    } else {
+                        processedText = `<em>${processedText}</em>`;
+                    }
+                }
+                
+                if (optionHighlight.checked) {
+                    if (selectionData.panel === 'source') {
+                        processedText = `==${processedText}==`;
+                    } else {
+                        processedText = `<mark>${processedText}</mark>`;
+                    }
+                }
+                
+                return processedText;
+            }
+            
+            // Register selection callback
+            const unsubscribe = editor.onTextSelected(selectionData => {
+                lastSelection = selectionData;
+                
+                // Enable buttons when text is selected
+                applyBtn.disabled = false;
+                clearBtn.disabled = false;
+                
+                // Display selection info
+                const wordCount = selectionData.text.split(/\s+/).filter(Boolean).length;
+                selectionInfo.innerHTML = `
+                    <p><strong>Selected text:</strong> "${selectionData.text}"</p>
+                    <p><strong>Panel:</strong> ${selectionData.panel}</p>
+                    <p><strong>Length:</strong> ${selectionData.text.length} characters, ${wordCount} words</p>
+                `;
+                
+                // Word counting
+                if (optionCount.checked) {
+                    selectionInfo.innerHTML += `
+                        <p><strong>Word analysis:</strong></p>
+                        <ul>
+                            <li>Character count: ${selectionData.text.length}</li>
+                            <li>Word count: ${wordCount}</li>
+                            <li>Lines: ${selectionData.text.split('\n').length}</li>
+                        </ul>
+                    `;
+                }
+                
+                // Automatic special transformations
+                if (selectionData.text.toLowerCase().includes('todo:') && optionAutoReplace.checked) {
+                    const replacement = selectionData.text.replace(/todo:/i, '✅ DONE:');
+                    editor.replaceSelectedText(replacement, selectionData);
+                }
+            });
+            
+            // Define selection replacement handler
+            function replacementHandler(selectionData) {
+                // Process text if auto-replace is enabled
+                if (optionAutoReplace.checked) {
+                    // Special case: automatically transform text that starts with specific words
+                    if (selectionData.text.toLowerCase() === 'todo') {
+                        return '✅ DONE';
+                    }
+                    
+                    if (selectionData.text.toLowerCase() === 'make me uppercase please') {
+                        return 'MADE UPPERCASE!';
+                    }
+                    
+                    if (selectionData.text.toLowerCase() === 'make me lowercase please') {
+                        return 'made lowercase!';
+                    }
+                    
+                    if (selectionData.text.toLowerCase() === 'capitalize each word in this phrase') {
+                        return 'Capitalize Each Word In This Phrase';
+                    }
+                    
+                    // Apply text processing if any options are selected
+                    if (optionUppercase.checked || optionLowercase.checked || 
+                        optionCapitalize.checked || optionBold.checked ||
+                        optionItalic.checked || optionHighlight.checked) {
+                        return processText(selectionData.text, selectionData);
+                    }
+                }
+                
+                // Return undefined to not replace anything
+            }
+            
+            // Set up the replacement handler
+            editor.onReplaceSelectedText = replacementHandler;
+            
+            // Apply button handler
+            applyBtn.addEventListener('click', () => {
+                const selection = editor.getCurrentSelection();
+                if (selection) {
+                    // Apply transformations
+                    const newText = processText(selection.text, selection);
+                    editor.replaceSelectedText(newText, selection);
+                    
+                    // Make non-editable if option is checked
+                    if (optionNonEditable.checked && selection.panel === 'rendered') {
+                        setTimeout(() => {
+                            const newSelection = editor.getCurrentSelection();
+                            if (newSelection) {
+                                editor.setSelectionEditable(false, newSelection);
+                                selectionInfo.innerHTML += `
+                                    <p><strong>Status:</strong> Made selection non-editable</p>
+                                `;
+                            }
+                        }, 100);
+                    }
+                } else {
+                    selectionInfo.innerHTML = `<p>No text currently selected. Please select some text first.</p>`;
+                }
+            });
+            
+            // Clear selection button
+            clearBtn.addEventListener('click', () => {
+                editor.clearSelection();
+                lastSelection = null;
+                applyBtn.disabled = true;
+                clearBtn.disabled = true;
+                selectionInfo.innerHTML = `<p>Selection cleared.</p>`;
+            });
+            
+            // Toggle handler button
+            let handlerEnabled = true;
+            handlerToggleBtn.addEventListener('click', () => {
+                if (handlerEnabled) {
+                    editor.onReplaceSelectedText = null;
+                    handlerEnabled = false;
+                    handlerToggleBtn.textContent = 'Turn Handler On';
+                    selectionInfo.innerHTML += `<p><strong>Status:</strong> Replacement handler disabled</p>`;
+                } else {
+                    editor.onReplaceSelectedText = replacementHandler;
+                    handlerEnabled = true;
+                    handlerToggleBtn.textContent = 'Turn Handler Off';
+                    selectionInfo.innerHTML += `<p><strong>Status:</strong> Replacement handler enabled</p>`;
+                }
+            });
+            
+            // Initially disable buttons
+            applyBtn.disabled = true;
+            clearBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>

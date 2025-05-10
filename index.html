@@ -107,7 +107,101 @@ Any manual edits may be lost.
 <h2 id="web-viewer">Web Viewer</h2>
 <p>SquibView can be used as a standalone tool for taking complex markdown output (such as from OpenAI, Claude, Mistral, or Deepseek) or a simple live preview markdown editor.  </p>
 <h2 id="as-a-component">As a Component</h2>
-<p>Squibview also can be used as an embedddable component in your app, where you can feed it complex markdown or other content and then render it on the fly.  Squibview can dynamically switch between showing a splitscreen of both the source and output or just the output so one can use it as renderer.  </p>
+<p>Squibview also can be used as an embedddable component in your app, where you can feed it complex markdown or other content and then render it on the fly.  Squibview can dynamically switch between showing a splitscreen of both the source and output or just the output so one can use it as renderer.</p>
+<h2 id="installation-and-usage">Installation and Usage</h2>
+<h3 id="using-build-files">Using Build Files</h3>
+<p>SquibView offers multiple build formats for different use cases:</p>
+<h4 id="esm-es-modules">ESM (ES Modules)</h4>
+<pre><code class="language-html">&lt;!-- Required dependencies --&gt;
+&lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/mermaid/dist/mermaid.min.js&quot;&gt;&lt;/script&gt;
+
+&lt;!-- SquibView CSS --&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;../dist/squibview.css&quot;&gt;
+
+&lt;!-- ESM Import --&gt;
+&lt;script type=&quot;module&quot;&gt;
+  import SquibView from &#39;../dist/squibview.esm.min.js&#39;;
+  
+  const editor = new SquibView(&#39;#editorContainer&#39;, {
+    titleShow: true,
+    titleContent: &quot;SquibView Editor&quot;
+  });
+  
+  // Set content
+  editor.setContent(&#39;# Hello SquibView\n\nThis is a test.&#39;, &#39;md&#39;);
+&lt;/script&gt;
+</code></pre>
+<h4 id="umd-universal-module-definition">UMD (Universal Module Definition)</h4>
+<pre><code class="language-html">&lt;!-- Required dependencies --&gt;
+&lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/mermaid/dist/mermaid.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/tiny-emitter@2.1.0/dist/tinyemitter.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/diff-match-patch@1.0.5/index.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/turndown@7.1.2/dist/turndown.js&quot;&gt;&lt;/script&gt;
+
+&lt;!-- SquibView CSS --&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;../dist/squibview.css&quot;&gt;
+
+&lt;!-- UMD Import --&gt;
+&lt;script src=&quot;../dist/squibview.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+  const editor = new SquibView(&#39;#editorContainer&#39;, {
+    titleShow: true,
+    titleContent: &quot;SquibView Editor&quot;
+  });
+  
+  // Set content
+  editor.setContent(&#39;# Hello SquibView\n\nThis is a test.&#39;, &#39;md&#39;);
+&lt;/script&gt;
+</code></pre>
+<h4 id="standalone-all-dependencies-bundled">Standalone (All Dependencies Bundled)</h4>
+<pre><code class="language-html">&lt;!-- SquibView CSS --&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;../dist/squibview.css&quot;&gt;
+
+&lt;!-- Standalone Import (includes all dependencies) --&gt;
+&lt;script src=&quot;../dist/squibview.standalone.min.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+  const editor = new SquibView(&#39;#editorContainer&#39;, {
+    titleShow: true,
+    titleContent: &quot;SquibView Editor&quot;
+  });
+  
+  // Set content
+  editor.setContent(&#39;# Hello SquibView\n\nThis is a test.&#39;, &#39;md&#39;);
+&lt;/script&gt;
+</code></pre>
+<h3 id="build-formats-comparison">Build Formats Comparison</h3>
+<table>
+<thead>
+<tr>
+<th>Format</th>
+<th>File Size</th>
+<th>Dependencies</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ESM</td>
+<td>Smaller</td>
+<td>Required externally</td>
+<td>Modern applications with bundlers</td>
+</tr>
+<tr>
+<td>UMD</td>
+<td>Medium</td>
+<td>Required externally</td>
+<td>Traditional script tags, CommonJS</td>
+</tr>
+<tr>
+<td>Standalone</td>
+<td>Larger</td>
+<td>Included</td>
+<td>Quick prototypes, no external dependencies</td>
+</tr>
+</tbody></table>
 <h3 id="using-via-cdn">Using via CDN</h3>
 <p>Squibview is available on unpkg and npm.  </p>
 <h2 id="examples">Examples</h2>
@@ -120,6 +214,10 @@ Any manual edits may be lost.
 <li><strong>Syntax Highlighting</strong>: Code blocks are automatically highlighted using Highlight.js.</li>
 <li><strong>Table Styling</strong>: Tables are rendered cleanly with improved readability.</li>
 <li><strong>Easy Export</strong>: Export or copy the generated HTML for use in other projects or documentation.</li>
+<li><strong>Text Selection API</strong>: Detect and manipulate selected text in both source and rendered panels.</li>
+<li><strong>Bidirectional Editing</strong>: Make changes in either the source or rendered view and see them reflected in both panels.</li>
+<li><strong>Revision History</strong>: Track changes with undo/redo functionality.</li>
+<li><strong>Plugin System</strong>: Extend functionality with custom plugins and renderers.</li>
 </ul>
 <h2 id="getting-started">Getting Started</h2>
 <p><strong>Clone the Repository:</strong></p>
@@ -133,6 +231,31 @@ Use the Converter:</p>
 <p>Select a view mode (md, html, split) using the buttons at the top.
 Enter your GitHub-flavored Markdown into the editor on the left (in split or md view).
 The right side will render the HTML output live, complete with diagrams, code highlighting, and more.</p>
+<h2 id="testing">Testing</h2>
+<p>SquibView uses Jest for unit/integration tests and Puppeteer for End-to-End (E2E) tests.</p>
+<ul>
+<li><p><strong>Unit/Integration Tests:</strong></p>
+<ul>
+<li>These tests check individual modules and their interactions. They provide code coverage reports.</li>
+<li>Run with: <code>npm run test</code></li>
+<li>Coverage reports are generated in the <code>coverage/</code> directory. Open <code>coverage/lcov-report/index.html</code> to view detailed coverage.</li>
+</ul>
+</li>
+<li><p><strong>End-to-End (E2E) Tests:</strong></p>
+<ul>
+<li>These tests run against a live instance of the application, simulating user interaction in a browser (using Puppeteer).</li>
+<li>They verify that the built application works as expected.</li>
+<li>Run with: <code>npm run test:e2e</code></li>
+<li><strong>Note:</strong> This script starts its own <code>http-server</code> on port 8000. Ensure this port is free before running.</li>
+</ul>
+</li>
+<li><p><strong>Run All Tests (Recommended before releases):</strong></p>
+<ul>
+<li>To ensure all checks pass, run both test suites sequentially.</li>
+<li>Command: <code>npm run test:all</code> (We will add this script next)</li>
+</ul>
+</li>
+</ul>
 <h2 id="contributing">Contributing</h2>
 <p>Contributions are welcome! Whether you&#39;re adding new features, fixing bugs, or improving documentation, please follow these guidelines:</p>
 <p>Fork the Repository: Click the &quot;Fork&quot; button on GitHub to create your own copy.</p>
@@ -145,7 +268,7 @@ The right side will render the HTML output live, complete with diagrams, code hi
 <p><strong>Push to Your Fork:</strong></p>
 <pre><code class="language-bash">git push origin feature/your-feature-name
 </code></pre>
-<p><strong>Open a Pull Request:</strong> Go to the original repository on GitHub and open a pull request from your fork&#39;s branch. Provide a clear description of your changes and why they’re useful.</p>
+<p><strong>Open a Pull Request:</strong> Go to the original repository on GitHub and open a pull request from your fork&#39;s branch. Provide a clear description of your changes and why they&#39;re useful.</p>
 <p>Please make sure your contributions follow the project&#39;s coding style and that tests pass, if applicable.</p>
 <h2 id="license">License</h2>
 <p>This project is licensed under the BSD-2 License. See the LICENSE file for details.</p>

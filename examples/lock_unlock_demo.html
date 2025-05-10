@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SquibView Lock/Unlock Selection Demo</title>
+    <link rel="stylesheet" href="../dist/squibview.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        
+        .demo-section {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .controls-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+            padding: 15px;
+            background-color: #edf2f7;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+        
+        button {
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        #selection-info {
+            margin: 15px 0;
+            padding: 15px;
+            background-color: #e8f4fd;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+            min-height: 40px;
+        }
+        
+        .code-block {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>SquibView Lock/Unlock Selection Demo</h1>
+    
+    <p>This demo showcases the ability to lock and unlock sections of content in SquibView. Select text in the rendered panel and use the buttons below to toggle editability.</p>
+    
+    <div class="demo-section">
+        <h2>Lock and Unlock Demonstration</h2>
+        
+        <div class="controls-panel">
+            <button id="lock-btn">Lock Selection</button>
+            <button id="unlock-btn">Unlock Selection</button>
+            <button id="toggle-btn">Toggle Lock/Unlock</button>
+            <button id="clear-btn">Clear Selection</button>
+        </div>
+        
+        <div id="selection-info">
+            <p>Select text in the rendered panel to see details here.</p>
+        </div>
+        
+        <div id="editor"></div>
+    </div>
+    
+    <div class="demo-section">
+        <h2>How to Use the Lock/Unlock Feature</h2>
+        
+        <h3>API Methods</h3>
+        <div class="code-block">
+<pre>// Lock selected text (make non-editable)
+editor.setSelectionEditable(false, selectionData);
+
+// Unlock selected text (make editable)
+editor.setSelectionEditable(true, selectionData);
+
+// Smart toggle between locked and unlocked states
+const newState = editor.toggleSelectionLock(selectionData);
+console.log(newState ? "Now editable" : "Now locked");</pre>
+        </div>
+        
+        <h3>Visual Indicators</h3>
+        <p>Locked content is visually indicated with:</p>
+        <ul>
+            <li>A lock icon (🔒) at the top-left corner</li>
+            <li>A light gray background</li>
+            <li>A dashed border</li>
+            <li>"Not allowed" cursor when hovering</li>
+        </ul>
+        
+        <p>Unlocked content (after previously being locked) shows an unlock icon (🔓).</p>
+    </div>
+    
+    <!-- Load required libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@12.3.2/dist/markdown-it.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.5.1/lib/core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.5.1/lib/languages/javascript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.5.1/lib/languages/python.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@9.1.7/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+    
+    <!-- Load SquibView -->
+    <script src="../dist/squibview.umd.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sample markdown content
+            const initialContent = `# Lock/Unlock Selection Demo
+
+This example demonstrates how to lock and unlock sections of content in SquibView.
+
+## How It Works
+
+1. Select text in this rendered panel (not in the source panel)
+2. Use the buttons above to lock or unlock the selection
+3. Locked content will have a 🔒 icon and cannot be edited
+4. Unlocked content will have a 🔓 icon and can be edited
+
+## Examples to Try
+
+Here are some paragraphs you can try locking and unlocking:
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam eget felis eget urna ultrices maximus. Sed vitae justo eget nisl lacinia tristique.
+
+Suspendisse potenti. Etiam faucibus, nisi vel lacinia convallis, risus tellus gravida est, vel sollicitudin libero quam a tellus.
+
+Nulla facilisi. Donec aliquam sagittis ante, non feugiat libero sodales vel. Cras tincidunt dolor in eros tincidunt, et blandit nulla dictum.
+
+## Why Use Content Locking?
+
+Locking content can be useful for:
+
+1. Protecting important sections from accidental edits
+2. Creating read-only template sections
+3. Building interactive forms with some fixed elements
+4. Preserving formatting in specific areas
+
+## Technical Details
+
+The lock/unlock feature uses the \`setSelectionEditable()\` and \`toggleSelectionLock()\` methods.
+
+\`\`\`javascript
+// Example code
+editor.setSelectionEditable(false, selectionData); // Lock
+editor.setSelectionEditable(true, selectionData);  // Unlock
+editor.toggleSelectionLock(selectionData);         // Smart toggle
+\`\`\`
+
+Try selecting and locking various parts of this document to see how it works!
+`;
+
+            // Initialize SquibView
+            const editor = new SquibView('#editor', {
+                initialContent: initialContent,
+                inputContentType: 'md',
+                initialView: 'split'
+            });
+            
+            // Elements
+            const selectionInfo = document.getElementById('selection-info');
+            const lockBtn = document.getElementById('lock-btn');
+            const unlockBtn = document.getElementById('unlock-btn');
+            const toggleBtn = document.getElementById('toggle-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            
+            // Store last selection
+            let lastSelection = null;
+            
+            // Register selection callback
+            editor.onTextSelected(selectionData => {
+                lastSelection = selectionData;
+                
+                // Only enable buttons for rendered panel
+                const isRenderedPanel = selectionData.panel === 'rendered';
+                
+                lockBtn.disabled = !isRenderedPanel;
+                unlockBtn.disabled = !isRenderedPanel;
+                toggleBtn.disabled = !isRenderedPanel;
+                clearBtn.disabled = false;
+                
+                // Display selection info
+                selectionInfo.innerHTML = `
+                    <p><strong>Selected text:</strong> "${selectionData.text}"</p>
+                    <p><strong>Panel:</strong> ${selectionData.panel}</p>
+                    <p><strong>Length:</strong> ${selectionData.text.length} characters</p>
+                `;
+                
+                if (!isRenderedPanel) {
+                    selectionInfo.innerHTML += `
+                        <p><strong>Note:</strong> Locking/unlocking only works in the rendered panel.</p>
+                    `;
+                }
+            });
+            
+            // Lock button
+            lockBtn.addEventListener('click', () => {
+                if (lastSelection && lastSelection.panel === 'rendered') {
+                    editor.setSelectionEditable(false, lastSelection);
+                    selectionInfo.innerHTML += `
+                        <p><strong>Status:</strong> Content locked 🔒</p>
+                    `;
+                } else {
+                    selectionInfo.innerHTML = `<p>Please select text in the rendered panel first.</p>`;
+                }
+            });
+            
+            // Unlock button
+            unlockBtn.addEventListener('click', () => {
+                if (lastSelection && lastSelection.panel === 'rendered') {
+                    editor.setSelectionEditable(true, lastSelection);
+                    selectionInfo.innerHTML += `
+                        <p><strong>Status:</strong> Content unlocked 🔓</p>
+                    `;
+                } else {
+                    selectionInfo.innerHTML = `<p>Please select text in the rendered panel first.</p>`;
+                }
+            });
+            
+            // Toggle button
+            toggleBtn.addEventListener('click', () => {
+                if (lastSelection && lastSelection.panel === 'rendered') {
+                    const newState = editor.toggleSelectionLock(lastSelection);
+                    
+                    if (newState === true) {
+                        selectionInfo.innerHTML += `
+                            <p><strong>Status:</strong> Content unlocked 🔓</p>
+                        `;
+                    } else if (newState === false) {
+                        selectionInfo.innerHTML += `
+                            <p><strong>Status:</strong> Content locked 🔒</p>
+                        `;
+                    } else {
+                        selectionInfo.innerHTML += `
+                            <p><strong>Status:</strong> Toggle operation failed.</p>
+                        `;
+                    }
+                } else {
+                    selectionInfo.innerHTML = `<p>Please select text in the rendered panel first.</p>`;
+                }
+            });
+            
+            // Clear selection button
+            clearBtn.addEventListener('click', () => {
+                editor.clearSelection();
+                lastSelection = null;
+                lockBtn.disabled = true;
+                unlockBtn.disabled = true;
+                toggleBtn.disabled = true;
+                clearBtn.disabled = true;
+                selectionInfo.innerHTML = `<p>Selection cleared.</p>`;
+            });
+            
+            // Initially disable buttons
+            lockBtn.disabled = true;
+            unlockBtn.disabled = true;
+            toggleBtn.disabled = true;
+            clearBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>

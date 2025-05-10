@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { VERSION } from '../src/version.js'; // Import directly from version.js
 
 // Get __dirname for ES6 modules
 const __filename = fileURLToPath(import.meta.url);
@@ -9,29 +10,24 @@ const __dirname = path.dirname(__filename);
 // Path to the package.json file
 const packageJsonPath = path.join(__dirname, '../package.json');
 
-// Import the ES6 module dynamically
 async function updateVersion() {
   try {
-    // Dynamically import  ES6 module
-    const modulePath = path.join(__dirname, '../src/squibview.js');
-    const { default: SquibView } = await import(modulePath);
-    console.log('SquibView:', SquibView);
-    // Create an instance of the class and get the version
-    //const quikChatInstance = new quikchat();
-    const version = SquibView.version.version; //static method
+    const currentVersion = VERSION; // Use the imported constant
+    console.log('Version from src/version.js:', currentVersion);
 
     // Read the existing package.json file
     const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf8'));
 
     // Update the version
-    packageJson.version = version;
+    packageJson.version = currentVersion;
 
     // Write the updated package.json file back to disk
     await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf8');
 
-    console.log(`Updated package.json to version ${version}`);
+    console.log(`Updated package.json to version ${currentVersion}`);
   } catch (error) {
     console.error('Error updating version:', error);
+    process.exit(1); // Exit with error code if update fails
   }
 }
 

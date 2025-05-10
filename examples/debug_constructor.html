@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SquibView Constructor Debug</title>
+  <link rel="stylesheet" href="../dist/squibview.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      padding: 0;
+    }
+    #error-log {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #ffeeee;
+      border: 1px solid #ffcccc;
+      border-radius: 5px;
+    }
+    pre {
+      white-space: pre-wrap;
+      background: #f5f5f5;
+      padding: 10px;
+      border-radius: 5px;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>SquibView Constructor Debug</h1>
+  
+  <div id="editorContainer"></div>
+  <div id="error-log"></div>
+
+  <!-- Required dependencies -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
+  <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+
+  <!-- Debug script to load and test the constructors -->
+  <script>
+    const errorLog = document.getElementById('error-log');
+    
+    // Function to log information
+    function log(message) {
+      const pre = document.createElement('pre');
+      pre.textContent = message;
+      errorLog.appendChild(pre);
+      console.log(message);
+    }
+    
+    // Test if something is a constructor
+    function isConstructor(obj) {
+      try {
+        Reflect.construct(String, [], obj);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+    
+    // Load the UMD script with debugging wrapper
+    window.addEventListener('DOMContentLoaded', () => {
+      // Define a shim for module
+      if (typeof module === 'undefined') {
+        var module = { exports: {} };
+      }
+      
+      // Load the script
+      const script = document.createElement('script');
+      script.src = '../dist/squibview.umd.js';
+      
+      script.onload = () => {
+        log('Script loaded successfully');
+        
+        // Check if SquibView is defined
+        if (typeof SquibView === 'undefined') {
+          log('SquibView is not defined');
+          
+          // Try to fix by using module.exports
+          if (module.exports) {
+            window.SquibView = module.exports;
+            log('Set SquibView from module.exports');
+          }
+          
+          // Check if it's an ES module
+          if (module.exports && module.exports.__esModule) {
+            window.SquibView = module.exports.default;
+            log('Set SquibView from module.exports.default');
+          }
+        }
+        
+        // Debug the SquibView object
+        log(`SquibView type: ${typeof SquibView}`);
+        log(`SquibView constructor: ${isConstructor(SquibView)}`);
+        
+        // Look at the dependencies
+        log('Checking dependencies:');
+        log(`TinyEmitter defined: ${typeof TinyEmitter !== 'undefined'}`);
+        log(`diff_match_patch defined: ${typeof diff_match_patch !== 'undefined'}`);
+        
+        try {
+          log('Trying to create TinyEmitter:');
+          const emitter = new TinyEmitter();
+          log('TinyEmitter created successfully');
+        } catch (e) {
+          log(`Error creating TinyEmitter: ${e.message}`);
+        }
+        
+        try {
+          log('Trying to create diff_match_patch:');
+          const dmp = new diff_match_patch();
+          log('diff_match_patch created successfully');
+        } catch (e) {
+          log(`Error creating diff_match_patch: ${e.message}`);
+        }
+        
+        try {
+          // Try to create a SquibView instance
+          log('Trying to create SquibView:');
+          const editor = new SquibView('#editorContainer', {
+            titleShow: true,
+            titleContent: "SquibView Debug"
+          });
+          log('SquibView created successfully');
+          
+          // Try to set content
+          editor.setContent('# Debug Test\n\nThis is a debug test.', 'md');
+          log('Content set successfully');
+        } catch (e) {
+          log(`Error: ${e.message}`);
+          log(`Stack: ${e.stack}`);
+        }
+      };
+      
+      script.onerror = () => {
+        log('Failed to load script');
+      };
+      
+      document.body.appendChild(script);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SquibView Development Environment</title>
+  
+  <!-- Development styles -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.5.1/styles/default.min.css">
+  <link rel="stylesheet" href="/dist/squibview.css">
+  
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    .dev-header {
+      background: #2c3e50;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .dev-header h1 {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+    
+    .dev-controls {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .dev-controls button {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    
+    .dev-controls button:hover {
+      background: #2980b9;
+    }
+    
+    .dev-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    
+    .dev-sidebar {
+      width: 250px;
+      background: #f5f5f5;
+      padding: 10px;
+      border-right: 1px solid #ddd;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .dev-sidebar h3 {
+      margin-top: 0;
+      font-size: 1rem;
+      color: #333;
+    }
+    
+    .dev-sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .dev-sidebar li {
+      padding: 8px 10px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    
+    .dev-sidebar li:hover {
+      background: #e0e0e0;
+    }
+    
+    .dev-sidebar li.active {
+      background: #3498db;
+      color: white;
+    }
+    
+    .status {
+      margin-top: auto;
+      font-size: 0.8rem;
+      color: #666;
+      padding: 10px;
+      background: #e0e0e0;
+      border-radius: 4px;
+    }
+    
+    .status .version {
+      font-weight: bold;
+    }
+    
+    #editor-container {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* Override SquibView styles for development */
+    .squibview {
+      height: 100% !important;
+      border: none !important;
+    }
+    
+    .error-icon {
+      display: none;
+    }
+    
+    text.error-text {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="dev-header">
+    <h1>SquibView Development Environment</h1>
+    <div class="dev-controls">
+      <button id="btn-reload">Reload</button>
+      <button id="btn-toggle-sidebar">Toggle Sidebar</button>
+      <button id="btn-toggle-view">Toggle View</button>
+      <button id="btn-run-tests">Run Tests</button>
+    </div>
+  </div>
+  
+  <div class="dev-container">
+    <div class="dev-sidebar" id="sidebar">
+      <h3>Example Content</h3>
+      <ul id="content-list">
+        <li data-content="markdown" class="active">Markdown</li>
+        <li data-content="html">HTML</li>
+        <li data-content="csv">CSV</li>
+        <li data-content="reveal">Reveal.js</li>
+        <li data-content="diagrams">Diagrams</li>
+        <li data-content="selection">Selection API</li>
+      </ul>
+      
+      <div class="status">
+        Version: <span class="version" id="version-display">loading...</span>
+        <div id="status-message">Ready</div>
+      </div>
+    </div>
+    
+    <div id="editor-container"></div>
+  </div>
+  
+  <!-- Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it@12.3.2/dist/markdown-it.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.5.1/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@9.1.7/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+  
+  <!-- Import map for ES module resolution -->
+  <script type="importmap">
+  {
+    "imports": {
+      "tiny-emitter": "https://esm.sh/tiny-emitter@2.1.0",
+      "diff-match-patch": "https://esm.sh/diff-match-patch@1.0.5",
+      "turndown": "https://esm.sh/turndown@7.1.2"
+    }
+  }
+  </script>
+  
+  <script type="module">
+    // Import SquibView directly from source for development
+    import SquibView from '/src/squibview.js';
+    
+    // Sample content
+    const content = {
+      markdown: `# SquibView Development
+      
+This is a test of the live development environment for SquibView.
+
+## Features
+
+- Hot module replacement
+- Live reload on changes
+- Development sidebar
+- Multiple content types
+
+### Code Example
+
+\`\`\`javascript
+// This should have syntax highlighting
+function example() {
+  return "Hello world!";
+}
+\`\`\`
+
+## How to use
+
+1. Make changes to the source files
+2. They will automatically be reloaded
+3. See your changes instantly
+
+> This is a blockquote for testing
+
+* List item 1
+* List item 2
+* List item 3
+
+| Column 1 | Column 2 | Column 3 |
+|----------|----------|----------|
+| Data 1   | Data 2   | Data 3   |
+| Row 2    | Value    | Another  |
+
+`,
+      html: `<div>
+  <h1>HTML Test Content</h1>
+  <p>This is <strong>HTML</strong> content to test the renderer.</p>
+  <ul>
+    <li>Item 1</li>
+    <li>Item 2</li>
+    <li>Item 3</li>
+  </ul>
+  <div style="padding: 20px; background: #f0f0f0; border-radius: 5px;">
+    <p>A styled container</p>
+  </div>
+</div>`,
+      csv: `Name,Age,City,Country
+John Doe,32,New York,USA
+Jane Smith,28,London,UK
+Carlos Rodriguez,45,Madrid,Spain
+Yuki Tanaka,36,Tokyo,Japan
+Ahmed Hassan,29,Cairo,Egypt`,
+      reveal: `# Presentation Title
+
+Author: Developer
+
+---
+
+## First Slide
+
+* Bullet point 1
+* Bullet point 2
+* Bullet point 3
+
+---
+
+## Code Example
+
+\`\`\`javascript
+function example() {
+  return "Hello world!";
+}
+\`\`\`
+
+---
+
+## Diagram
+
+\`\`\`mermaid
+graph TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Process]
+    B -->|No| D[End]
+    C --> D
+\`\`\`
+
+---
+
+## Thank You!
+
+Questions?`,
+      diagrams: `# Mermaid Diagrams
+
+\`\`\`mermaid
+graph TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Process]
+    B -->|No| D[End]
+    C --> D
+\`\`\`
+
+## Sequence Diagram
+
+\`\`\`mermaid
+sequenceDiagram
+    participant Alice
+    participant Bob
+    Alice->>John: Hello John, how are you?
+    loop Healthcheck
+        John->>John: Fight against hypochondria
+    end
+    Note right of John: Rational thoughts prevail!
+    John-->>Alice: Great!
+    John->>Bob: How about you?
+    Bob-->>John: Jolly good!
+\`\`\`
+
+## Class Diagram
+
+\`\`\`mermaid
+classDiagram
+    Class01 <|-- AveryLongClass : Cool
+    Class03 *-- Class04
+    Class05 o-- Class06
+    Class07 .. Class08
+    Class09 --> C2 : Where am I?
+    Class09 --* C3
+    Class09 --|> Class07
+    Class07 : equals()
+    Class07 : Object[] elementData
+    Class01 : size()
+    Class01 : int chimp
+    Class01 : int gorilla
+    Class08 <--> C2: Cool label
+\`\`\`
+
+## Flowchart
+
+\`\`\`mermaid
+flowchart LR
+    A[Hard edge] -->|Link text| B(Round edge)
+    B --> C{Decision}
+    C -->|One| D[Result one]
+    C -->|Two| E[Result two]
+\`\`\``,
+      selection: `# Selection API Demo
+
+Select some text in this document to test the Selection API.
+
+## What you can do:
+
+1. Select text with your mouse
+2. The Selection API will detect it
+3. You can manipulate the selected text
+
+Try selecting **this bold text** to see how it works.
+
+> You can also select text in blockquotes like this one
+
+Or try selecting code: \`console.log("Hello world");\`
+
+## Selection Handler
+
+The Selection API provides:
+
+* Text selection events
+* Selection replacement functions
+* Lock/unlock capabilities
+
+Select this paragraph and check the console to see the selection data.`
+    };
+    
+    // Initialize editor
+    let editor;
+    
+    function initEditor() {
+      try {
+        // Create editor instance
+        editor = new SquibView('#editor-container', {
+          titleShow: true,
+          titleContent: `SquibView Development (v${SquibView.version.version})`,
+          initialContent: content.markdown,
+          inputContentType: 'md'
+        });
+        
+        // Store in window for console access
+        window.editor = editor;
+        
+        // Update version display
+        document.getElementById('version-display').textContent = SquibView.version.version;
+        
+        // Add selection handler for testing
+        editor.onTextSelected(selectionData => {
+          console.log('Text selected:', selectionData);
+          document.getElementById('status-message').textContent = 
+            `Selected: "${selectionData.text.substring(0, 20)}${selectionData.text.length > 20 ? '...' : ''}"`;
+        });
+        
+        // Set up event listeners for the buttons
+        setupEventListeners();
+        
+        // Log success
+        console.log('SquibView development environment initialized.');
+      } catch (error) {
+        console.error('Error initializing editor:', error);
+        document.getElementById('status-message').textContent = `Error: ${error.message}`;
+      }
+    }
+    
+    function setupEventListeners() {
+      // Reload button
+      document.getElementById('btn-reload').addEventListener('click', () => {
+        location.reload();
+      });
+      
+      // Toggle sidebar
+      document.getElementById('btn-toggle-sidebar').addEventListener('click', () => {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.style.display = sidebar.style.display === 'none' ? 'flex' : 'none';
+      });
+      
+      // Toggle view
+      document.getElementById('btn-toggle-view').addEventListener('click', () => {
+        editor.toggleView();
+      });
+      
+      // Run tests button
+      document.getElementById('btn-run-tests').addEventListener('click', runTests);
+      
+      // Content list items
+      document.querySelectorAll('#content-list li').forEach(item => {
+        item.addEventListener('click', () => {
+          // Set active class
+          document.querySelectorAll('#content-list li').forEach(li => li.classList.remove('active'));
+          item.classList.add('active');
+          
+          // Get content type
+          const contentType = item.dataset.content;
+          
+          // Set appropriate content type
+          let type = 'md';
+          switch(contentType) {
+            case 'html':
+              type = 'html';
+              break;
+            case 'csv':
+              type = 'csv';
+              break;
+            case 'reveal':
+              type = 'reveal';
+              break;
+            default:
+              type = 'md';
+          }
+          
+          // Set content
+          editor.setContent(content[contentType], type);
+        });
+      });
+    }
+    
+    function runTests() {
+      const tests = [
+        { name: 'Basic Editor Initialization', test: () => editor !== undefined },
+        { name: 'Content Setting', test: () => {
+          editor.setContent('Test content', 'md');
+          return editor.getContent() === 'Test content';
+        }},
+        { name: 'View Toggling', test: () => {
+          const initialView = editor.currentView;
+          editor.toggleView();
+          const newView = editor.currentView;
+          return initialView !== newView;
+        }},
+        { name: 'Selection API', test: () => {
+          return typeof editor.onTextSelected === 'function' && 
+                 typeof editor.getCurrentSelection === 'function';
+        }},
+        { name: 'Revision History', test: () => {
+          editor.setContent('Version 1', 'md');
+          editor.setContent('Version 2', 'md');
+          editor.revisionUndo();
+          return editor.getContent() === 'Version 1';
+        }}
+      ];
+      
+      // Run tests
+      const results = tests.map(test => {
+        try {
+          const passed = test.test();
+          return { name: test.name, passed, error: null };
+        } catch (error) {
+          return { name: test.name, passed: false, error };
+        }
+      });
+      
+      // Display results
+      const passCount = results.filter(r => r.passed).length;
+      document.getElementById('status-message').innerHTML = 
+        `Tests: ${passCount}/${tests.length} passed. See console for details.`;
+      
+      // Log detailed results
+      console.group('Test Results');
+      results.forEach(result => {
+        if (result.passed) {
+          console.log(`✅ ${result.name}: Passed`);
+        } else {
+          console.error(`❌ ${result.name}: Failed`, result.error);
+        }
+      });
+      console.groupEnd();
+      
+      // Reset editor state after tests
+      editor.setContent(content.markdown, 'md');
+    }
+    
+    // Initialize the editor when the page loads
+    document.addEventListener('DOMContentLoaded', initEditor);
+    
+    // Handle hot module replacement for development
+    if (import.meta.hot) {
+      import.meta.hot.accept('/src/squibview.js', () => {
+        console.log('SquibView module updated, reloading...');
+        
+        // Save current content and content type
+        const currentContent = editor ? editor.getContent() : content.markdown;
+        const currentContentType = editor ? editor.inputContentType : 'md';
+        
+        // Re-initialize the editor
+        try {
+          // Clean up existing editor (if any)
+          if (editor) {
+            const container = document.getElementById('editor-container');
+            container.innerHTML = '';
+          }
+          
+          // Initialize with new version
+          initEditor();
+          
+          // Restore content
+          editor.setContent(currentContent, currentContentType);
+          
+          // Update status
+          document.getElementById('status-message').textContent = 'Hot updated successfully';
+        } catch (error) {
+          console.error('Error during hot update:', error);
+          document.getElementById('status-message').textContent = `Hot update error: ${error.message}`;
+        }
+      });
+    }
+  </script>
+</body>
+</html>

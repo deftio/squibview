@@ -1,6 +1,6 @@
 {
   "name": "squibview",
-  "version": "0.0.29a",
+  "version": "0.0.30c",
   "description": "SquibView is a light weight editor which live-renders mardown (including code, diagrams, etc) or HTML to a browser",
   "keywords": [
     "markdown",
@@ -34,10 +34,18 @@
   "scripts": {
     "test": "jest --config jest.config.cjs --coverage",
     "test:e2e": "npx concurrently -k \"npx http-server -p 8000\" \"wait-on http://localhost:8000 && jest -c e2e-tests/jest.config.cjs\"",
-    "build": "npm run updateVersion && npm run makeIndexHTML && npm run minifyCSS && rollup -c",
+    "test:all": "npm run test && npm run test:e2e",
+    "build": "npm run updateVersion && npm run makeIndexHTML && rollup -c && npm run minifyCSS",
+    "build:umd": "npm run updateVersion && rollup -c --environment BUILD:umd && npm run minifyCSS",
+    "build:esm": "npm run updateVersion && rollup -c --environment BUILD:esm && npm run minifyCSS",
+    "build:standalone": "npm run updateVersion && rollup -c --environment BUILD:standalone && npm run minifyCSS",
     "minifyCSS": "node ./tools/minifyCSS.cjs",
-    "updateVersion": "node ./tools/updateVersion",
-    "makeIndexHTML": "node ./node_modules/docbat/src/docbat-cli.js -i README.md -o index.html"
+    "updateVersion": "node ./tools/updateVersion.js",
+    "makeIndexHTML": "node ./node_modules/docbat/src/docbat-cli.js -i README.md -o index.html",
+    "dev": "vite",
+    "dev:hmr": "node dev/live-dev-server.js",
+    "serve:devstatic": "npx http-server -p 8001 -c-1",
+    "serve": "python -m http.server 8080"
   },
   "devDependencies": {
     "@babel/core": "^7.26.7",
@@ -45,6 +53,7 @@
     "@babel/preset-react": "^7.24.7",
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-commonjs": "^26.0.1",
+    "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
     "babel-jest": "^29.7.0",
@@ -63,6 +72,7 @@
     "rollup-plugin-css-only": "^4.5.2",
     "rollup-plugin-json": "^4.0.0",
     "rollup-plugin-postcss": "^4.0.2",
+    "vite": "^6.3.5",
     "wait-on": "^8.0.2"
   },
   "dependencies": {

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SquibView Text Selection Example</title>
+    <link rel="stylesheet" href="../dist/squibview.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .controls-panel {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        
+        .controls-panel button {
+            margin-right: 10px;
+            padding: 5px 10px;
+        }
+        
+        pre {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        
+        h1 {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>SquibView Text Selection Demo</h1>
+    
+    <p>This example demonstrates the text selection capabilities in SquibView. Select text in either the source or rendered panels and use the buttons below to manipulate the selection.</p>
+    
+    <div class="controls-panel">
+        <button id="boldBtn">Make Bold</button>
+        <button id="italicBtn">Make Italic</button>
+        <button id="nonEditableBtn">Make Non-Editable</button>
+        <button id="replaceBtn">Replace with "REPLACED"</button>
+        <button id="clearBtn">Clear Selection</button>
+    </div>
+    
+    <div id="selection-info">
+        <p>No text selected.</p>
+    </div>
+    
+    <div id="editor"></div>
+    
+    <!-- Load required libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@12.3.2/dist/markdown-it.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.5.1/lib/core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.5.1/lib/languages/javascript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.5.1/lib/languages/python.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@9.1.7/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+    
+    <!-- Load SquibView -->
+    <script src="../dist/squibview.umd.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sample markdown content
+            const initialContent = `# Text Selection Demo
+
+This is a demonstration of the text selection features in SquibView.
+
+## How to Use
+
+1. Select text in either the **source panel** or the **rendered panel**
+2. Use the buttons above to manipulate the selected text
+3. See the information about the selection below the buttons
+
+## Features Demonstrated
+
+- Text selection in source and rendered panels
+- Callback function when text is selected
+- Replacing selected text
+- Making selected text non-editable (rendered panel only)
+
+### Code Example
+
+\`\`\`javascript
+// Register a selection callback
+const unsubscribe = editor.onTextSelected(selectionData => {
+  console.log(\`Selected: \${selectionData.text}\`);
+});
+
+// Replace selected text
+editor.replaceSelectedText('new text', selectionData);
+
+// Make selected text non-editable
+editor.setSelectionEditable(false, selectionData);
+\`\`\`
+
+## Try it out!
+
+Select some text in this rendered area, or in the source panel, and use the buttons above.
+`;
+
+            // Initialize SquibView
+            const editor = new SquibView('#editor', {
+                initialContent: initialContent,
+                inputContentType: 'md',
+                initialView: 'split'
+            });
+            
+            // Selection info element
+            const selectionInfo = document.getElementById('selection-info');
+            
+            // Button handlers
+            const boldBtn = document.getElementById('boldBtn');
+            const italicBtn = document.getElementById('italicBtn');
+            const nonEditableBtn = document.getElementById('nonEditableBtn');
+            const replaceBtn = document.getElementById('replaceBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            
+            // Keep track of the last selection
+            let lastSelection = null;
+            
+            // Register text selection callback
+            editor.onTextSelected(selectionData => {
+                lastSelection = selectionData;
+                
+                // Update selection info display
+                selectionInfo.innerHTML = `
+                    <p><strong>Selected text:</strong> "${selectionData.text}"</p>
+                    <p><strong>Panel:</strong> ${selectionData.panel}</p>
+                    <p><strong>Length:</strong> ${selectionData.text.length} characters</p>
+                `;
+                
+                // Enable buttons
+                boldBtn.disabled = false;
+                italicBtn.disabled = false;
+                replaceBtn.disabled = false;
+                clearBtn.disabled = false;
+                
+                // Only enable non-editable button for rendered panel
+                nonEditableBtn.disabled = selectionData.panel !== 'rendered';
+            });
+            
+            // Button click handlers
+            boldBtn.addEventListener('click', () => {
+                if (!lastSelection) return;
+                
+                // Format depends on which panel
+                if (lastSelection.panel === 'source') {
+                    editor.replaceSelectedText(`**${lastSelection.text}**`, lastSelection);
+                } else {
+                    editor.replaceSelectedText(`<strong>${lastSelection.text}</strong>`, lastSelection);
+                }
+            });
+            
+            italicBtn.addEventListener('click', () => {
+                if (!lastSelection) return;
+                
+                // Format depends on which panel
+                if (lastSelection.panel === 'source') {
+                    editor.replaceSelectedText(`*${lastSelection.text}*`, lastSelection);
+                } else {
+                    editor.replaceSelectedText(`<em>${lastSelection.text}</em>`, lastSelection);
+                }
+            });
+            
+            nonEditableBtn.addEventListener('click', () => {
+                if (!lastSelection || lastSelection.panel !== 'rendered') return;
+                
+                editor.setSelectionEditable(false, lastSelection);
+                selectionInfo.innerHTML += '<p><strong>Status:</strong> Made selection non-editable</p>';
+            });
+            
+            replaceBtn.addEventListener('click', () => {
+                if (!lastSelection) return;
+                
+                editor.replaceSelectedText('REPLACED', lastSelection);
+            });
+            
+            clearBtn.addEventListener('click', () => {
+                editor.clearSelection();
+                lastSelection = null;
+                selectionInfo.innerHTML = '<p>No text selected.</p>';
+                
+                // Disable buttons
+                boldBtn.disabled = true;
+                italicBtn.disabled = true;
+                nonEditableBtn.disabled = true;
+                replaceBtn.disabled = true;
+                clearBtn.disabled = true;
+            });
+            
+            // Initially disable buttons
+            boldBtn.disabled = true;
+            italicBtn.disabled = true;
+            nonEditableBtn.disabled = true;
+            replaceBtn.disabled = true;
+            clearBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>

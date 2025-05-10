@@ -27,7 +27,7 @@ function _asyncToGenerator(n) {
       function _throw(n) {
         asyncGeneratorStep(a, r, o, _next, _throw, "throw", n);
       }
-      _next(undefined);
+      _next(void 0);
     });
   };
 }
@@ -349,7 +349,7 @@ function _regeneratorRuntime() {
   }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, c, function () {
     return this;
   }), e.AsyncIterator = AsyncIterator, e.async = function (t, r, n, o, i) {
-    undefined === i && (i = Promise);
+    void 0 === i && (i = Promise);
     var a = new AsyncIterator(wrap(t, r, n, o), i);
     return e.isGeneratorFunction(r) ? a : a.next().then(function (t) {
       return t.done ? t.value : a.next();
@@ -456,8 +456,8 @@ function _slicedToArray(r, e) {
 function _toPrimitive(t, r) {
   if ("object" != typeof t || !t) return t;
   var e = t[Symbol.toPrimitive];
-  if (undefined !== e) {
-    var i = e.call(t, r || "default");
+  if (void 0 !== e) {
+    var i = e.call(t, r);
     if ("object" != typeof i) return i;
     throw new TypeError("@@toPrimitive must return a primitive value.");
   }
@@ -471,7 +471,7 @@ function _unsupportedIterableToArray(r, a) {
   if (r) {
     if ("string" == typeof r) return _arrayLikeToArray(r, a);
     var t = {}.toString.call(r).slice(8, -1);
-    return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : undefined;
+    return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0;
   }
 }
 
@@ -2775,6 +2775,24 @@ var diffMatchPatch = {exports: {}};
 var diffMatchPatchExports = diffMatchPatch.exports;
 var DiffMatchPatch = /*@__PURE__*/getDefaultExportFromCjs(diffMatchPatchExports);
 
+// src/version.js
+var VERSION = "0.0.30c";
+var REPO_URL = "https://github.com/deftio/squibview";
+
+// Fix for development mode
+/*
+try {
+  if (!TinyEmitter || !DiffMatchPatch) {
+    // If direct imports failed, try the shim
+    const shim = await import('./import-shim.js');
+    if (!TinyEmitter && shim.TinyEmitter) TinyEmitter = shim.TinyEmitter;
+    if (!DiffMatchPatch && shim.DiffMatchPatch) DiffMatchPatch = shim.DiffMatchPatch;
+  }
+} catch (e) {
+  console.warn('Import shim not available, continuing with direct imports', e);
+}
+*/
+
 /**
  * RevisionManager class handles content revisions with memory-efficient diff storage
  */
@@ -2986,11 +3004,17 @@ var SquibView = /*#__PURE__*/function () {
       throw new Error('Container element not found');
     }
 
-    // Initialize event emitter for plugin communication
+    // Initialize event emitter for plugin communication and selection events
     this.events = new TinyEmitter();
 
     // Initialize revision manager
     this.revisionManager = new RevisionManager();
+
+    // Track last selection data
+    this.lastSelectionData = null;
+
+    // Store text selection handlers
+    this._onTextReplacementHandler = null;
 
     // Initialize renderer registry
     this.renderers = {};
@@ -3020,6 +3044,11 @@ var SquibView = /*#__PURE__*/function () {
 
     // Update UI elements based on current content type
     this.updateTypeButtons();
+
+    // Set up text replacement handler if provided in options
+    if (this.options.onReplaceSelectedText) {
+      this.onReplaceSelectedText = this.options.onReplaceSelectedText;
+    }
   }
 
   /**
@@ -3413,6 +3442,23 @@ var SquibView = /*#__PURE__*/function () {
         _this3.setContent();
       });
 
+      // Text selection event in source panel
+      this.input.addEventListener('mouseup', function () {
+        var selection = document.getSelection();
+        if (selection && selection.toString().trim() !== '') {
+          var selectionData = {
+            panel: 'source',
+            text: selection.toString(),
+            range: {
+              start: _this3.input.selectionStart,
+              end: _this3.input.selectionEnd
+            }
+          };
+          _this3.lastSelectionData = selectionData;
+          _this3.events.emit('text:selected', selectionData);
+        }
+      });
+
       // Listen for changes in rendered content to support bidirectional editing
       // Use a debounce pattern to prevent processing every keystroke
       var editDebounceTimer = null;
@@ -3455,6 +3501,22 @@ var SquibView = /*#__PURE__*/function () {
               editDebounceTimer = null;
             }, 300);
           }
+        }
+      });
+
+      // Text selection event in rendered panel
+      this.output.addEventListener('mouseup', function () {
+        var selection = document.getSelection();
+        if (selection && selection.toString().trim() !== '') {
+          var range = selection.getRangeAt(0);
+          var selectionData = {
+            panel: 'rendered',
+            text: selection.toString(),
+            range: range,
+            element: _this3.output.querySelector('[contenteditable="true"]')
+          };
+          _this3.lastSelectionData = selectionData;
+          _this3.events.emit('text:selected', selectionData);
         }
       });
     }
@@ -4231,14 +4293,332 @@ var SquibView = /*#__PURE__*/function () {
     }
 
     /**
+     * Registers a callback function to be called when text is selected
+     * 
+     * @param {Function} callback - Function to call when text is selected
+     * @returns {Function} Unsubscribe function to remove the callback
+     */
+  }, {
+    key: "onTextSelected",
+    value: function onTextSelected(callback) {
+      var _this5 = this;
+      if (typeof callback !== 'function') {
+        throw new Error('Callback must be a function');
+      }
+      this.events.on('text:selected', callback);
+
+      // Return unsubscribe function
+      return function () {
+        _this5.events.off('text:selected', callback);
+      };
+    }
+
+    /**
+     * Replaces the currently selected text in either panel
+     * 
+     * @param {string} replacement - The text to replace the selection with
+     * @param {Object} selectionData - The selection data from the text:selected event
+     * @returns {boolean} Whether the replacement was successful
+     */
+  }, {
+    key: "replaceSelectedText",
+    value: function replaceSelectedText(replacement, selectionData) {
+      if (!selectionData) {
+        return false;
+      }
+      if (selectionData.panel === 'source') {
+        // Replace in source panel (textarea)
+        var _selectionData$range = selectionData.range,
+          start = _selectionData$range.start,
+          end = _selectionData$range.end;
+        var currentContent = this.input.value;
+        var newContent = currentContent.substring(0, start) + replacement + currentContent.substring(end);
+
+        // Update content
+        this.setContent(newContent, this.inputContentType);
+
+        // Return cursor focus to textarea
+        this.input.focus();
+        this.input.setSelectionRange(start + replacement.length, start + replacement.length);
+        return true;
+      } else if (selectionData.panel === 'rendered') {
+        // Replace in rendered panel (contenteditable div)
+        var range = selectionData.range;
+        range.deleteContents();
+
+        // Create a text node with the replacement text
+        var textNode = document.createTextNode(replacement);
+        range.insertNode(textNode);
+
+        // Set the cursor at the end of the replaced text
+        range.setStartAfter(textNode);
+        range.setEndAfter(textNode);
+
+        // Collapse the range to a cursor position
+        range.collapse(true);
+
+        // Select the range
+        var selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        // Update the source content to match the HTML changes
+        var editableContent = this.output.querySelector('[contenteditable="true"]');
+        if (editableContent) {
+          var renderedContent = editableContent.innerHTML;
+          var renderer = this.renderers[this.inputContentType];
+          if (renderer && renderer.outputToSource) {
+            var originalSource = this.input.value;
+            var newSource = renderer.outputToSource(renderedContent, {
+              originalSource: originalSource
+            });
+
+            // Update source content
+            this.input.value = newSource;
+
+            // Add to revision history
+            this.revisionManager.addRevision(newSource, this.inputContentType);
+
+            // Emit content change event
+            this.events.emit('content:change', newSource, this.inputContentType);
+          }
+        }
+        return true;
+      }
+      return false;
+    }
+
+    /**
+     * Sets the contenteditable attribute for the selected text
+     * 
+     * @param {boolean} editable - Whether the selection should be editable
+     * @param {Object} selectionData - The selection data from the text:selected event
+     * @returns {boolean} Whether the operation was successful
+     */
+  }, {
+    key: "setSelectionEditable",
+    value: function setSelectionEditable(editable, selectionData) {
+      if (!selectionData || selectionData.panel !== 'rendered') {
+        return false;
+      }
+      var range = selectionData.range;
+      if (range) {
+        // Create a wrapper span to control editability
+        var span = document.createElement('span');
+        span.contentEditable = editable.toString(); // 'true' or 'false'
+
+        // Add a class to visually indicate locked content
+        if (!editable) {
+          span.className = 'squibview-locked-content';
+          span.title = 'This content is locked (not editable)';
+          // Add a small lock icon using CSS ::before
+          span.style.position = 'relative';
+          span.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+          span.style.border = '1px dashed #999';
+          span.style.borderRadius = '3px';
+          span.style.padding = '0 2px';
+        } else {
+          span.className = 'squibview-editable-content';
+        }
+
+        // Clone the range contents into the span
+        span.appendChild(range.cloneContents());
+
+        // Clear the selected content and insert the wrapped content
+        range.deleteContents();
+        range.insertNode(span);
+
+        // Update the source content to match the HTML changes
+        var editableContent = this.output.querySelector('[contenteditable="true"]');
+        if (editableContent) {
+          var renderedContent = editableContent.innerHTML;
+          var renderer = this.renderers[this.inputContentType];
+          if (renderer && renderer.outputToSource) {
+            var originalSource = this.input.value;
+            var newSource = renderer.outputToSource(renderedContent, {
+              originalSource: originalSource
+            });
+
+            // Update source content
+            this.input.value = newSource;
+
+            // Add to revision history
+            this.revisionManager.addRevision(newSource, this.inputContentType);
+
+            // Emit content change event
+            this.events.emit('content:change', newSource, this.inputContentType);
+          }
+        }
+        return true;
+      }
+      return false;
+    }
+
+    /**
+     * Toggles the editability of the selected text
+     * 
+     * @param {Object} selectionData - The selection data from the text:selected event
+     * @returns {boolean} Whether the operation was successful and the new state (true=editable, false=locked)
+     */
+  }, {
+    key: "toggleSelectionLock",
+    value: function toggleSelectionLock(selectionData) {
+      if (!selectionData || selectionData.panel !== 'rendered') {
+        return null;
+      }
+
+      // Detect if selection is inside an already locked/unlocked span
+      var targetNode = selectionData.range.commonAncestorContainer;
+      var isLocked = false;
+
+      // Navigate up to find if selection is within a contenteditable span
+      while (targetNode && targetNode.nodeType === Node.ELEMENT_NODE) {
+        if (targetNode.hasAttribute('contenteditable')) {
+          // Found a contenteditable attribute, check its value
+          isLocked = targetNode.getAttribute('contenteditable') === 'false';
+          break;
+        }
+        targetNode = targetNode.parentNode;
+      }
+
+      // Toggle the state - if locked, unlock it; if unlocked or not in a contenteditable span, lock it
+      var newEditableState = isLocked;
+      var result = this.setSelectionEditable(newEditableState, selectionData);
+
+      // Return both success status and the new state
+      return result ? newEditableState : null;
+    }
+
+    /**
+     * Gets the current text selection data from either panel
+     * 
+     * @returns {Object|null} The selection data object or null if no text is selected
+     */
+  }, {
+    key: "getCurrentSelection",
+    value: function getCurrentSelection() {
+      // First, check if we have a cached selection
+      if (this.lastSelectionData) {
+        return this.lastSelectionData;
+      }
+      var selection = document.getSelection();
+
+      // Check if we have an active selection
+      if (!selection || selection.toString().trim() === '') {
+        return null;
+      }
+
+      // Determine which panel contains the selection
+      if (this.input === document.activeElement) {
+        // Source panel selection
+        var selectionData = {
+          panel: 'source',
+          text: selection.toString(),
+          range: {
+            start: this.input.selectionStart,
+            end: this.input.selectionEnd
+          }
+        };
+        this.lastSelectionData = selectionData;
+        return selectionData;
+      } else {
+        // Try to find if selection is within the rendered panel
+        var node = selection.anchorNode;
+        var isInOutput = false;
+
+        // Walk up the DOM tree to check if selection is within output panel
+        while (node && node !== document.body) {
+          if (node === this.output) {
+            isInOutput = true;
+            break;
+          }
+          node = node.parentNode;
+        }
+        if (isInOutput) {
+          var _selectionData = {
+            panel: 'rendered',
+            text: selection.toString(),
+            range: selection.getRangeAt(0),
+            element: this.output.querySelector('[contenteditable="true"]')
+          };
+          this.lastSelectionData = _selectionData;
+          return _selectionData;
+        }
+      }
+      return null;
+    }
+
+    /**
+     * Clears the current text selection
+     */
+  }, {
+    key: "clearSelection",
+    value: function clearSelection() {
+      this.lastSelectionData = null;
+      var selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+      }
+    }
+
+    /**
+     * Sets a handler function for text replacement on selection
+     * 
+     * @param {Function|null} handler - Function to call when text is selected, or null to remove handler
+     * @throws {Error} If handler is not a function or null
+     */
+  }, {
+    key: "onReplaceSelectedText",
+    get:
+    /**
+     * Gets the current text replacement handler
+     * 
+     * @returns {Function|null} The current handler function or null if none is set
+     */
+    function get() {
+      var _this6 = this;
+      return this._onTextReplacementHandler ? function (selectionData) {
+        var result = _this6._onTextReplacementHandler(selectionData);
+        return result;
+      } : null;
+    }
+
+    /**
      * Copies the rendered content to the clipboard with formatting.
      * Processes code blocks, SVG elements, and images to ensure they copy correctly.
-     */
+     */,
+    set: function set(handler) {
+      var _this7 = this;
+      if (handler !== null && typeof handler !== 'function') {
+        throw new Error('onReplaceSelectedText handler must be a function or null');
+      }
+
+      // Remove previous handler if it exists
+      if (this._onTextReplacementHandler) {
+        this.events.off('text:selected', this._onTextReplacementHandler);
+        this._onTextReplacementHandler = null;
+      }
+
+      // Set new handler if provided
+      if (handler) {
+        this._onTextReplacementHandler = function (selectionData) {
+          var result = handler(selectionData);
+
+          // If the handler returns a string, use it to replace the selected text
+          if (typeof result === 'string') {
+            _this7.replaceSelectedText(result, selectionData);
+          }
+        };
+
+        // Register the handler
+        this.events.on('text:selected', this._onTextReplacementHandler);
+      }
+    }
   }, {
     key: "copyHTML",
     value: (function () {
       var _copyHTML = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee4() {
-        var _this5 = this;
+        var _this8 = this;
         var copyButton, contentDiv, clone, svgElements, _iterator3, _step3, _loop2, htmlContent, platform, tempDiv, selection, range, successful;
         return _regeneratorRuntime().wrap(function _callee4$(_context6) {
           while (1) switch (_context6.prev = _context6.next) {
@@ -4285,7 +4665,7 @@ var SquibView = /*#__PURE__*/function () {
                       svg = _step3.value;
                       _context5.prev = 1;
                       _context5.next = 4;
-                      return _this5.svgToPng(svg);
+                      return _this8.svgToPng(svg);
                     case 4:
                       pngBlob = _context5.sent;
                       _context5.next = 7;
@@ -4620,6 +5000,43 @@ var SquibView = /*#__PURE__*/function () {
     }
 
     /**
+     * Example of how to use text selection features
+     * This method demonstrates registering selection callbacks and manipulating selected text
+     * 
+     * @example
+     * // Register a selection callback
+     * const editor = new SquibView('#editor');
+     * const unsubscribe = editor.onTextSelected(selectionData => {
+     *   console.log(`Selected text: ${selectionData.text} in ${selectionData.panel} panel`);
+     *   
+     *   // Replace selection with bold text if in source panel
+     *   if (selectionData.panel === 'source') {
+     *     editor.replaceSelectedText(`**${selectionData.text}**`, selectionData);
+     *   }
+     *   
+     *   // Make selection non-editable if in rendered panel
+     *   if (selectionData.panel === 'rendered') {
+     *     editor.setSelectionEditable(false, selectionData);
+     *   }
+     * });
+     * 
+     * // Later, to stop listening for selections:
+     * unsubscribe();
+     * 
+     * // Get current selection manually (without callback)
+     * const selection = editor.getCurrentSelection();
+     * if (selection) {
+     *   editor.replaceSelectedText('replacement text', selection);
+     * }
+     */
+  }, {
+    key: "demonstrateSelectionFeatures",
+    value: function demonstrateSelectionFeatures() {
+      // This is a documentation method only and doesn't need implementation
+      console.log('See method documentation for usage examples');
+    }
+
+    /**
      * Creates a complete HTML page from a HTML snippet/div content.
      * 
      * @param {string} inputDivHTML - The HTML content to include in the page
@@ -4695,11 +5112,12 @@ _defineProperty(SquibView, "defaultOptions", {
   titleShow: false,
   titleContent: '',
   initialView: 'split',
-  baseClass: 'squibview'
+  baseClass: 'squibview',
+  onReplaceSelectedText: null
 });
 _defineProperty(SquibView, "version", {
-  version: "0.0.29a",
-  url: "https://github.com/deftio/squibview"
+  version: VERSION,
+  url: REPO_URL
 });
 
 function extend (destination) {
@@ -5106,7 +5524,7 @@ function findRule (rules, node, options) {
     var rule = rules[i];
     if (filterValue(rule, node, options)) return rule
   }
-  return undefined
+  return void 0
 }
 
 function filterValue (rule, node, options) {
@@ -5328,7 +5746,7 @@ function isPreOrCode (node) {
   return node.nodeName === 'PRE' || node.nodeName === 'CODE'
 }
 
-function Node (node, options) {
+function Node$1 (node, options) {
   node.isBlock = isBlock(node);
   node.isCode = node.nodeName === 'CODE' || node.parentNode.isCode;
   node.isBlank = isBlank(node);
@@ -5557,7 +5975,7 @@ TurndownService.prototype = {
 function process (parentNode) {
   var self = this;
   return reduce.call(parentNode.childNodes, function (output, node) {
-    node = new Node(node, self.options);
+    node = new Node$1(node, self.options);
 
     var replacement = '';
     if (node.nodeType === 3) {

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Basic UMD Test</title>
+  <link rel="stylesheet" href="../dist/squibview.css">
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+    }
+    #editor {
+      height: 400px;
+      border: 1px solid #ccc;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Basic UMD Test</h1>
+  <div id="editor"></div>
+
+  <!-- External libraries -->
+  <script src="https://unpkg.com/markdown-it@12.3.2/dist/markdown-it.min.js"></script>
+  <script src="https://unpkg.com/highlight.js@11.5.1/highlight.min.js"></script>
+  <script src="https://unpkg.com/mermaid@9.1.7/dist/mermaid.min.js"></script>
+  <script src="https://unpkg.com/tiny-emitter@2.1.0/dist/tinyemitter.min.js"></script>
+  <script src="https://unpkg.com/diff-match-patch@1.0.5/index.js"></script>
+
+  <!-- Define module if needed -->
+  <script>
+    if (typeof module === 'undefined') {
+      var module = { exports: {} };
+    }
+  </script>
+
+  <!-- UMD build -->
+  <script src="../dist/squibview.umd.min.js"></script>
+
+  <!-- Test script -->
+  <script>
+    // If the UMD module exported to module.exports in browser
+    if (typeof SquibView === 'undefined' && module.exports) {
+      window.SquibView = module.exports;
+    }
+
+    // Check if SquibView is defined
+    if (typeof SquibView === 'function') {
+      console.log('SquibView is defined as a function');
+    } else if (typeof SquibView === 'object' && SquibView.default) {
+      console.log('SquibView is defined as an object with default export');
+      window.SquibView = SquibView.default;
+    } else {
+      console.error('SquibView is not properly defined', SquibView);
+    }
+
+    try {
+      // Create editor
+      const editor = new SquibView('#editor', {
+        titleShow: true,
+        titleContent: 'SquibView UMD Test'
+      });
+
+      // Set content
+      editor.setContent('# UMD Test\n\nTesting the UMD build of SquibView', 'md');
+
+      console.log('SquibView initialized successfully');
+    } catch (error) {
+      console.error('Error initializing SquibView:', error);
+      document.getElementById('editor').innerHTML = `
+        <div style="padding: 20px; color: red;">
+          <h3>Error</h3>
+          <p>${error.message}</p>
+          <pre>${error.stack}</pre>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>

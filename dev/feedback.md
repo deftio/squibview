@@ -437,6 +437,44 @@ setContent(content = this.input.value, contentType = this.inputContentType, save
    - Consider [tiny-emitter](https://github.com/scottcorgan/tiny-emitter) for event-based communication
    - Or implement a simple pub/sub pattern for internal events
 
+## Development Environment Improvements
+
+### Module Resolution with Import Maps
+
+**Current Issue:**
+- Using Python's SimpleHTTPServer or http.server for development results in module resolution errors
+- Error: `Uncaught TypeError: Failed to resolve module specifier "tiny-emitter". Relative references must start with either "/", "./", or "../".`
+
+**Solution:**
+- Add import maps to development HTML files:
+  ```html
+  <script type="importmap">
+  {
+    "imports": {
+      "tiny-emitter": "https://unpkg.com/tiny-emitter@2.1.0/dist/tinyemitter.min.js",
+      "diff-match-patch": "https://unpkg.com/diff-match-patch@1.0.5/index.js",
+      "turndown": "https://unpkg.com/turndown@7.1.2/dist/turndown.js"
+    }
+  }
+  </script>
+  ```
+- Import maps provide a way to map "bare" import specifiers to specific URLs
+- Modern browsers support import maps natively
+- This approach avoids the need for bundling during development
+
+### Modern Development Server
+
+**Recommendation:**
+- Add Vite-based development server for hot module replacement
+- Include npm scripts for different development approaches:
+  ```json
+  "scripts": {
+    "dev": "vite",
+    "dev:hmr": "node dev/live-dev-server.js"
+  }
+  ```
+- Create a comprehensive development UI that supports testing various SquibView features
+
 ## Overall Architecture Recommendation
 
 1. **Core Module:** Base SquibView functionality

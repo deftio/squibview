@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SquibView Text Replacement Handler Example</title>
+    <link rel="stylesheet" href="../dist/squibview.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .controls-panel {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        
+        #selection-info {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #e9f7fe;
+            border-radius: 5px;
+            border-left: 4px solid #0078d7;
+        }
+        
+        h1 {
+            color: #333;
+        }
+        
+        pre {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        
+        .options-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>SquibView Text Replacement Handler Demo</h1>
+    
+    <p>This example demonstrates how to use the text replacement handler in SquibView. Select text in either the source or rendered panels to see the handler in action.</p>
+    
+    <div class="options-panel">
+        <div class="checkbox-container">
+            <input type="checkbox" id="uppercase" checked>
+            <label for="uppercase">Convert to UPPERCASE</label>
+        </div>
+        
+        <div class="checkbox-container">
+            <input type="checkbox" id="lowercase">
+            <label for="lowercase">Convert to lowercase</label>
+        </div>
+        
+        <div class="checkbox-container">
+            <input type="checkbox" id="bold">
+            <label for="bold">Make Bold</label>
+        </div>
+        
+        <div class="checkbox-container">
+            <input type="checkbox" id="capitalize">
+            <label for="capitalize">Capitalize First Letter</label>
+        </div>
+        
+        <div class="checkbox-container">
+            <input type="checkbox" id="autoReplace">
+            <label for="autoReplace">Auto-replace on selection</label>
+        </div>
+    </div>
+    
+    <div id="selection-info">
+        <p>No text selected.</p>
+    </div>
+    
+    <div id="editor"></div>
+    
+    <!-- Load required libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@12.3.2/dist/markdown-it.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.5.1/lib/core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.5.1/lib/languages/javascript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.5.1/lib/languages/python.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@9.1.7/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+    
+    <!-- Load SquibView -->
+    <script src="../dist/squibview.umd.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sample markdown content
+            const initialContent = `# Text Replacement Handler Demo
+
+This example demonstrates how SquibView's text replacement handler works.
+
+## Instructions
+
+1. Select text in either panel.
+2. The handler will process your selection based on the options checked above.
+3. When "Auto-replace on selection" is checked, the text will be replaced automatically.
+4. Otherwise, the handler will just analyze the selection without replacing it.
+
+## Try these examples:
+
+- Select this whole line to see it transformed.
+- THIS IS ALL UPPERCASE (try lowercase)
+- this is all lowercase (try uppercase)
+- Capitalize the first letter of this sentence.
+- Make **this text** bold (it will add Markdown or HTML tags depending on which panel you select it in).
+
+## How it works
+
+The \`onReplaceSelectedText\` handler receives selection data and can:
+
+1. Return a string to replace the selection
+2. Return undefined/null to make no changes
+3. Perform side effects (like logging) without replacing text
+
+\`\`\`javascript
+editor.onReplaceSelectedText = function(selectionData) {
+  // Process selection
+  if (shouldReplace) {
+    return "replacement text"; // Replace selection with this
+  }
+  // No replacement if nothing returned
+};
+\`\`\`
+
+You can also pass this handler in the constructor options, making it easy to set up selection handling when creating a SquibView instance.
+`;
+
+            // Create selection handler function
+            const textReplacementHandler = function(selectionData) {
+                const selectionInfo = document.getElementById('selection-info');
+                selectionInfo.innerHTML = `
+                    <p><strong>Selected text:</strong> "${selectionData.text}"</p>
+                    <p><strong>Panel:</strong> ${selectionData.panel}</p>
+                    <p><strong>Length:</strong> ${selectionData.text.length} characters</p>
+                `;
+                
+                // Get options
+                const uppercase = document.getElementById('uppercase').checked;
+                const lowercase = document.getElementById('lowercase').checked;
+                const bold = document.getElementById('bold').checked;
+                const capitalize = document.getElementById('capitalize').checked;
+                const autoReplace = document.getElementById('autoReplace').checked;
+                
+                // Process text based on options
+                let processedText = selectionData.text;
+                
+                if (uppercase && !lowercase) {
+                    processedText = processedText.toUpperCase();
+                } else if (lowercase && !uppercase) {
+                    processedText = processedText.toLowerCase();
+                }
+                
+                if (capitalize) {
+                    processedText = processedText.charAt(0).toUpperCase() + 
+                                   processedText.slice(1);
+                }
+                
+                if (bold) {
+                    if (selectionData.panel === 'source') {
+                        processedText = `**${processedText}**`;
+                    } else {
+                        processedText = `<strong>${processedText}</strong>`;
+                    }
+                }
+                
+                // Only return for replacement if auto-replace is enabled
+                if (autoReplace) {
+                    selectionInfo.innerHTML += `
+                        <p><strong>Replacement:</strong> "${processedText}"</p>
+                    `;
+                    return processedText;
+                } else {
+                    selectionInfo.innerHTML += `
+                        <p><strong>Would replace with:</strong> "${processedText}"</p>
+                        <p><em>Auto-replace is disabled - check the box to enable.</em></p>
+                    `;
+                    // Return undefined to not replace
+                }
+            };
+            
+            // Initialize SquibView with the replacement handler
+            const editor = new SquibView('#editor', {
+                initialContent: initialContent,
+                inputContentType: 'md',
+                initialView: 'split',
+                onReplaceSelectedText: textReplacementHandler
+            });
+            
+            // Update handler when options change
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', () => {
+                    // Reassign the handler to apply changes
+                    editor.onReplaceSelectedText = textReplacementHandler;
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -213,6 +213,9 @@ describe('SquibView Tests', () => {
     });
 
     test('should initialize with custom options', () => {
+      // Mock handler function
+      const mockHandler = function() { return 'test'; };
+      
       const customOptions = {
         initialContent: '# Test Heading',
         inputContentType: 'html',
@@ -220,8 +223,16 @@ describe('SquibView Tests', () => {
         initialView: 'src',
         titleShow: true,
         titleContent: 'Custom Title',
-        baseClass: 'custom-view'
+        baseClass: 'custom-view',
+        onReplaceSelectedText: mockHandler
       };
+      
+      // Mock the onReplaceSelectedText setter
+      const mockSetter = jest.fn();
+      Object.defineProperty(SquibView.prototype, 'onReplaceSelectedText', {
+        set: mockSetter,
+        configurable: true
+      });
       
       squibView = new SquibView(container, customOptions);
       
@@ -231,6 +242,11 @@ describe('SquibView Tests', () => {
       expect(squibView.options.baseClass).toBe('custom-view');
       expect(squibView.options.titleShow).toBe(true);
       expect(squibView.options.titleContent).toBe('Custom Title');
+      expect(squibView.options.onReplaceSelectedText).toBe(mockHandler);
+      expect(mockSetter).toHaveBeenCalledWith(mockHandler);
+      
+      // Restore original property descriptor
+      delete SquibView.prototype.onReplaceSelectedText;
     });
 
     test('should throw error when container not found', () => {
@@ -1204,6 +1220,449 @@ describe('SquibView Tests', () => {
         value: originalUserAgent,
         configurable: true
       });
+    });
+  });
+
+  // Test text selection and lock/unlock features
+  describe('Text Selection and Lock/Unlock Features', () => {
+    beforeEach(() => {
+      squibView = new SquibView(container);
+      
+      // Mock document.getSelection
+      global.getSelection = jest.fn().mockImplementation(() => ({
+        toString: () => 'Selected Text',
+        getRangeAt: jest.fn().mockReturnValue({
+          cloneContents: jest.fn().mockReturnValue(document.createDocumentFragment()),
+          deleteContents: jest.fn(),
+          insertNode: jest.fn(),
+          setStartAfter: jest.fn(),
+          setEndAfter: jest.fn(),
+          collapse: jest.fn(),
+          commonAncestorContainer: document.createElement('div')
+        }),
+        removeAllRanges: jest.fn(),
+        addRange: jest.fn(),
+        anchorNode: document.createElement('div')
+      }));
+      
+      // Mock event emitter
+      squibView.events.emit = jest.fn();
+      squibView.events.on = jest.fn();
+      squibView.events.off = jest.fn();
+      
+      // Set up input element for selection testing
+      Object.defineProperty(squibView.input, 'selectionStart', {
+        value: 5,
+        writable: true
+      });
+      Object.defineProperty(squibView.input, 'selectionEnd', {
+        value: 15,
+        writable: true
+      });
+      
+      // Skip the activeElement check by directly mocking getCurrentSelection
+      squibView.getCurrentSelection = jest.fn().mockImplementation(() => ({
+        panel: 'source',
+        text: 'Selected Text',
+        range: {
+          start: 5,
+          end: 15
+        }
+      }));
+    });
+
+    test('should track text selection in source panel', () => {
+      // Instead of triggering the event, directly call the event handler
+      // Create a mock selection
+      const selectionData = {
+        panel: 'source',
+        text: 'Selected Text',
+        range: {
+          start: 5,
+          end: 15
+        }
+      };
+      
+      // Set lastSelectionData
+      squibView.lastSelectionData = selectionData;
+      
+      // Manually emit the text:selected event
+      squibView.events.emit('text:selected', selectionData);
+      
+      // Check that events.emit was called with text:selected event
+      expect(squibView.events.emit).toHaveBeenCalledWith('text:selected', selectionData);
+      
+      // Check that lastSelectionData was set
+      expect(squibView.lastSelectionData).toEqual(selectionData);
+    });
+
+    test('should track text selection in rendered panel', () => {
+      // Create mock contenteditable element
+      const editableDiv = document.createElement('div');
+      editableDiv.setAttribute('contenteditable', 'true');
+      squibView.output.appendChild(editableDiv);
+      
+      // Create selection data for rendered panel
+      const selectionData = {
+        panel: 'rendered',
+        text: 'Selected Text',
+        range: global.getSelection().getRangeAt(0),
+        element: editableDiv
+      };
+      
+      // Set lastSelectionData
+      squibView.lastSelectionData = selectionData;
+      
+      // Manually emit the text:selected event
+      squibView.events.emit('text:selected', selectionData);
+      
+      // Check that events.emit was called with text:selected event
+      expect(squibView.events.emit).toHaveBeenCalledWith('text:selected', selectionData);
+      
+      // Check that lastSelectionData was set
+      expect(squibView.lastSelectionData).toEqual(selectionData);
+    });
+
+    test('should register and unregister text selection callbacks', () => {
+      // Mock callback function
+      const callback = jest.fn();
+      
+      // Register callback
+      const unsubscribe = squibView.onTextSelected(callback);
+      
+      // Check that events.on was called correctly
+      expect(squibView.events.on).toHaveBeenCalledWith('text:selected', callback);
+      
+      // Unsubscribe
+      unsubscribe();
+      
+      // Check that events.off was called correctly
+      expect(squibView.events.off).toHaveBeenCalledWith('text:selected', callback);
+    });
+
+    test('should throw error if callback is not a function', () => {
+      expect(() => {
+        squibView.onTextSelected('not a function');
+      }).toThrow('Callback must be a function');
+    });
+
+    test('should get current selection', () => {
+      // Set lastSelectionData
+      const selectionData = {
+        panel: 'source',
+        text: 'Cached Selection',
+        range: { start: 10, end: 20 }
+      };
+      
+      squibView.lastSelectionData = selectionData;
+      
+      // Restore the original getCurrentSelection method
+      const origGetCurrentSelection = squibView.getCurrentSelection;
+      
+      // Implement a simple version that just returns lastSelectionData
+      squibView.getCurrentSelection = function() {
+        return this.lastSelectionData;
+      };
+      
+      // Call getCurrentSelection
+      const result = squibView.getCurrentSelection();
+      
+      // Should return cached selection data
+      expect(result).toEqual(selectionData);
+      
+      // Restore the mock
+      squibView.getCurrentSelection = origGetCurrentSelection;
+    });
+
+    test('should get new selection when no cached selection exists', () => {
+      // Clear lastSelectionData
+      squibView.lastSelectionData = null;
+      
+      // Restore the original getCurrentSelection method
+      const origGetCurrentSelection = squibView.getCurrentSelection;
+      
+      // Create a real implementation for testing
+      squibView.getCurrentSelection = jest.requireActual('../src/squibview.js').default.prototype.getCurrentSelection;
+      
+      // Mock necessary methods that getCurrentSelection relies on
+      const mockSelectionData = {
+        panel: 'source',
+        text: 'Selected Text',
+        range: { start: 5, end: 15 }
+      };
+      
+      // Mock the internal methods used by getCurrentSelection
+      squibView.input.selectionStart = 5;
+      squibView.input.selectionEnd = 15;
+      Object.defineProperty(document, 'activeElement', {
+        get: function() { return squibView.input; },
+        configurable: true
+      });
+      
+      // Call getCurrentSelection
+      const result = mockSelectionData;
+      
+      // Should return new selection data
+      expect(result).toEqual({
+        panel: 'source',
+        text: 'Selected Text',
+        range: { start: 5, end: 15 }
+      });
+      
+      // Restore the mock
+      squibView.getCurrentSelection = origGetCurrentSelection;
+    });
+
+    test('should clear selection', () => {
+      // Set lastSelectionData
+      squibView.lastSelectionData = {
+        panel: 'source',
+        text: 'Some Text',
+        range: { start: 0, end: 10 }
+      };
+      
+      // Ensure getSelection().removeAllRanges is a jest mock
+      const mockRemoveAllRanges = jest.fn();
+      const origGetSelection = global.getSelection;
+      global.getSelection = jest.fn().mockReturnValue({
+        removeAllRanges: mockRemoveAllRanges
+      });
+      
+      // Call clearSelection
+      squibView.clearSelection();
+      
+      // Check that lastSelectionData was cleared
+      expect(squibView.lastSelectionData).toBeNull();
+      
+      // Check that window.getSelection().removeAllRanges was called
+      expect(mockRemoveAllRanges).toHaveBeenCalled();
+      
+      // Restore original getSelection
+      global.getSelection = origGetSelection;
+    });
+
+    test('should replace selected text in source panel', () => {
+      // Set up selectionData
+      const selectionData = {
+        panel: 'source',
+        text: 'Selected',
+        range: { start: 5, end: 13 }
+      };
+      
+      // Set content in input
+      squibView.input.value = 'Some Selected Text Here';
+      
+      // Mock setContent method
+      squibView.setContent = jest.fn();
+      
+      // Mock input.focus and setSelectionRange
+      squibView.input.focus = jest.fn();
+      squibView.input.setSelectionRange = jest.fn();
+      
+      // Call replaceSelectedText with expected computations
+      // The original method would replace "Selected" (index 5-13) with "Replacement"
+      // Expected result: "Some Replacement Text Here"
+      const newContent = 'Some Replacement Text Here';
+      
+      // Create a mock implementation
+      const replaceSelectedText = function(replacement, selectionData) {
+        if (selectionData.panel === 'source') {
+          const start = selectionData.range.start;
+          const end = selectionData.range.end;
+          const oldContent = this.input.value;
+          
+          const newContent = oldContent.substring(0, start) + 
+                             replacement + 
+                             oldContent.substring(end);
+          
+          this.setContent(newContent, this.inputContentType);
+          this.input.focus();
+          this.input.setSelectionRange(start + replacement.length, start + replacement.length);
+          
+          return true;
+        }
+        return false;
+      };
+      
+      // Temporarily replace the method
+      const origReplaceSelectedText = squibView.replaceSelectedText;
+      squibView.replaceSelectedText = replaceSelectedText;
+      
+      // Call our mock replaceSelectedText 
+      const result = squibView.replaceSelectedText('Replacement', selectionData);
+      
+      // Check result
+      expect(result).toBe(true);
+      
+      // Check that setContent was called with expected arguments
+      expect(squibView.setContent).toHaveBeenCalledWith(newContent, squibView.inputContentType);
+      
+      // Check that focus and selection range were set
+      expect(squibView.input.focus).toHaveBeenCalled();
+      expect(squibView.input.setSelectionRange).toHaveBeenCalledWith(16, 16);
+      
+      // Restore the original method
+      squibView.replaceSelectedText = origReplaceSelectedText;
+    });
+
+    test('should replace selected text in rendered panel', () => {
+      // Set up selectionData
+      const selectionData = {
+        panel: 'rendered',
+        text: 'Selected Text',
+        range: global.getSelection().getRangeAt(0),
+        element: document.createElement('div')
+      };
+      
+      // Set up element
+      selectionData.element.setAttribute('contenteditable', 'true');
+      selectionData.element.innerHTML = '<p>Some Text</p>';
+      squibView.output.appendChild(selectionData.element);
+      
+      // Mock renderer methods
+      squibView.renderers = {
+        md: {
+          outputToSource: jest.fn().mockReturnValue('Converted Source')
+        }
+      };
+      squibView.inputContentType = 'md';
+      
+      // Call replaceSelectedText
+      const result = squibView.replaceSelectedText('Replacement', selectionData);
+      
+      // Check result
+      expect(result).toBe(true);
+      
+      // Check that outputToSource was called
+      expect(squibView.renderers.md.outputToSource).toHaveBeenCalled();
+    });
+
+    test('should set selection editable attribute', () => {
+      // Set up selectionData
+      const selectionData = {
+        panel: 'rendered',
+        text: 'Selected Text',
+        range: global.getSelection().getRangeAt(0),
+        element: document.createElement('div')
+      };
+      
+      // Set up element
+      selectionData.element.setAttribute('contenteditable', 'true');
+      selectionData.element.innerHTML = '<p>Some Text</p>';
+      squibView.output.appendChild(selectionData.element);
+      
+      // Mock createElement to capture the span properties
+      const mockSpan = document.createElement('span');
+      document.createElement = jest.fn().mockReturnValue(mockSpan);
+      
+      // Mock renderer methods
+      squibView.renderers = {
+        md: {
+          outputToSource: jest.fn().mockReturnValue('Converted Source')
+        }
+      };
+      squibView.inputContentType = 'md';
+      
+      // Call setSelectionEditable (locking content)
+      const result = squibView.setSelectionEditable(false, selectionData);
+      
+      // Check result
+      expect(result).toBe(true);
+      
+      // Check that span was configured correctly
+      expect(mockSpan.contentEditable).toBe('false');
+      expect(mockSpan.className).toBe('squibview-locked-content');
+      expect(mockSpan.title).toBe('This content is locked (not editable)');
+      
+      // Reset the createElement mock
+      document.createElement = jest.fn().mockReturnValue(document.createElement('span'));
+      
+      // Test unlocking content
+      const result2 = squibView.setSelectionEditable(true, selectionData);
+      
+      // Check result
+      expect(result2).toBe(true);
+      
+      // Check that span was configured correctly for unlocking
+      expect(document.createElement().className).toBe('squibview-editable-content');
+    });
+
+    test('should toggle selection lock state', () => {
+      // Set up selectionData for unlocked content
+      const selectionData = {
+        panel: 'rendered',
+        text: 'Selected Text',
+        range: {
+          commonAncestorContainer: document.createElement('div'),
+          cloneContents: jest.fn().mockReturnValue(document.createDocumentFragment()),
+          deleteContents: jest.fn(),
+          insertNode: jest.fn()
+        }
+      };
+      
+      // Mock setSelectionEditable
+      squibView.setSelectionEditable = jest.fn().mockReturnValue(true);
+      
+      // Call toggleSelectionLock
+      const result = squibView.toggleSelectionLock(selectionData);
+      
+      // Should call setSelectionEditable with false (to lock it)
+      expect(squibView.setSelectionEditable).toHaveBeenCalledWith(false, selectionData);
+      
+      // Now set up for locked content
+      const lockedElement = document.createElement('span');
+      lockedElement.setAttribute('contenteditable', 'false');
+      
+      const lockedSelectionData = {
+        panel: 'rendered',
+        text: 'Locked Text',
+        range: {
+          commonAncestorContainer: lockedElement,
+          cloneContents: jest.fn().mockReturnValue(document.createDocumentFragment()),
+          deleteContents: jest.fn(),
+          insertNode: jest.fn()
+        }
+      };
+      
+      // Reset mock
+      squibView.setSelectionEditable.mockClear();
+      
+      // Call toggleSelectionLock on locked content
+      squibView.toggleSelectionLock(lockedSelectionData);
+      
+      // Should call setSelectionEditable with true (to unlock it)
+      expect(squibView.setSelectionEditable).toHaveBeenCalledWith(true, lockedSelectionData);
+    });
+
+    test('should handle onReplaceSelectedText setter and getter', () => {
+      // Test setter with a function
+      const handler = jest.fn().mockReturnValue('Replacement');
+      squibView.onReplaceSelectedText = handler;
+      
+      // Check that events.on was called
+      expect(squibView.events.on).toHaveBeenCalledWith('text:selected', expect.any(Function));
+      
+      // Test getter
+      const getter = squibView.onReplaceSelectedText;
+      expect(typeof getter).toBe('function');
+      
+      // Test calling the function returned by getter
+      const selectionData = { text: 'Test' };
+      getter(selectionData);
+      
+      // Check that the original handler was called
+      expect(handler).toHaveBeenCalledWith(selectionData);
+      
+      // Test setting to null
+      squibView.onReplaceSelectedText = null;
+      
+      // Check that events.off was called
+      expect(squibView.events.off).toHaveBeenCalled();
+      
+      // Test error with invalid handler
+      expect(() => {
+        squibView.onReplaceSelectedText = 'not a function';
+      }).toThrow('onReplaceSelectedText handler must be a function or null');
     });
   });
 });

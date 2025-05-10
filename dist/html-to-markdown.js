@@ -10,7 +10,7 @@ function _defineProperties(e, r) {
   }
 }
 function _createClass(e, r, t) {
-  return _defineProperties(e.prototype, r), Object.defineProperty(e, "prototype", {
+  return r && _defineProperties(e.prototype, r), Object.defineProperty(e, "prototype", {
     writable: false
   }), e;
 }
@@ -46,7 +46,7 @@ function _objectSpread2(e) {
 function _toPrimitive(t, r) {
   if ("object" != typeof t || !t) return t;
   var e = t[Symbol.toPrimitive];
-  if (undefined !== e) {
+  if (void 0 !== e) {
     var i = e.call(t, r);
     if ("object" != typeof i) return i;
     throw new TypeError("@@toPrimitive must return a primitive value.");

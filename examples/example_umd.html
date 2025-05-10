@@ -1,24 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
-<!--
-Visual Markdown Viewer with Graphics Support
-Author: @deftio
-
-Uses Markdown-it for parsing Markdown content, Highlight.js for syntax highlighting, and Mermaid for diagrams.
-
-Allows live editing of Markdown content with a split view of the rendered HTML output.
-Also supports Mermaid diagrams and SVG content within fenced code blocks.
--->
-
 <head>
   <meta charset="UTF-8" />
-  <title>SquibView Editor with Live Render Support</title>
+  <title>SquibView UMD Example</title>  
   <link rel="icon"
-    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
-
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/default.min.css">
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14a14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0a7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
 
   <link rel="stylesheet" href="../dist/squibview.css">
+
+  <!-- External libraries for the lean UMD build -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -39,38 +34,17 @@ Also supports Mermaid diagrams and SVG content within fenced code blocks.
       /* border : 1px solid lightgrey; */
       border-radius: 5px;
     }
-
-    .error-icon {
-      display: none;
-    }
-    text.error-text {
-      display: none;
-    }
   </style>
 </head>
 
 <body>
-
-  <!-- Libraries -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
-  <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+  <!-- SquibView UMD script, depends on the libraries loaded above -->
   <script src="../dist/squibview.umd.min.js"></script>
-  <!-- 
-  <div id="testControls">
-    <button onclick="toggleTitle()" style="margin-right: 10px; padding: 8px 16px; border-radius: 4px; border: 1px solid #2a57d3; background: white; color: #2a57d3; cursor: pointer;">Toggle Title</button>
-    <button onclick="toggleControls()" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #2a57d3; background: white; color: #2a57d3; cursor: pointer;">Toggle Controls</button>
-    <button onclick="toggleView()" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #2a57d3; background: white; color: #2a57d3; cursor: pointer;">Toggle View</button>
-    <hr>
-  </div>
--->
+  
   <div id="editorContainer"></div>
 
   <script>
-   
-
     // This is the main code that creates the editor and sets the content
-    // it has nothing to do with the GraphicalMD editor
     const editor = new SquibView('#editorContainer', {
       titleShow: true,
       titleContent: "SquibView Editor (UMD Example) " + SquibView.version.version
@@ -86,7 +60,7 @@ Also supports Mermaid diagrams and SVG content within fenced code blocks.
       }
     })("./sample-content.md");
 
-    // external test functions for playing around with the editor
+    // External test functions for playing around with the editor
     function toggleTitle() {
       const currentState = editor.title.style.display !== 'none';
       editor.titleShow(!currentState);
@@ -96,9 +70,6 @@ Also supports Mermaid diagrams and SVG content within fenced code blocks.
       const currentState = editor.controls.style.display !== 'none';
       editor.controlsShow(!currentState);
     }
-
-
   </script>
 </body>
-
 </html>

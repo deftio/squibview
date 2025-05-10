@@ -2,11 +2,11 @@ import React from 'react';
 import SquibView from './squibview.js';
 
 function _assertThisInitialized(e) {
-  if (undefined === e) throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  if (void 0 === e) throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
   return e;
 }
 function _callSuper(t, o, e) {
-  return o = _getPrototypeOf(o), _possibleConstructorReturn(t, _isNativeReflectConstruct() ? Reflect.construct(o, e, _getPrototypeOf(t).constructor) : o.apply(t, e));
+  return o = _getPrototypeOf(o), _possibleConstructorReturn(t, _isNativeReflectConstruct() ? Reflect.construct(o, e || [], _getPrototypeOf(t).constructor) : o.apply(t, e));
 }
 function _classCallCheck(a, n) {
   if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function");
@@ -18,7 +18,7 @@ function _defineProperties(e, r) {
   }
 }
 function _createClass(e, r, t) {
-  return _defineProperties(e.prototype, r), Object.defineProperty(e, "prototype", {
+  return r && _defineProperties(e.prototype, r), Object.defineProperty(e, "prototype", {
     writable: false
   }), e;
 }
@@ -98,7 +98,7 @@ function _objectWithoutPropertiesLoose(r, e) {
 }
 function _possibleConstructorReturn(t, e) {
   if (e && ("object" == typeof e || "function" == typeof e)) return e;
-  if (undefined !== e) throw new TypeError("Derived constructors may only return object or undefined");
+  if (void 0 !== e) throw new TypeError("Derived constructors may only return object or undefined");
   return _assertThisInitialized(t);
 }
 function _setPrototypeOf(t, e) {
@@ -109,7 +109,7 @@ function _setPrototypeOf(t, e) {
 function _toPrimitive(t, r) {
   if ("object" != typeof t || !t) return t;
   var e = t[Symbol.toPrimitive];
-  if (undefined !== e) {
+  if (void 0 !== e) {
     var i = e.call(t, r);
     if ("object" != typeof i) return i;
     throw new TypeError("@@toPrimitive must return a primitive value.");
