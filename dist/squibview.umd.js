@@ -2601,7 +2601,7 @@
   var DiffMatchPatch = /*@__PURE__*/getDefaultExportFromCjs(diffMatchPatchExports);
 
   // src/version.js
-  var VERSION = "0.0.31b";
+  var VERSION = "0.0.32";
   var REPO_URL = "https://github.com/deftio/squibview";
 
   // Fix for development mode
