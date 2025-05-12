@@ -1,5 +1,5 @@
-import React from 'react';
-import SquibView from './squibview.js';
+import React from 'https://esm.sh/react@18.2.0';
+import SquibView from '../dist/squibview.esm.js';
 
 function _assertThisInitialized(e) {
   if (void 0 === e) throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -131,10 +131,9 @@ var SquibViewReact = /*#__PURE__*/function (_React$Component) {
     var _this;
     _classCallCheck(this, SquibViewReact);
     _this = _callSuper(this, SquibViewReact, [props]);
-    _this.containerRef = /*#__PURE__*/React.createRef();
+    _this.containerRef = React.createRef();
     _this.state = {
-      editor: null,
-      content: props.initialContent || ''
+      editor: null
     };
     return _this;
   }
@@ -154,25 +153,6 @@ var SquibViewReact = /*#__PURE__*/function (_React$Component) {
           titleContent: this.props.titleContent
         });
 
-        // Override methods to communicate with React
-        var originalSetContent = instance.setContent.bind(instance);
-        instance.setContent = function (newContent, type, saveRevision) {
-          originalSetContent(newContent, type, saveRevision);
-          _this2.setState({
-            content: newContent
-          });
-          if (_this2.props.onChange) {
-            _this2.props.onChange(newContent, type);
-          }
-        };
-        var originalSetView = instance.setView.bind(instance);
-        instance.setView = function (view) {
-          originalSetView(view);
-          if (_this2.props.onViewChange) {
-            _this2.props.onViewChange(view);
-          }
-        };
-
         // Listen for editor events and re-emit them as props callbacks
         instance.events.on('content:rendered', function (contentType) {
           if (_this2.props.onContentRendered) {
@@ -189,6 +169,13 @@ var SquibViewReact = /*#__PURE__*/function (_React$Component) {
             _this2.props.onUndoRedo('redo', content, contentType);
           }
         });
+
+        // Listen for content changes from the editor
+        instance.events.on('content:changed', function (newContent, type) {
+          if (_this2.props.onChange) {
+            _this2.props.onChange(newContent, type);
+          }
+        });
         this.setState({
           editor: instance
         });
@@ -197,37 +184,40 @@ var SquibViewReact = /*#__PURE__*/function (_React$Component) {
   }, {
     key: "componentDidUpdate",
     value: function componentDidUpdate(prevProps) {
-      // Handle content updates from parent
-      if (this.state.editor && this.props.initialContent !== prevProps.initialContent) {
-        this.state.editor.setContent(this.props.initialContent, this.props.inputContentType || this.state.editor.inputContentType, false);
-        this.setState({
-          content: this.props.initialContent
-        });
+      var editor = this.state.editor;
+      if (!editor) return;
+
+      // Handle content updates from parent only if they're different from current editor content
+      if (this.props.initialContent !== prevProps.initialContent) {
+        var currentContent = editor.getContent();
+        if (currentContent !== this.props.initialContent) {
+          editor.setContent(this.props.initialContent, this.props.inputContentType || editor.inputContentType, false);
+        }
       }
 
       // Handle content type changes
-      if (this.state.editor && this.props.inputContentType !== prevProps.inputContentType) {
-        this.state.editor.setContent(this.state.editor.getContent(), this.props.inputContentType, false);
+      if (this.props.inputContentType !== prevProps.inputContentType) {
+        editor.setContent(editor.getContent(), this.props.inputContentType, false);
       }
 
       // Handle view changes
-      if (this.state.editor && this.props.initialView !== prevProps.initialView) {
-        this.state.editor.setView(this.props.initialView);
+      if (this.props.initialView !== prevProps.initialView) {
+        editor.setView(this.props.initialView);
       }
 
       // Handle controls visibility
-      if (this.state.editor && this.props.showControls !== prevProps.showControls) {
-        this.state.editor.controlsShow(this.props.showControls);
+      if (this.props.showControls !== prevProps.showControls) {
+        editor.controlsShow(this.props.showControls);
       }
 
       // Handle title visibility
-      if (this.state.editor && this.props.titleShow !== prevProps.titleShow) {
-        this.state.editor.titleShow(this.props.titleShow);
+      if (this.props.titleShow !== prevProps.titleShow) {
+        editor.titleShow(this.props.titleShow);
       }
 
       // Handle title content
-      if (this.state.editor && this.props.titleContent !== prevProps.titleContent) {
-        this.state.editor.titleSetContent(this.props.titleContent);
+      if (this.props.titleContent !== prevProps.titleContent) {
+        editor.titleSetContent(this.props.titleContent);
       }
     }
   }, {
@@ -244,7 +234,7 @@ var SquibViewReact = /*#__PURE__*/function (_React$Component) {
       var _this$props = this.props,
         className = _this$props.className,
         otherProps = _objectWithoutProperties(_this$props, _excluded);
-      return /*#__PURE__*/React.createElement('div', _objectSpread2({
+      return React.createElement('div', _objectSpread2({
         ref: this.containerRef,
         className: "squibview-react-container ".concat(className || '')
       }, otherProps));

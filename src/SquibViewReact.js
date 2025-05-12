@@ -1,5 +1,5 @@
-import React from 'react';
-import SquibView from './squibview.js';
+import React from 'https://esm.sh/react@18.2.0';
+import SquibView from '../dist/squibview.esm.js';
 
 /**
  * React component wrapper for SquibView
@@ -9,8 +9,7 @@ class SquibViewReact extends React.Component {
     super(props);
     this.containerRef = React.createRef();
     this.state = {
-      editor: null,
-      content: props.initialContent || ''
+      editor: null
     };
   }
   
@@ -25,24 +24,6 @@ class SquibViewReact extends React.Component {
         titleShow: this.props.titleShow,
         titleContent: this.props.titleContent
       });
-      
-      // Override methods to communicate with React
-      const originalSetContent = instance.setContent.bind(instance);
-      instance.setContent = (newContent, type, saveRevision) => {
-        originalSetContent(newContent, type, saveRevision);
-        this.setState({ content: newContent });
-        if (this.props.onChange) {
-          this.props.onChange(newContent, type);
-        }
-      };
-      
-      const originalSetView = instance.setView.bind(instance);
-      instance.setView = (view) => {
-        originalSetView(view);
-        if (this.props.onViewChange) {
-          this.props.onViewChange(view);
-        }
-      };
       
       // Listen for editor events and re-emit them as props callbacks
       instance.events.on('content:rendered', (contentType) => {
@@ -62,49 +43,61 @@ class SquibViewReact extends React.Component {
           this.props.onUndoRedo('redo', content, contentType);
         }
       });
+
+      // Listen for content changes from the editor
+      instance.events.on('content:changed', (newContent, type) => {
+        if (this.props.onChange) {
+          this.props.onChange(newContent, type);
+        }
+      });
       
       this.setState({ editor: instance });
     }
   }
   
   componentDidUpdate(prevProps) {
-    // Handle content updates from parent
-    if (this.state.editor && this.props.initialContent !== prevProps.initialContent) {
-      this.state.editor.setContent(
-        this.props.initialContent, 
-        this.props.inputContentType || this.state.editor.inputContentType, 
-        false
-      );
-      this.setState({ content: this.props.initialContent });
+    const { editor } = this.state;
+    if (!editor) return;
+
+    // Handle content updates from parent only if they're different from current editor content
+    if (this.props.initialContent !== prevProps.initialContent) {
+      const currentContent = editor.getContent();
+      if (currentContent !== this.props.initialContent) {
+        editor.setContent(
+          this.props.initialContent, 
+          this.props.inputContentType || editor.inputContentType, 
+          false
+        );
+      }
     }
     
     // Handle content type changes
-    if (this.state.editor && this.props.inputContentType !== prevProps.inputContentType) {
-      this.state.editor.setContent(
-        this.state.editor.getContent(), 
+    if (this.props.inputContentType !== prevProps.inputContentType) {
+      editor.setContent(
+        editor.getContent(), 
         this.props.inputContentType,
         false
       );
     }
     
     // Handle view changes
-    if (this.state.editor && this.props.initialView !== prevProps.initialView) {
-      this.state.editor.setView(this.props.initialView);
+    if (this.props.initialView !== prevProps.initialView) {
+      editor.setView(this.props.initialView);
     }
     
     // Handle controls visibility
-    if (this.state.editor && this.props.showControls !== prevProps.showControls) {
-      this.state.editor.controlsShow(this.props.showControls);
+    if (this.props.showControls !== prevProps.showControls) {
+      editor.controlsShow(this.props.showControls);
     }
     
     // Handle title visibility
-    if (this.state.editor && this.props.titleShow !== prevProps.titleShow) {
-      this.state.editor.titleShow(this.props.titleShow);
+    if (this.props.titleShow !== prevProps.titleShow) {
+      editor.titleShow(this.props.titleShow);
     }
     
     // Handle title content
-    if (this.state.editor && this.props.titleContent !== prevProps.titleContent) {
-      this.state.editor.titleSetContent(this.props.titleContent);
+    if (this.props.titleContent !== prevProps.titleContent) {
+      editor.titleSetContent(this.props.titleContent);
     }
   }
   

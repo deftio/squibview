@@ -180,7 +180,7 @@ const esmStandaloneConfig = {
 ------------------------------------------------------------------ */
 const reactConfig = {
   input: 'src/SquibViewReact.js',
-  external: ['react', './squibview.js'], // or 'react', 'squibview'
+  external: ['https://esm.sh/react@18.2.0', '../dist/squibview.esm.js'], // Update SquibView path
   output: [
     {
       file: 'dist/squibview-react.js',
@@ -195,7 +195,12 @@ const reactConfig = {
     },
   ],
   plugins: [
-    resolve({ extensions }),
+    resolve({ 
+      extensions,
+      alias: {
+        'react': 'https://esm.sh/react@18.2.0'
+      }
+    }),
     commonjs(),
     babel({
       babelHelpers: 'bundled',
@@ -273,18 +278,8 @@ const htmlToMarkdownConfig = {
    Finally, export an array of configuration objects so Rollup 
    will build them all in one go.
 */
-export default [
-  // 1) UMD (regular)
-  umdConfig,
-  // 2) UMD (standalone)
-  umdStandaloneConfig,
-  // 3) ESM (regular) & ESM (standalone)
-  esmRegularConfig,
-  esmStandaloneConfig,
-  // 4) React
-  reactConfig,
-  // 5) Vue
-  vueConfig,
-  // 6) HTML->Markdown
-  htmlToMarkdownConfig,
-];
+export default process.env.BUILD === 'react' ? reactConfig :
+       process.env.BUILD === 'umd' ? umdConfig :
+       process.env.BUILD === 'esm' ? esmRegularConfig :
+       process.env.BUILD === 'standalone' ? umdStandaloneConfig :
+       [umdConfig, umdStandaloneConfig, esmRegularConfig, esmStandaloneConfig, reactConfig, vueConfig, htmlToMarkdownConfig];
