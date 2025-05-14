@@ -15,9 +15,7 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 1% 4%;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
+            max-width: 800px;
         }
 
         h1 {
@@ -27,36 +25,35 @@
         .examples {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 12px;
         }
 
         .example {
-            border: 1px solid #ccc;
-            padding: 20px;
-            border-radius: 5px;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
         }
 
         .example h2 {
-            margin-top: 0;
+            margin: 0;
+            font-size: 1.2em;
             color: #2a57d3;
+            display: inline;
         }
 
         .example p {
-            margin-bottom: 20px;
+            margin: 4px 0;
+            color: #666;
+            font-size: 0.9em;
         }
 
         .example a {
-            display: inline-block;
-            padding: 8px 16px;
-            background: #2a57d3;
-            color: white;
+            color: #2a57d3;
             text-decoration: none;
-            border-radius: 4px;
-            transition: background 0.3s;
+            margin-left: 8px;
         }
 
         .example a:hover {
-            background: #1e3f9e;
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -65,21 +62,45 @@
     <h1>SquibView Examples</h1>
     <div class="examples">
         <div class="example">
+            <h2>Basic ESM Example</h2>
+            <a href="example_ESM.html">View</a>
+            <p>A simple example using SquibView as an ES module.</p>
+        </div>
+
+        <div class="example">
+            <h2>Basic UMD Example</h2>
+            <a href="example_UMD.html">View</a>
+            <p>A simple example using SquibView as a UMD module.</p>
+        </div>
+
+        <div class="example">
             <h2>Standalone UMD Example</h2>
+            <a href="standalone_umd.html">View</a>
             <p>A simple example using the standalone UMD build of SquibView, loaded via script tags.</p>
-            <a href="example_standalone_umd.html">View Example</a>
         </div>
 
         <div class="example">
             <h2>Standalone ESM Example</h2>
+            <a href="standalone_esm.html">View</a>
             <p>A simple example using the standalone ESM build of SquibView, loaded via ES modules.</p>
-            <a href="standalone_esm.html">View Example</a>
+        </div>
+
+        <div class="example">
+            <h2>CSV Example</h2>
+            <a href="example_csv.html">View</a>
+            <p>An example demonstrating CSV table rendering with SquibView. Supports comma, space, tab, and semicolon separators.</p>
+        </div>
+
+        <div class="example">
+            <h2>Plugin System Example</h2>
+            <a href="plugin_system.html">View</a>
+            <p>An example demonstrating how to extend SquibView with custom renderers and operations using the plugin architecture.</p>
         </div>
 
         <div class="example">
             <h2>React Example</h2>
+            <a href="example_react.html">View</a>
             <p>A more complex example using the React wrapper for SquibView, demonstrating state management and custom controls.</p>
-            <a href="example_react.html">View Example</a>
         </div>
     </div>
 </body>
