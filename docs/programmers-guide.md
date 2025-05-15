@@ -1,40 +1,18 @@
 # SquibView Programmer's Guide
 
+This guide provides detailed documentation for developers using SquibView in their applications.
+
 ## Table of Contents
-1. [Introduction](#introduction)
-2. [Installation](#installation)
-3. [Getting Started](#getting-started)
-4. [Core Concepts](#core-concepts)
-5. [API Reference](#api-reference)
-   - [Constructor](#constructor)
-   - [Content Management](#content-management)
-   - [View Management](#view-management)
-   - [Selection API](#selection-api)
-   - [Clipboard Operations](#clipboard-operations)
-   - [Revisions and History](#revisions-and-history)
-   - [Renderers and Content Types](#renderers-and-content-types)
-   - [Event System](#event-system)
-   - [Title and Controls](#title-and-controls)
-6. [Advanced Usage](#advanced-usage)
-   - [Custom Renderers](#custom-renderers)
-   - [Plugins](#plugins)
-   - [Bidirectional Editing](#bidirectional-editing)
-7. [Examples](#examples)
-8. [FAQ](#faq)
-
-## Introduction
-
-SquibView is a lightweight, flexible live editor and renderer for various content types including Markdown, HTML, CSV, and RevealJS presentations. It supports bidirectional editing, syntax highlighting, diagrams, and a rich plugin system.
-
-Key features include:
-- Split view editing (source and rendered panels)
-- Automatic rendering of content as you type
-- Support for multiple content types (Markdown, HTML, CSV, RevealJS)
-- Bidirectional editing (changes in rendered view are reflected in source)
-- Copy support for formatted HTML and images
-- Revision history with undo/redo functionality
-- Custom renderer and plugin system
-- Text selection API for manipulating selected content
+- [Installation](#installation)
+- [Build Formats](#build-formats)
+- [Basic Usage](#basic-usage)
+- [Configuration Options](#configuration-options)
+- [Content Types](#content-types)
+- [API Reference](#api-reference)
+- [React Integration](#react-integration)
+- [Plugin System](#plugin-system)
+- [Event System](#event-system)
+- [Examples](#examples)
 
 ## Installation
 
@@ -43,571 +21,354 @@ Key features include:
 npm install squibview
 ```
 
-### CDN (UMD build)
+### CDN
 ```html
-<!-- CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/squibview/dist/squibview.min.css">
-
-<!-- JavaScript dependencies -->
-<script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/highlight.js/lib/core.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/papaparse/papaparse.min.js"></script>
-
-<!-- SquibView -->
-<script src="https://cdn.jsdelivr.net/npm/squibview/dist/squibview.umd.min.js"></script>
+<!-- Latest version -->
+<script src="https://unpkg.com/squibview/dist/squibview.standalone.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/squibview/dist/squibview.css">
 ```
 
-### ES Module
+## Build Formats
+
+SquibView is available in three formats:
+
+### ESM (ES Modules)
 ```html
-<link rel="stylesheet" href="path/to/squibview.min.css">
+<!-- Required dependencies -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+
+<!-- SquibView -->
+<link rel="stylesheet" href="../dist/squibview.css">
 <script type="module">
-  import SquibView from 'path/to/squibview.esm.min.js';
-  
+  import SquibView from '../dist/squibview.esm.min.js';
   const editor = new SquibView('#editor');
 </script>
 ```
 
-## Getting Started
-
-### Basic Usage
-
+### UMD (Universal Module Definition)
 ```html
-<div id="editor"></div>
+<!-- Required dependencies -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+<script src="https://unpkg.com/tiny-emitter@2.1.0/dist/tinyemitter.min.js"></script>
+<script src="https://unpkg.com/diff-match-patch@1.0.5/index.js"></script>
+<script src="https://unpkg.com/turndown@7.1.2/dist/turndown.js"></script>
 
+<!-- SquibView -->
+<link rel="stylesheet" href="../dist/squibview.css">
+<script src="../dist/squibview.umd.min.js"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const editor = new SquibView('#editor', {
-      initialContent: '# Hello, world!\n\nThis is a **Markdown** editor.',
-      inputContentType: 'md',
-      initialView: 'split'
-    });
-  });
+  const editor = new SquibView('#editor');
 </script>
 ```
 
-### Configuration Options
+### Standalone (All Dependencies Bundled)
+```html
+<!-- SquibView -->
+<link rel="stylesheet" href="../dist/squibview.css">
+<script src="../dist/squibview.standalone.min.js"></script>
+<script>
+  const editor = new SquibView('#editor');
+</script>
+```
 
+## Basic Usage
+
+### Creating an Instance
 ```javascript
-const editor = new SquibView('#editor', {
-  // Content
-  initialContent: '# My Document',    // Initial content to load
-  inputContentType: 'md',             // 'md', 'html', 'reveal', 'csv', 'tsv', 'semisv', 'ssv'
-  
-  // UI
-  showControls: true,                 // Show control buttons
-  titleShow: false,                   // Show title section
-  titleContent: '',                   // Content for title section
-  initialView: 'split',               // 'src', 'html', or 'split'
-  baseClass: 'squibview',             // Base CSS class
-  
-  // Text selection
-  onReplaceSelectedText: function(selectionData) {
-    // Process selection and optionally return replacement text
-    if (selectionData.text === 'hello') {
-      return 'hello world';  // This will replace the selected text
-    }
-    // Returning nothing means no replacement
+const editor = new SquibView('#editorContainer', {
+  // Configuration options
+});
+```
+
+### Setting Content
+```javascript
+// Set Markdown content
+editor.setContent('# Hello World\n\nThis is a test.', 'md');
+
+// Set HTML content
+editor.setContent('<h1>Hello World</h1><p>This is a test.</p>', 'html');
+
+// Set CSV content
+editor.setContent('name,age\nJohn,30\nJane,25', 'csv');
+```
+
+### Changing Views
+```javascript
+// Switch to source view
+editor.setView('src');
+
+// Switch to rendered view
+editor.setView('html');
+
+// Switch to split view
+editor.setView('split');
+```
+
+## Configuration Options
+
+### Basic Options
+```javascript
+const editor = new SquibView('#editorContainer', {
+  initialContent: '',           // Initial content to load
+  inputContentType: 'md',       // Type of content ('md', 'html', 'reveal', 'csv', 'tsv')
+  showControls: true,          // Whether to show control buttons
+  titleShow: false,            // Whether to show the title section
+  titleContent: '',            // Content for the title section
+  initialView: 'split',        // Initial view mode ('src', 'html', 'split')
+  baseClass: 'squibview',      // Base CSS class for styling
+});
+```
+
+### Image Handling
+```javascript
+const editor = new SquibView('#editorContainer', {
+  preserveImageTags: true,     // Whether to keep original image URLs in source view
+                               // When true: images remain as <img> tags with original URLs
+                               // When false: images are converted to data URLs
+                               // Note: Images are always converted to data URLs when copying
+});
+```
+
+### Text Selection
+```javascript
+const editor = new SquibView('#editorContainer', {
+  onReplaceSelectedText: (selectionData) => {
+    // Handle text selection
+    return 'replacement text';  // Return string to replace selection
   }
 });
 ```
 
-## Core Concepts
+## Content Types
 
-### View Modes
+### Markdown (md)
+- Supports GitHub-flavored Markdown
+- Renders Mermaid diagrams
+- Syntax highlighting for code blocks
+- Table formatting
+- Inline SVG graphics
 
-SquibView provides three view modes:
-- **Source**: Shows only the raw source editor
-- **Rendered**: Shows only the rendered output
-- **Split**: Shows both source and rendered views side by side
+### HTML (html)
+- Renders complete HTML pages
+- Supports embedded iframes
+- Preserves HTML structure
 
-```javascript
-// Change view programmatically
-editor.setView('src');    // Source only
-editor.setView('html');   // Rendered only
-editor.setView('split');  // Both
-```
+### RevealJS (reveal)
+- Converts markdown to RevealJS slides
+- Splits content on '---' delimiters
+- Supports Mermaid diagrams in slides
 
-### Content Types
-
-SquibView supports multiple content types:
-- **md**: Markdown
-- **html**: HTML
-- **reveal**: RevealJS presentation slides
-- **csv**: Comma-separated values
-- **tsv**: Tab-separated values
-- **semisv**: Semicolon-separated values
-- **ssv**: Space-separated values
-
-```javascript
-// Change content type and content
-editor.setContent('# New content', 'md');
-```
+### CSV/TSV (csv, tsv)
+- Renders tabular data
+- Converts to markdown tables
+- Supports different delimiters (comma, tab, semicolon, space)
 
 ## API Reference
 
-### Constructor
-
+### Core Methods
 ```javascript
-/**
- * Creates a new SquibView instance
- *
- * @param {HTMLElement|string} element - DOM element or selector where editor will be mounted
- * @param {Object} options - Configuration options
- */
-const editor = new SquibView('#editor', options);
+// Content Management
+editor.setContent(content, contentType)  // Set content
+editor.getContent()                      // Get current content
+editor.getMarkdownSource()               // Get markdown source
+editor.getHTMLSource()                   // Get HTML source
+
+// View Management
+editor.setView(view)                     // Set view mode
+editor.toggleView()                      // Toggle between views
+editor.controlsShow(show)                // Show/hide controls
+editor.titleShow(show)                   // Show/hide title
+editor.titleSetContent(content)          // Set title content
+editor.titleGetContent()                 // Get title content
+
+// Copy Operations
+editor.copySource()                      // Copy source content
+editor.copyHTML()                        // Copy rendered HTML
+
+// Revision History
+editor.revisionUndo()                    // Undo last change
+editor.revisionRedo()                    // Redo last change
+editor.revisionSet(index)                // Set to specific revision
+editor.revisionNumRevsions()             // Get number of revisions
+editor.revisionGetCurrentIndex()         // Get current revision index
 ```
 
-### Content Management
-
+### Text Selection API
 ```javascript
-// Get current content
-const content = editor.getContent();
-
-// Get HTML source from rendered panel
-const html = editor.getHTMLSource();
-
-// Get Markdown source
-const md = editor.getMarkdownSource();
-
-// Set new content
-editor.setContent('# New content', 'md', true); // content, contentType, saveRevision
-```
-
-### View Management
-
-```javascript
-// Set view mode
-editor.setView('src');    // Source only
-editor.setView('html');   // Rendered only
-editor.setView('split');  // Both
-
-// Toggle between view modes
-editor.toggleView();  // Cycles: src -> split -> html -> src
-```
-
-### Selection API
-
-```javascript
-// Register a selection callback
-const unsubscribe = editor.onTextSelected(selectionData => {
-  console.log(`Selected: ${selectionData.text} in ${selectionData.panel} panel`);
-  
-  // Example: Process selection
-  if (selectionData.text.includes('TODO')) {
-    // Do something with the TODO item
-  }
-});
-
-// Later, to unsubscribe
-unsubscribe();
-
 // Get current selection
 const selection = editor.getCurrentSelection();
-if (selection) {
-  console.log(`Current selection: ${selection.text}`);
-}
 
 // Replace selected text
-editor.replaceSelectedText('New text', selection);
+editor.replaceSelectedText('new text', selection);
 
-// Lock selected text (make non-editable)
-editor.setSelectionEditable(false, selection);
-
-// Unlock selected text (make editable)
+// Make selection editable/non-editable
 editor.setSelectionEditable(true, selection);
 
-// Smart toggle between locked and unlocked states
-const newState = editor.toggleSelectionLock(selection);
-console.log(newState ? "Now editable" : "Now locked");
+// Toggle selection lock
+editor.toggleSelectionLock(selection);
 
-// Clear selection
-editor.clearSelection();
+// Register selection callback
+const unsubscribe = editor.onTextSelected((selectionData) => {
+  console.log('Selected:', selectionData.text);
+});
+```
 
-// Set a handler to process selections and optionally replace them
-editor.onReplaceSelectedText = function(selectionData) {
-  // Process selection
-  if (selectionData.text === 'TODO') {
-    return '✅ DONE';  // Replace with this text
+## React Integration
+
+### Basic Usage
+```jsx
+import { SquibViewReact } from 'squibview/react';
+
+function App() {
+  return (
+    <SquibViewReact
+      initialContent="# Hello World"
+      inputContentType="md"
+      showControls={true}
+    />
+  );
+}
+```
+
+### Props
+```jsx
+<SquibViewReact
+  // Basic props
+  initialContent=""
+  inputContentType="md"
+  showControls={true}
+  titleShow={false}
+  titleContent=""
+  initialView="split"
+  
+  // Image handling
+  preserveImageTags={true}
+  
+  // Event handlers
+  onContentChange={(content, type) => {}}
+  onViewChange={(view) => {}}
+  onTextSelected={(selectionData) => {}}
+/>
+```
+
+## Plugin System
+
+### Creating a Plugin
+```javascript
+const myPlugin = {
+  name: 'myPlugin',
+  init: (editor) => {
+    // Plugin initialization
+  },
+  destroy: () => {
+    // Cleanup
   }
-  // Return undefined or null to not replace anything
 };
 
-// Remove the handler
-editor.onReplaceSelectedText = null;
+// Register plugin
+editor.registerPlugin(myPlugin);
 ```
 
-Selection data structure:
+### Custom Renderers
 ```javascript
-// Source panel selection
-{
-  panel: 'source',
-  text: 'selected text',
-  range: {
-    start: 10,  // Character position
-    end: 22     // Character position
-  }
-}
-
-// Rendered panel selection
-{
-  panel: 'rendered',
-  text: 'selected text',
-  range: DOMRange,  // DOM Range object
-  element: HTMLElement  // The contenteditable element
-}
-```
-
-### Clipboard Operations
-
-```javascript
-// Copy source to clipboard
-await editor.copySource();
-
-// Copy rendered HTML to clipboard (preserves formatting)
-await editor.copyHTML();
-```
-
-### Revisions and History
-
-```javascript
-// Undo last change
-editor.revisionUndo();
-
-// Redo previously undone change
-editor.revisionRedo();
-
-// Get number of revisions
-const count = editor.revisionNumRevsions();
-
-// Get current revision index
-const index = editor.revisionGetCurrentIndex();
-
-// Set to specific revision
-editor.revisionSet(index);
-```
-
-### Renderers and Content Types
-
-```javascript
-// Register a custom renderer
 editor.registerRenderer('custom', {
   render: (source) => {
-    // Custom rendering logic
-    return customRenderFunction(source);
+    // Render source to HTML
+    return html;
   },
   sourceToOutput: (source) => {
-    // Transform source to output format
-    return transformSourceToOutput(source);
+    // Convert source to output format
+    return output;
   },
-  outputToSource: (output, options) => {
-    // Transform output back to source format
-    return transformOutputToSource(output, options);
+  outputToSource: (output) => {
+    // Convert output back to source
+    return source;
   },
   operations: {
-    customOperation: (src) => {
-      // Custom operation on source content
+    customOp: (source) => {
+      // Custom operation
       return modifiedSource;
     }
   },
   buttons: [
-    { 
-      label: 'Custom Action', 
-      action: 'customOperation', 
-      title: 'Tooltip text' 
+    {
+      label: 'Custom',
+      action: 'customOp',
+      title: 'Custom operation'
     }
   ]
 });
 ```
 
-### Event System
+## Event System
 
+### Available Events
 ```javascript
-// Listen for content changes
-editor.events.on('content:change', (content, contentType) => {
-  console.log(`Content changed to type: ${contentType}`);
-});
-
-// Listen for view changes
-editor.events.on('view:change', (view) => {
-  console.log(`View changed to: ${view}`);
-});
-
-// Listen for rendering completion
-editor.events.on('markdown:rendered', (markdown, html) => {
-  console.log('Markdown rendered to HTML');
-});
-
-// Other events
-// - 'content:rendered' - After content is rendered
-// - 'html:rendered' - After HTML is rendered
-// - 'layout:change' - After layout is adjusted
-// - 'renderer:registered' - After a renderer is registered
-// - 'controls:visibility' - After controls visibility changes
-// - 'title:visibility' - After title visibility changes
-// - 'title:content' - After title content changes
-// - 'revision:undo' - After undoing a revision
-// - 'revision:redo' - After redoing a revision
-// - 'revision:set' - After setting to a specific revision
-```
-
-### Title and Controls
-
-```javascript
-// Show/hide controls
-editor.controlsShow(true);  // Show
-editor.controlsShow(false); // Hide
-
-// Show/hide title
-editor.titleShow(true);  // Show
-editor.titleShow(false); // Hide
-
-// Set title content
-editor.titleSetContent('<h2>My Document</h2>');
-
-// Get title content
-const title = editor.titleGetContent();
-```
-
-## Advanced Usage
-
-### Custom Renderers
-
-Custom renderers allow you to extend SquibView with support for additional content types or customize the rendering of existing types.
-
-```javascript
-editor.registerRenderer('yaml', {
-  render: (source) => {
-    const parsed = jsyaml.load(source);
-    const html = convertYamlToHtml(parsed);
-    editor.output.innerHTML = html;
-  },
-  sourceToOutput: (source) => {
-    return convertYamlToHtml(jsyaml.load(source));
-  },
-  outputToSource: (output, options) => {
-    return convertHtmlToYaml(output);
-  },
-  operations: {
-    formatYaml: (src) => {
-      return formatYamlString(src);
-    }
-  },
-  buttons: [
-    { label: 'Format', action: 'formatYaml', title: 'Format YAML' }
-  ]
-});
-```
-
-### Plugins
-
-You can build plugins for SquibView by listening to events and extending functionality:
-
-```javascript
-function wordCountPlugin(editor) {
-  // Create UI elements
-  const counterDiv = document.createElement('div');
-  counterDiv.className = 'word-counter';
-  editor.controls.appendChild(counterDiv);
-  
-  // Update counter whenever content changes
-  editor.events.on('content:change', (content) => {
-    const wordCount = content.split(/\s+/).filter(Boolean).length;
-    counterDiv.textContent = `Words: ${wordCount}`;
-  });
-  
-  // Return an API for the plugin
-  return {
-    getWordCount: () => {
-      const content = editor.getContent();
-      return content.split(/\s+/).filter(Boolean).length;
-    }
-  };
-}
-
-// Use the plugin
-const wordCounter = wordCountPlugin(editor);
-console.log(`Word count: ${wordCounter.getWordCount()}`);
-```
-
-### Bidirectional Editing
-
-SquibView supports bidirectional editing, allowing you to make changes in either the source or rendered panel.
-
-```javascript
-// Enable bidirectional editing on a specific element in the rendered view
-const element = document.querySelector('.my-element');
-element.contentEditable = 'true';
-
-// Listen for changes
-editor.events.on('content:change', (content, contentType) => {
-  // Save content to server when it changes
-  saveToServer(content, contentType);
-});
+editor.events.on('content:change', (content, type) => {});
+editor.events.on('view:change', (view) => {});
+editor.events.on('text:selected', (selectionData) => {});
+editor.events.on('markdown:rendered', (markdown, html) => {});
+editor.events.on('html:rendered', (html) => {});
+editor.events.on('revision:undo', (content, type) => {});
+editor.events.on('revision:redo', (content, type) => {});
+editor.events.on('revision:set', (index, content, type) => {});
+editor.events.on('controls:visibility', (show) => {});
+editor.events.on('title:visibility', (show) => {});
+editor.events.on('title:content', (content) => {});
+editor.events.on('layout:change', (view, dimensions) => {});
+editor.events.on('renderer:registered', (type, config) => {});
 ```
 
 ## Examples
 
 ### Basic Markdown Editor
-
-```html
-<div id="editor"></div>
-
-<script>
-  const editor = new SquibView('#editor', {
-    initialContent: '# Hello world\n\nThis is a simple markdown editor.',
-    inputContentType: 'md'
-  });
-</script>
-```
-
-### CSV Table Editor
-
-```html
-<div id="editor"></div>
-
-<script>
-  const csvData = 'Name,Age,City\nJohn,30,New York\nJane,25,San Francisco';
-  
-  const editor = new SquibView('#editor', {
-    initialContent: csvData,
-    inputContentType: 'csv',
-    initialView: 'split'
-  });
-</script>
-```
-
-### Presentation Slides
-
-```html
-<div id="editor"></div>
-
-<script>
-  const slides = `# My Presentation
-
-First slide content
-
----
-
-## Second Slide
-
-- Bullet point 1
-- Bullet point 2
-
----
-
-## Final Slide
-
-Thank you!`;
-  
-  const editor = new SquibView('#editor', {
-    initialContent: slides,
-    inputContentType: 'reveal',
-    initialView: 'html'
-  });
-</script>
-```
-
-### Text Selection and Replacement
-
-```html
-<div id="editor"></div>
-
-<script>
-  const editor = new SquibView('#editor', {
-    initialContent: '# Text Selection\n\nSelect some text to see it processed.',
-    inputContentType: 'md',
-    onReplaceSelectedText: function(selectionData) {
-      // Simple text formatter
-      if (selectionData.panel === 'source') {
-        if (selectionData.text.match(/^[a-z]/)) {
-          // Capitalize first letter of sentences
-          return selectionData.text.charAt(0).toUpperCase() + 
-                 selectionData.text.slice(1);
-        }
-      }
-      // Return undefined to not replace anything
-    }
-  });
-  
-  // Add a button to make selected text bold
-  const boldButton = document.createElement('button');
-  boldButton.textContent = 'Bold';
-  document.body.appendChild(boldButton);
-  
-  boldButton.addEventListener('click', () => {
-    const selection = editor.getCurrentSelection();
-    if (selection) {
-      if (selection.panel === 'source') {
-        editor.replaceSelectedText(`**${selection.text}**`, selection);
-      } else {
-        editor.replaceSelectedText(`<strong>${selection.text}</strong>`, selection);
-      }
-    }
-  });
-</script>
-```
-
-## FAQ
-
-### How do I change from Markdown to HTML?
-
 ```javascript
-// Get current content as Markdown
-const mdContent = editor.getContent();
-
-// Convert to HTML (if needed)
-const htmlContent = editor.md.render(mdContent);
-
-// Set content type to HTML
-editor.setContent(htmlContent, 'html');
-```
-
-### How do I save content to a server?
-
-```javascript
-editor.events.on('content:change', (content, contentType) => {
-  // Debounce to avoid too many requests
-  clearTimeout(window.saveTimeout);
-  window.saveTimeout = setTimeout(() => {
-    fetch('/api/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content, contentType })
-    });
-  }, 1000);
+const editor = new SquibView('#editor', {
+  initialContent: '# Hello World\n\nThis is a test.',
+  inputContentType: 'md',
+  showControls: true,
+  initialView: 'split'
 });
 ```
 
-### How do I extend SquibView with custom functionality?
-
+### CSV Viewer
 ```javascript
-// Example: Add custom button to controls
-const customButton = document.createElement('button');
-customButton.textContent = 'Custom Action';
-customButton.addEventListener('click', () => {
-  const content = editor.getContent();
-  // Do something with content
-  editor.setContent(processedContent, editor.inputContentType);
+const editor = new SquibView('#editor', {
+  initialContent: 'name,age\nJohn,30\nJane,25',
+  inputContentType: 'csv',
+  showControls: true,
+  initialView: 'html'
 });
-editor.controls.appendChild(customButton);
 ```
 
-### How do I handle large documents?
-
+### RevealJS Presentation
 ```javascript
-// Set a warning threshold (characters)
-const LARGE_DOC_THRESHOLD = 50000;
-
-editor.events.on('content:change', (content) => {
-  if (content.length > LARGE_DOC_THRESHOLD) {
-    console.warn('Large document detected. Performance may be affected.');
-    
-    // Optionally defer rendering
-    if (editor.currentView === 'split') {
-      editor.setView('src');
-      alert('Switched to source view due to large document size.');
-    }
-  }
+const editor = new SquibView('#editor', {
+  initialContent: '# Slide 1\n\nContent\n\n---\n\n# Slide 2\n\nMore content',
+  inputContentType: 'reveal',
+  showControls: true,
+  initialView: 'html'
 });
+```
+
+### React Component with Image Handling
+```jsx
+import { SquibViewReact } from 'squibview/react';
+
+function App() {
+  return (
+    <SquibViewReact
+      initialContent="# Image Example\n\n![Test](./test.png)"
+      inputContentType="md"
+      preserveImageTags={true}
+      onContentChange={(content, type) => {
+        console.log('Content changed:', content);
+      }}
+    />
+  );
+}
 ```

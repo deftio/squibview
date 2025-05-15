@@ -104,6 +104,11 @@ Any manual edits may be lost.
 <p>SquibView is a javascript embeddable for converting GitHub-flavored Markdown (or full HTML pages) into a rendered view on the fly. </p>
 <p>For markdown inputs, it supports rendering Mermaid diagrams, syntax-highlighted code blocks, tables, and inline SVG graphics, providing a powerful and interactive way to view and export your Markdown content as HTML.</p>
 <p>For HTML inputs, it creates a complete embedded iframe to view the content.  </p>
+<h2 id="documentation">Documentation</h2>
+<ul>
+<li><a href="./docs/programmers-guide.md">Programmer&#39;s Guide</a> - Comprehensive documentation for developers</li>
+<li><a href="./examples">Examples</a> - Example implementations and usage patterns</li>
+</ul>
 <h2 id="web-viewer">Web Viewer</h2>
 <p>SquibView can be used as a standalone tool for taking complex markdown output (such as from OpenAI, Claude, Mistral, or Deepseek) or a simple live preview markdown editor.  </p>
 <h2 id="as-a-component">As a Component</h2>
@@ -218,7 +223,30 @@ Any manual edits may be lost.
 <li><strong>Bidirectional Editing</strong>: Make changes in either the source or rendered view and see them reflected in both panels.</li>
 <li><strong>Revision History</strong>: Track changes with undo/redo functionality.</li>
 <li><strong>Plugin System</strong>: Extend functionality with custom plugins and renderers.</li>
+<li><strong>Image Handling</strong>: Control how images are displayed in source view and when copying content.</li>
 </ul>
+<h2 id="configuration-options">Configuration Options</h2>
+<p>SquibView can be configured with various options when initializing:</p>
+<pre><code class="language-javascript">const editor = new SquibView(&#39;#editorContainer&#39;, {
+  // Basic options
+  initialContent: &#39;&#39;,           // Initial content to load
+  inputContentType: &#39;md&#39;,       // Type of content (&#39;md&#39;, &#39;html&#39;, &#39;reveal&#39;, &#39;csv&#39;, &#39;tsv&#39;)
+  showControls: true,          // Whether to show control buttons
+  titleShow: false,            // Whether to show the title section
+  titleContent: &#39;&#39;,            // Content for the title section
+  initialView: &#39;split&#39;,        // Initial view mode (&#39;src&#39;, &#39;html&#39;, &#39;split&#39;)
+  baseClass: &#39;squibview&#39;,      // Base CSS class for styling
+  
+  // Image handling
+  preserveImageTags: true,     // Whether to keep original image URLs in source view
+                               // When true: images remain as &lt;img&gt; tags with original URLs
+                               // When false: images are converted to data URLs
+                               // Note: Images are always converted to data URLs when copying
+  
+  // Text replacement
+  onReplaceSelectedText: null  // Callback for text replacement on selection
+});
+</code></pre>
 <h2 id="getting-started">Getting Started</h2>
 <p><strong>Clone the Repository:</strong></p>
 <pre><code class="language-bash">git clone https://github.com/deftio/squibview.git
@@ -272,4 +300,30 @@ The right side will render the HTML output live, complete with diagrams, code hi
 <p>Please make sure your contributions follow the project&#39;s coding style and that tests pass, if applicable.</p>
 <h2 id="license">License</h2>
 <p>This project is licensed under the BSD-2 License. See the LICENSE file for details.</p>
+<h4 id="example-image-handling">Example: Image Handling</h4>
+<pre><code class="language-javascript">// Create editor with default image handling (preserves original URLs)
+const editor1 = new SquibView(&#39;#editor1&#39;, {
+  preserveImageTags: true  // default
+});
+
+// Create editor that converts images to data URLs in source view
+const editor2 = new SquibView(&#39;#editor2&#39;, {
+  preserveImageTags: false
+});
+
+// Set content with images
+const markdown = `
+# Image Example
+
+![Local Image](./images/example.png)
+![Remote Image](https://example.com/image.jpg)
+`;
+
+editor1.setContent(markdown, &#39;md&#39;);  // Images remain as URLs in source
+editor2.setContent(markdown, &#39;md&#39;);  // Images converted to data URLs in source
+
+// Both editors will convert images to data URLs when copying
+editor1.copyHTML();  // Images in clipboard are data URLs
+editor2.copyHTML();  // Images in clipboard are data URLs
+</code></pre>
 </body></html>

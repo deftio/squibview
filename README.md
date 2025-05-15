@@ -4,11 +4,18 @@
 
 [Live Demo (local)](./examples/example_ESM.html)
 
-SquibView is a javascript embeddable for converting GitHub-flavored Markdown (or full HTML pages) into a rendered view on the fly. 
+SquibView is a (headless) javascript embeddable editor / viewer for GitHub-flavored Markdown (or full HTML pages) into a rendered view on the fly. 
 
 For markdown inputs, it supports rendering Mermaid diagrams, syntax-highlighted code blocks, tables, and inline SVG graphics, providing a powerful and interactive way to view and export your Markdown content as HTML.
 
 For HTML inputs, it creates a complete embedded iframe to view the content.  
+
+Squibview supports full cut-and-paste and allows editing of the rendered content back in to source.
+
+## Documentation
+
+- [Programmer's Guide](./docs/programmers-guide.md) - Comprehensive documentation for developers
+- [Examples](./examples) - Example implementations and usage patterns
 
 ## Web Viewer
 
@@ -123,6 +130,33 @@ See the [examples folder](./examples)
 - **Bidirectional Editing**: Make changes in either the source or rendered view and see them reflected in both panels.
 - **Revision History**: Track changes with undo/redo functionality.
 - **Plugin System**: Extend functionality with custom plugins and renderers.
+- **Image Handling**: Control how images are displayed in source view and when copying content.
+
+## Configuration Options
+
+SquibView can be configured with various options when initializing:
+
+```javascript
+const editor = new SquibView('#editorContainer', {
+  // Basic options
+  initialContent: '',           // Initial content to load
+  inputContentType: 'md',       // Type of content ('md', 'html', 'reveal', 'csv', 'tsv')
+  showControls: true,          // Whether to show control buttons
+  titleShow: false,            // Whether to show the title section
+  titleContent: '',            // Content for the title section
+  initialView: 'split',        // Initial view mode ('src', 'html', 'split')
+  baseClass: 'squibview',      // Base CSS class for styling
+  
+  // Image handling
+  preserveImageTags: true,     // Whether to keep original image URLs in source view
+                               // When true: images remain as <img> tags with original URLs
+                               // When false: images are converted to data URLs
+                               // Note: Images are always converted to data URLs when copying
+  
+  // Text replacement
+  onReplaceSelectedText: null  // Callback for text replacement on selection
+});
+```
 
 ## Getting Started
 
@@ -191,3 +225,32 @@ Please make sure your contributions follow the project's coding style and that t
 ## License
 
 This project is licensed under the BSD-2 License. See the LICENSE file for details.
+
+#### Example: Image Handling
+
+```javascript
+// Create editor with default image handling (preserves original URLs)
+const editor1 = new SquibView('#editor1', {
+  preserveImageTags: true  // default
+});
+
+// Create editor that converts images to data URLs in source view
+const editor2 = new SquibView('#editor2', {
+  preserveImageTags: false
+});
+
+// Set content with images
+const markdown = `
+# Image Example
+
+![Local Image](./images/example.png)
+![Remote Image](https://example.com/image.jpg)
+`;
+
+editor1.setContent(markdown, 'md');  // Images remain as URLs in source
+editor2.setContent(markdown, 'md');  // Images converted to data URLs in source
+
+// Both editors will convert images to data URLs when copying
+editor1.copyHTML();  // Images in clipboard are data URLs
+editor2.copyHTML();  // Images in clipboard are data URLs
+```

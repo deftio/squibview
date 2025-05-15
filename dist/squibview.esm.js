@@ -2776,7 +2776,7 @@ var diffMatchPatchExports = diffMatchPatch.exports;
 var DiffMatchPatch = /*@__PURE__*/getDefaultExportFromCjs(diffMatchPatchExports);
 
 // src/version.js
-var VERSION = "0.0.32";
+var VERSION = "0.0.33";
 var REPO_URL = "https://github.com/deftio/squibview";
 
 // Fix for development mode
@@ -3877,6 +3877,7 @@ var SquibView = /*#__PURE__*/function () {
     key: "renderMarkdown",
     value: (function () {
       var _renderMarkdown = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee2(md) {
+        var _this5 = this;
         var markdown, html, contentDiv, images, _iterator2, _step2, _loop;
         return _regeneratorRuntime().wrap(function _callee2$(_context3) {
           while (1) switch (_context3.prev = _context3.next) {
@@ -3891,17 +3892,23 @@ var SquibView = /*#__PURE__*/function () {
               _iterator2 = _createForOfIteratorHelper(images);
               _context3.prev = 6;
               _loop = /*#__PURE__*/_regeneratorRuntime().mark(function _loop() {
-                var img, canvas, ctx, tempImg;
+                var img, originalSrc, canvas, ctx, tempImg;
                 return _regeneratorRuntime().wrap(function _loop$(_context2) {
                   while (1) switch (_context2.prev = _context2.next) {
                     case 0:
                       img = _step2.value;
                       _context2.prev = 1;
+                      // Store original src if we need to preserve it
+                      originalSrc = img.src; // Only convert to data URL if not preserving tags
+                      if (_this5.options.preserveImageTags) {
+                        _context2.next = 10;
+                        break;
+                      }
                       canvas = document.createElement('canvas');
                       ctx = canvas.getContext('2d'); // Create new image and wait for it to load
                       tempImg = new Image();
                       tempImg.crossOrigin = 'anonymous';
-                      _context2.next = 8;
+                      _context2.next = 10;
                       return new Promise(function (resolve, reject) {
                         tempImg.onload = function () {
                           // Set canvas size to match image
@@ -3919,20 +3926,20 @@ var SquibView = /*#__PURE__*/function () {
                           resolve();
                         };
                         tempImg.onerror = reject;
-                        tempImg.src = img.src;
+                        tempImg.src = originalSrc;
                       });
-                    case 8:
-                      _context2.next = 13;
-                      break;
                     case 10:
-                      _context2.prev = 10;
+                      _context2.next = 15;
+                      break;
+                    case 12:
+                      _context2.prev = 12;
                       _context2.t0 = _context2["catch"](1);
                       console.error('Failed to convert image:', _context2.t0);
-                    case 13:
+                    case 15:
                     case "end":
                       return _context2.stop();
                   }
-                }, _loop, null, [[1, 10]]);
+                }, _loop, null, [[1, 12]]);
               });
               _iterator2.s();
             case 9:
@@ -3956,8 +3963,6 @@ var SquibView = /*#__PURE__*/function () {
               _iterator2.f();
               return _context3.finish(18);
             case 21:
-              // end of images to data urls
-
               // Initialize mermaid diagrams after all images are processed
               mermaid.init(undefined, this.output.querySelectorAll('.mermaid'));
 
@@ -4301,7 +4306,7 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "onTextSelected",
     value: function onTextSelected(callback) {
-      var _this5 = this;
+      var _this6 = this;
       if (typeof callback !== 'function') {
         throw new Error('Callback must be a function');
       }
@@ -4309,7 +4314,7 @@ var SquibView = /*#__PURE__*/function () {
 
       // Return unsubscribe function
       return function () {
-        _this5.events.off('text:selected', callback);
+        _this6.events.off('text:selected', callback);
       };
     }
 
@@ -4576,9 +4581,9 @@ var SquibView = /*#__PURE__*/function () {
      * @returns {Function|null} The current handler function or null if none is set
      */
     function get() {
-      var _this6 = this;
+      var _this7 = this;
       return this._onTextReplacementHandler ? function (selectionData) {
-        var result = _this6._onTextReplacementHandler(selectionData);
+        var result = _this7._onTextReplacementHandler(selectionData);
         return result;
       } : null;
     }
@@ -4588,7 +4593,7 @@ var SquibView = /*#__PURE__*/function () {
      * Processes code blocks, SVG elements, and images to ensure they copy correctly.
      */,
     set: function set(handler) {
-      var _this7 = this;
+      var _this8 = this;
       if (handler !== null && typeof handler !== 'function') {
         throw new Error('onReplaceSelectedText handler must be a function or null');
       }
@@ -4606,7 +4611,7 @@ var SquibView = /*#__PURE__*/function () {
 
           // If the handler returns a string, use it to replace the selected text
           if (typeof result === 'string') {
-            _this7.replaceSelectedText(result, selectionData);
+            _this8.replaceSelectedText(result, selectionData);
           }
         };
 
@@ -4618,17 +4623,17 @@ var SquibView = /*#__PURE__*/function () {
     key: "copyHTML",
     value: (function () {
       var _copyHTML = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee4() {
-        var _this8 = this;
-        var copyButton, contentDiv, clone, svgElements, _iterator3, _step3, _loop2, htmlContent, platform, tempDiv, selection, range, successful;
-        return _regeneratorRuntime().wrap(function _callee4$(_context6) {
-          while (1) switch (_context6.prev = _context6.next) {
+        var _this9 = this;
+        var copyButton, contentDiv, clone, images, _iterator3, _step3, _loop2, svgElements, _iterator4, _step4, _loop3, htmlContent, platform, tempDiv, selection, range, successful;
+        return _regeneratorRuntime().wrap(function _callee4$(_context7) {
+          while (1) switch (_context7.prev = _context7.next) {
             case 0:
               copyButton = this.controls.querySelector('.copy-html-button');
               copyButton.textContent = 'Copying...';
-              _context6.prev = 2;
+              _context7.prev = 2;
               contentDiv = this.output.querySelector('div[contenteditable="true"]');
               if (contentDiv) {
-                _context6.next = 6;
+                _context7.next = 6;
                 break;
               }
               throw new Error('Content div not found');
@@ -4653,22 +4658,92 @@ var SquibView = /*#__PURE__*/function () {
                 block.parentNode.replaceWith(table);
               });
 
-              // Convert SVG elements to PNG
-              svgElements = clone.querySelectorAll('svg');
-              _iterator3 = _createForOfIteratorHelper(svgElements);
-              _context6.prev = 10;
+              // Convert all images to data URLs for copying
+              images = clone.querySelectorAll('img');
+              _iterator3 = _createForOfIteratorHelper(images);
+              _context7.prev = 10;
               _loop2 = /*#__PURE__*/_regeneratorRuntime().mark(function _loop2() {
-                var svg, pngBlob, dataUrl, img;
+                var img, canvas, ctx, tempImg;
                 return _regeneratorRuntime().wrap(function _loop2$(_context5) {
                   while (1) switch (_context5.prev = _context5.next) {
                     case 0:
-                      svg = _step3.value;
+                      img = _step3.value;
                       _context5.prev = 1;
-                      _context5.next = 4;
-                      return _this8.svgToPng(svg);
+                      canvas = document.createElement('canvas');
+                      ctx = canvas.getContext('2d'); // Create new image and wait for it to load
+                      tempImg = new Image();
+                      tempImg.crossOrigin = 'anonymous';
+                      _context5.next = 8;
+                      return new Promise(function (resolve, reject) {
+                        tempImg.onload = function () {
+                          // Set canvas size to match image
+                          canvas.width = tempImg.naturalWidth;
+                          canvas.height = tempImg.naturalHeight;
+
+                          // Draw image to canvas
+                          ctx.drawImage(tempImg, 0, 0);
+
+                          // Convert to data URL
+                          var dataUrl = canvas.toDataURL('image/png', 1.0);
+
+                          // Update original image
+                          img.src = dataUrl;
+                          resolve();
+                        };
+                        tempImg.onerror = reject;
+                        tempImg.src = img.src;
+                      });
+                    case 8:
+                      _context5.next = 13;
+                      break;
+                    case 10:
+                      _context5.prev = 10;
+                      _context5.t0 = _context5["catch"](1);
+                      console.error('Failed to convert image for copying:', _context5.t0);
+                    case 13:
+                    case "end":
+                      return _context5.stop();
+                  }
+                }, _loop2, null, [[1, 10]]);
+              });
+              _iterator3.s();
+            case 13:
+              if ((_step3 = _iterator3.n()).done) {
+                _context7.next = 17;
+                break;
+              }
+              return _context7.delegateYield(_loop2(), "t0", 15);
+            case 15:
+              _context7.next = 13;
+              break;
+            case 17:
+              _context7.next = 22;
+              break;
+            case 19:
+              _context7.prev = 19;
+              _context7.t1 = _context7["catch"](10);
+              _iterator3.e(_context7.t1);
+            case 22:
+              _context7.prev = 22;
+              _iterator3.f();
+              return _context7.finish(22);
+            case 25:
+              // Convert SVG elements to PNG
+              svgElements = clone.querySelectorAll('svg');
+              _iterator4 = _createForOfIteratorHelper(svgElements);
+              _context7.prev = 27;
+              _loop3 = /*#__PURE__*/_regeneratorRuntime().mark(function _loop3() {
+                var svg, pngBlob, dataUrl, img;
+                return _regeneratorRuntime().wrap(function _loop3$(_context6) {
+                  while (1) switch (_context6.prev = _context6.next) {
+                    case 0:
+                      svg = _step4.value;
+                      _context6.prev = 1;
+                      _context6.next = 4;
+                      return _this9.svgToPng(svg);
                     case 4:
-                      pngBlob = _context5.sent;
-                      _context5.next = 7;
+                      pngBlob = _context6.sent;
+                      _context6.next = 7;
                       return new Promise(function (resolve) {
                         var reader = new FileReader();
                         reader.onloadend = function () {
@@ -4677,7 +4752,7 @@ var SquibView = /*#__PURE__*/function () {
                         reader.readAsDataURL(pngBlob);
                       });
                     case 7:
-                      dataUrl = _context5.sent;
+                      dataUrl = _context6.sent;
                       img = document.createElement('img');
                       img.src = dataUrl;
                       img.width = svg.clientWidth || svg.viewBox.baseVal.width || 100;
@@ -4687,80 +4762,48 @@ var SquibView = /*#__PURE__*/function () {
                       img.style.height = img.height + 'px';
                       img.alt = "Converted diagram";
                       svg.parentNode.replaceChild(img, svg);
-                      _context5.next = 22;
+                      _context6.next = 22;
                       break;
                     case 19:
-                      _context5.prev = 19;
-                      _context5.t0 = _context5["catch"](1);
-                      console.error('Failed to convert SVG:', _context5.t0);
+                      _context6.prev = 19;
+                      _context6.t0 = _context6["catch"](1);
+                      console.error('Failed to convert SVG:', _context6.t0);
                     case 22:
                     case "end":
-                      return _context5.stop();
+                      return _context6.stop();
                   }
-                }, _loop2, null, [[1, 19]]);
+                }, _loop3, null, [[1, 19]]);
               });
-              _iterator3.s();
-            case 13:
-              if ((_step3 = _iterator3.n()).done) {
-                _context6.next = 17;
+              _iterator4.s();
+            case 30:
+              if ((_step4 = _iterator4.n()).done) {
+                _context7.next = 34;
                 break;
               }
-              return _context6.delegateYield(_loop2(), "t0", 15);
-            case 15:
-              _context6.next = 13;
+              return _context7.delegateYield(_loop3(), "t2", 32);
+            case 32:
+              _context7.next = 30;
               break;
-            case 17:
-              _context6.next = 22;
+            case 34:
+              _context7.next = 39;
               break;
-            case 19:
-              _context6.prev = 19;
-              _context6.t1 = _context6["catch"](10);
-              _iterator3.e(_context6.t1);
-            case 22:
-              _context6.prev = 22;
-              _iterator3.f();
-              return _context6.finish(22);
-            case 25:
+            case 36:
+              _context7.prev = 36;
+              _context7.t3 = _context7["catch"](27);
+              _iterator4.e(_context7.t3);
+            case 39:
+              _context7.prev = 39;
+              _iterator4.f();
+              return _context7.finish(39);
+            case 42:
               htmlContent = "\n          <html xmlns:v=\"urn:schemas-microsoft-com:vml\"\n                xmlns:o=\"urn:schemas-microsoft-com:office:office\"\n                xmlns:w=\"urn:schemas-microsoft-com:office:word\">\n            <head>\n              <meta charset=\"utf-8\">\n              <style>\n                table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }\n                th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }\n                th { background-color: #f0f0f0; font-weight: bold; }\n\n                /* Code block styling */\n                .hljs { display: block; overflow-x: auto; padding: 1em; }\n                .hljs-keyword { color: #0033B3; }\n                .hljs-string { color: #067D17; }\n                .hljs-comment { color: #8C8C8C; }\n                .hljs-function { color: #00627A; }\n                .hljs-number { color: #1750EB; }\n                .hljs-operator { color: #687687; }\n                .hljs-punctuation { color: #000000; }\n\n                /* Word-specific image handling */\n                img { display: block; max-width: none; }\n              </style>\n            </head>\n            <body>\n              ".concat(clone.innerHTML, "\n            </body>\n          </html>");
               platform = this.getPlatform();
               if (!(platform === 'macos')) {
-                _context6.next = 39;
+                _context7.next = 56;
                 break;
               }
-              _context6.prev = 28;
-              _context6.next = 31;
-              return navigator.clipboard.write([new ClipboardItem({
-                'text/html': new Blob([htmlContent], {
-                  type: 'text/html'
-                }),
-                'text/plain': new Blob([clone.innerText], {
-                  type: 'text/plain'
-                })
-              })]);
-            case 31:
-              _context6.next = 37;
-              break;
-            case 33:
-              _context6.prev = 33;
-              _context6.t2 = _context6["catch"](28);
-              if (this.copyToClipboard(htmlContent)) {
-                _context6.next = 37;
-                break;
-              }
-              throw new Error('Fallback copy failed');
-            case 37:
-              _context6.next = 63;
-              break;
-            case 39:
-              // Windows/Linux approach
-              tempDiv = document.createElement('div');
-              tempDiv.style.position = 'fixed';
-              tempDiv.style.left = '-9999px';
-              tempDiv.style.top = '0';
-              tempDiv.innerHTML = htmlContent;
-              document.body.appendChild(tempDiv);
-              _context6.prev = 45;
-              _context6.next = 48;
+              _context7.prev = 45;
+              _context7.next = 48;
               return navigator.clipboard.write([new ClipboardItem({
                 'text/html': new Blob([htmlContent], {
                   type: 'text/html'
@@ -4770,11 +4813,43 @@ var SquibView = /*#__PURE__*/function () {
                 })
               })]);
             case 48:
-              _context6.next = 60;
+              _context7.next = 54;
               break;
             case 50:
-              _context6.prev = 50;
-              _context6.t3 = _context6["catch"](45);
+              _context7.prev = 50;
+              _context7.t4 = _context7["catch"](45);
+              if (this.copyToClipboard(htmlContent)) {
+                _context7.next = 54;
+                break;
+              }
+              throw new Error('Fallback copy failed');
+            case 54:
+              _context7.next = 80;
+              break;
+            case 56:
+              // Windows/Linux approach
+              tempDiv = document.createElement('div');
+              tempDiv.style.position = 'fixed';
+              tempDiv.style.left = '-9999px';
+              tempDiv.style.top = '0';
+              tempDiv.innerHTML = htmlContent;
+              document.body.appendChild(tempDiv);
+              _context7.prev = 62;
+              _context7.next = 65;
+              return navigator.clipboard.write([new ClipboardItem({
+                'text/html': new Blob([htmlContent], {
+                  type: 'text/html'
+                }),
+                'text/plain': new Blob([clone.innerText], {
+                  type: 'text/plain'
+                })
+              })]);
+            case 65:
+              _context7.next = 77;
+              break;
+            case 67:
+              _context7.prev = 67;
+              _context7.t5 = _context7["catch"](62);
               selection = window.getSelection();
               range = document.createRange();
               range.selectNodeContents(tempDiv);
@@ -4782,34 +4857,34 @@ var SquibView = /*#__PURE__*/function () {
               selection.addRange(range);
               successful = document.execCommand('copy');
               if (successful) {
-                _context6.next = 60;
+                _context7.next = 77;
                 break;
               }
               throw new Error('Fallback copy failed');
-            case 60:
-              _context6.prev = 60;
+            case 77:
+              _context7.prev = 77;
               if (tempDiv && tempDiv.parentNode) {
                 document.body.removeChild(tempDiv);
               }
-              return _context6.finish(60);
-            case 63:
+              return _context7.finish(77);
+            case 80:
               copyButton.textContent = 'Copied!';
-              _context6.next = 70;
+              _context7.next = 87;
               break;
-            case 66:
-              _context6.prev = 66;
-              _context6.t4 = _context6["catch"](2);
-              console.error('Copy HTML failed:', _context6.t4);
+            case 83:
+              _context7.prev = 83;
+              _context7.t6 = _context7["catch"](2);
+              console.error('Copy HTML failed:', _context7.t6);
               copyButton.textContent = 'Copy failed';
-            case 70:
+            case 87:
               setTimeout(function () {
                 copyButton.textContent = 'Copy Rendered';
               }, 2000);
-            case 71:
+            case 88:
             case "end":
-              return _context6.stop();
+              return _context7.stop();
           }
-        }, _callee4, this, [[2, 66], [10, 19, 22, 25], [28, 33], [45, 50, 60, 63]]);
+        }, _callee4, this, [[2, 83], [10, 19, 22, 25], [27, 36, 39, 42], [45, 50], [62, 67, 77, 80]]);
       }));
       function copyHTML() {
         return _copyHTML.apply(this, arguments);
@@ -5100,6 +5175,26 @@ var SquibView = /*#__PURE__*/function () {
       }).join('\n');
       return "".concat(header, "\n").concat(separator, "\n").concat(tableRows);
     }
+
+    /**
+     * Gets whether image tags are preserved in source view
+     * @returns {boolean} Whether image tags are preserved
+     */
+  }, {
+    key: "preserveImageTags",
+    get: function get() {
+      return this.options.preserveImageTags;
+    }
+
+    /**
+     * Sets whether image tags should be preserved in source view
+     * @param {boolean} value - Whether to preserve image tags
+     */,
+    set: function set(value) {
+      this.options.preserveImageTags = value;
+      // Re-render content to apply the new setting
+      this.renderMarkdown();
+    }
   }]);
 }(); // The React component wrapper has been moved to a separate file
 // to avoid dependency issues when React is not available
@@ -5113,7 +5208,8 @@ _defineProperty(SquibView, "defaultOptions", {
   titleContent: '',
   initialView: 'split',
   baseClass: 'squibview',
-  onReplaceSelectedText: null
+  onReplaceSelectedText: null,
+  preserveImageTags: true // Changed default to true
 });
 _defineProperty(SquibView, "version", {
   version: VERSION,

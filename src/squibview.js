@@ -206,7 +206,8 @@ class SquibView {
     titleContent: '',
     initialView: 'split',
     baseClass: 'squibview',
-    onReplaceSelectedText: null
+    onReplaceSelectedText: null,
+    preserveImageTags: true // Changed default to true
   };
 
   static version = {
@@ -1096,37 +1097,42 @@ class SquibView {
     // render images to data urls
     for (const img of images) {
       try {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        // Store original src if we need to preserve it
+        const originalSrc = img.src;
+        
+        // Only convert to data URL if not preserving tags
+        if (!this.options.preserveImageTags) {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
 
-        // Create new image and wait for it to load
-        const tempImg = new Image();
-        tempImg.crossOrigin = 'anonymous';
+          // Create new image and wait for it to load
+          const tempImg = new Image();
+          tempImg.crossOrigin = 'anonymous';
 
-        await new Promise((resolve, reject) => {
-          tempImg.onload = () => {
-            // Set canvas size to match image
-            canvas.width = tempImg.naturalWidth;
-            canvas.height = tempImg.naturalHeight;
+          await new Promise((resolve, reject) => {
+            tempImg.onload = () => {
+              // Set canvas size to match image
+              canvas.width = tempImg.naturalWidth;
+              canvas.height = tempImg.naturalHeight;
 
-            // Draw image to canvas
-            ctx.drawImage(tempImg, 0, 0);
+              // Draw image to canvas
+              ctx.drawImage(tempImg, 0, 0);
 
-            // Convert to data URL
-            const dataUrl = canvas.toDataURL('image/png', 1.0);
+              // Convert to data URL
+              const dataUrl = canvas.toDataURL('image/png', 1.0);
 
-            // Update original image
-            img.src = dataUrl;
-            resolve();
-          };
-          tempImg.onerror = reject;
-          tempImg.src = img.src;
-        });
+              // Update original image
+              img.src = dataUrl;
+              resolve();
+            };
+            tempImg.onerror = reject;
+            tempImg.src = originalSrc;
+          });
+        }
       } catch (error) {
         console.error('Failed to convert image:', error);
       }
     }
-    // end of images to data urls
 
     // Initialize mermaid diagrams after all images are processed
     mermaid.init(undefined, this.output.querySelectorAll('.mermaid'));
@@ -1769,6 +1775,41 @@ class SquibView {
         block.parentNode.replaceWith(table);
       });
 
+      // Convert all images to data URLs for copying
+      const images = clone.querySelectorAll('img');
+      for (const img of images) {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+
+          // Create new image and wait for it to load
+          const tempImg = new Image();
+          tempImg.crossOrigin = 'anonymous';
+
+          await new Promise((resolve, reject) => {
+            tempImg.onload = () => {
+              // Set canvas size to match image
+              canvas.width = tempImg.naturalWidth;
+              canvas.height = tempImg.naturalHeight;
+
+              // Draw image to canvas
+              ctx.drawImage(tempImg, 0, 0);
+
+              // Convert to data URL
+              const dataUrl = canvas.toDataURL('image/png', 1.0);
+
+              // Update original image
+              img.src = dataUrl;
+              resolve();
+            };
+            tempImg.onerror = reject;
+            tempImg.src = img.src;
+          });
+        } catch (error) {
+          console.error('Failed to convert image for copying:', error);
+        }
+      }
+
       // Convert SVG elements to PNG
       const svgElements = clone.querySelectorAll('svg');
       for (const svg of svgElements) {
@@ -2225,6 +2266,24 @@ class SquibView {
     const tableRows = rows.slice(1).map(row => `| ${row.join(' | ')} |`).join('\n');
 
     return `${header}\n${separator}\n${tableRows}`;
+  }
+
+  /**
+   * Gets whether image tags are preserved in source view
+   * @returns {boolean} Whether image tags are preserved
+   */
+  get preserveImageTags() {
+    return this.options.preserveImageTags;
+  }
+
+  /**
+   * Sets whether image tags should be preserved in source view
+   * @param {boolean} value - Whether to preserve image tags
+   */
+  set preserveImageTags(value) {
+    this.options.preserveImageTags = value;
+    // Re-render content to apply the new setting
+    this.renderMarkdown();
   }
 }
 

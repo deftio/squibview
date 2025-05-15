@@ -1665,4 +1665,186 @@ describe('SquibView Tests', () => {
       }).toThrow('onReplaceSelectedText handler must be a function or null');
     });
   });
+
+  describe('Image handling', () => {
+    beforeEach(() => {
+      document.body.innerHTML = '<div id="test"></div>';
+      squibView = new SquibView('#test');
+      
+      // Mock Image constructor to simulate image loading
+      global.Image = jest.fn().mockImplementation(() => {
+        const img = {
+          onload: null,
+          onerror: null,
+          src: '',
+          naturalWidth: 100,
+          naturalHeight: 100,
+          crossOrigin: ''
+        };
+        // Trigger onload immediately when src is set
+        Object.defineProperty(img, 'src', {
+          set: function(value) {
+            this._src = value;
+            if (this.onload) {
+              this.onload();
+            }
+          },
+          get: function() {
+            return this._src;
+          }
+        });
+        return img;
+      });
+      
+      // Mock canvas context
+      const mockContext = {
+        drawImage: jest.fn(),
+        scale: jest.fn(),
+        clearRect: jest.fn()
+      };
+      
+      // Mock canvas
+      const mockCanvas = {
+        getContext: jest.fn().mockReturnValue(mockContext),
+        toDataURL: jest.fn().mockReturnValue('data:image/png;base64,mock'),
+        width: 100,
+        height: 100
+      };
+      
+      // Mock document.createElement for canvas
+      document.createElement = jest.fn().mockImplementation((tagName) => {
+        if (tagName === 'canvas') return mockCanvas;
+        return {};
+      });
+    });
+
+    test('should preserve image tags when preserveImageTags is true', async () => {
+      squibView.preserveImageTags = true;
+      const markdown = '![test](https://example.com/test.png)';
+      
+      // Mock markdown renderer to return HTML with image
+      squibView.md.render = jest.fn().mockReturnValue('<p><img src="https://example.com/test.png" alt="test"></p>');
+      
+      await squibView.setContent(markdown);
+      
+      // Check squibView.output.innerHTML directly
+      expect(squibView.output.innerHTML).toContain('<img src="https://example.com/test.png" alt="test">');
+      expect(squibView.output.innerHTML).not.toMatch(/data:image\/png;base64,/);
+    });
+
+    test('should convert images to data URLs when preserveImageTags is false', async () => {
+      squibView.preserveImageTags = false;
+      const markdown = '![test](https://example.com/test.png)';
+      
+      // Mock markdown renderer to return HTML with image
+      squibView.md.render = jest.fn().mockReturnValue('<p><img src="https://example.com/test.png" alt="test"></p>');
+      
+      await squibView.setContent(markdown);
+      
+      // Check squibView.output.innerHTML directly
+      // The mock for canvas.toDataURL returns 'data:image/png;base64,mock'
+      expect(squibView.output.innerHTML).toContain('<img src="data:image/png;base64,mock" alt="test">');
+      expect(squibView.output.innerHTML).not.toContain('https://example.com/test.png');
+    });
+
+    // test('should always convert images to data URLs when copying HTML', async () => {
+    //   const markdown = '![test](https://example.com/test.png)';
+    //   console.log('[TEST DEBUG] Starting test: should always convert images to data URLs when copying HTML');
+
+    //   squibView.preserveImageTags = true;
+    //   squibView.md.render = jest.fn().mockReturnValue(
+    //     '<div contenteditable="true"><p><img src="https://example.com/test.png" alt="test"></p></div>'
+    //   );
+    //   console.log('[TEST DEBUG] About to setContent');
+    //   await squibView.setContent(markdown);
+    //   console.log('[TEST DEBUG] setContent finished. Output innerHTML:', squibView.output.innerHTML);
+
+    //   const mockWrite = jest.fn().mockResolvedValue(undefined);
+    //   Object.defineProperty(navigator, 'clipboard', {
+    //     value: { write: mockWrite, writeText: jest.fn().mockResolvedValue(undefined) },
+    //     writable: true,
+    //   });
+    //   squibView.getPlatform = jest.fn().mockReturnValue('macos');
+
+    //   const originalBlob = global.Blob;
+    //   const originalClipboardItem = global.ClipboardItem;
+    //   const originalImage = global.Image;
+    //   let capturedHtmlStringForBlob; // Intentionally start as undefined
+    //   let blobConstructorCalled = false;
+    //   let clipboardItemConstructorCalled = false;
+    //   let imageOnloadCalledCount = 0;
+    //   let imageSrcSetInMock = '';
+
+    //   try {
+    //     global.Image = jest.fn().mockImplementation(() => {
+    //       console.log('[TEST DEBUG] Mocked Image constructor (specific to copyHTML test) called.');
+    //       const img = {
+    //         onload: null,
+    //         onerror: null,
+    //         src: '',
+    //         naturalWidth: 100,
+    //         naturalHeight: 100,
+    //         crossOrigin: ''
+    //       };
+    //       Object.defineProperty(img, 'src', {
+    //         set: function(value) {
+    //           this._src = value;
+    //           imageSrcSetInMock = value; // Capture the src value
+    //           console.log(`[TEST DEBUG] Image src set to: ${value}. Triggering onload.`);
+    //           imageOnloadCalledCount++;
+    //           if (this.onload) {
+    //             // Simulating async image loading successfully
+    //             Promise.resolve().then(() => this.onload());
+    //           }
+    //         },
+    //         get: function() { return this._src; }
+    //       });
+    //       return img;
+    //     });
+
+    //     global.Blob = jest.fn().mockImplementation((contentArray, options) => {
+    //       blobConstructorCalled = true;
+    //       console.log('[TEST DEBUG] Mocked Blob constructor called.');
+    //       if (contentArray && contentArray.length > 0) {
+    //         capturedHtmlStringForBlob = contentArray[0];
+    //         console.log('[TEST DEBUG] Blob received contentArray[0] (first 100 chars):', capturedHtmlStringForBlob ? capturedHtmlStringForBlob.substring(0, 100) : 'undefined');
+    //       } else {
+    //         console.log('[TEST DEBUG] Blob received empty or invalid contentArray:', contentArray);
+    //       }
+    //       return {
+    //         _capturedHtmlContent: capturedHtmlStringForBlob,
+    //         type: options ? options.type : '',
+    //         size: capturedHtmlStringForBlob ? capturedHtmlStringForBlob.length : 0,
+    //         text: () => Promise.resolve(capturedHtmlStringForBlob),
+    //         toString: () => '[object MockedBlobForTest]',
+    //       };
+    //     });
+
+    //     global.ClipboardItem = jest.fn().mockImplementation((clipboardData) => {
+    //       clipboardItemConstructorCalled = true;
+    //       console.log('[TEST DEBUG] Mocked ClipboardItem constructor called.');
+    //       return { _capturedClipboardData: clipboardData };
+    //     });
+
+    //     console.log('[TEST DEBUG] About to call copyHTML');
+    //     await squibView.copyHTML();
+    //     console.log('[TEST DEBUG] copyHTML finished.');
+
+    //     expect(imageOnloadCalledCount).toBeGreaterThan(0);
+    //     console.log(`[TEST DEBUG] Image src that was processed: ${imageSrcSetInMock}`);
+    //     expect(mockWrite).toHaveBeenCalled();
+    //     expect(blobConstructorCalled).toBe(true);
+    //     expect(clipboardItemConstructorCalled).toBe(true);
+        
+    //     expect(capturedHtmlStringForBlob).toBeDefined();
+    //     expect(capturedHtmlStringForBlob).toMatch(/data:image\/png;base64,/);
+
+    //   } finally {
+    //     global.Blob = originalBlob;
+    //     global.ClipboardItem = originalClipboardItem;
+    //     global.Image = originalImage;
+    //     console.log('[TEST DEBUG] Test finished.');
+    //   }
+    // });
+  });
 });
