@@ -4,13 +4,16 @@
 
 [Live Demo (local)](./examples/example_ESM.html)
 
-SquibView is a (headless) javascript embeddable editor / viewer for GitHub-flavored Markdown (or full HTML pages) into a rendered view on the fly. 
 
-For markdown inputs, it supports rendering Mermaid diagrams, syntax-highlighted code blocks, tables, and inline SVG graphics, providing a powerful and interactive way to view and export your Markdown content as HTML.
+SquibView is a headless JavaScript embeddable editor/viewer that renders GitHub-Flavored Markdown (or full HTML pages) on the fly.
 
-For HTML inputs, it creates a complete embedded iframe to view the content.  
+For Markdown inputs, it supports rendering Mermaid diagrams, syntax-highlighted code blocks, tables, and inline SVG graphics. This provides a powerful and interactive way to view and export Markdown content as HTML.
 
-Squibview supports full cut-and-paste and allows editing of the rendered content back in to source.
+For HTML inputs, it embeds the content within an iframe for viewing.
+
+SquibView supports full cut-and-paste functionality and allows edits made in the rendered view to be reflected back in the source.
+
+<img src="./squibview-example.png" alt="SquibView Example" width="600">
 
 ## Documentation
 
@@ -19,11 +22,11 @@ Squibview supports full cut-and-paste and allows editing of the rendered content
 
 ## Web Viewer
 
-SquibView can be used as a standalone tool for taking complex markdown output (such as from OpenAI, Claude, Mistral, or Deepseek) or a simple live preview markdown editor.  
+SquibView can be used as a standalone tool for processing complex Markdown output (e.g., from LLMs like OpenAI, Claude, Mistral, or Deepseek) or as a simple live preview Markdown editor.
 
 ## As a Component
 
-Squibview also can be used as an embedddable component in your app, where you can feed it complex markdown or other content and then render it on the fly.  Squibview can dynamically switch between showing a splitscreen of both the source and output or just the output so one can use it as renderer.
+As an embeddable component, SquibView allows your application to render complex Markdown or other content on the fly. It can dynamically switch between a split-screen view (source and output) or an output-only view, serving effectively as a renderer.
 
 ## Installation and Usage
 
@@ -112,7 +115,7 @@ SquibView offers multiple build formats for different use cases:
 
 ### Using via CDN
 
-Squibview is available on unpkg and npm.  
+SquibView is available via CDN (unpkg) and as an npm package.
 
 ## Examples
 
@@ -148,14 +151,45 @@ const editor = new SquibView('#editorContainer', {
   baseClass: 'squibview',      // Base CSS class for styling
   
   // Image handling
-  preserveImageTags: true,     // Whether to keep original image URLs in source view
-                               // When true: images remain as <img> tags with original URLs
-                               // When false: images are converted to data URLs
-                               // Note: Images are always converted to data URLs when copying
+  preserveImageTags: true,     // Default: true. Whether to keep original image URLs in source view.
+                               // When true: images remain as <img> tags with original URLs in the source view.
+                               // When false: images are converted to data URLs in the source view.
+                               // Note: For clipboard operations (copy), images are always converted to data URLs
+                               // to ensure portability, regardless of this setting.
   
   // Text replacement
   onReplaceSelectedText: null  // Callback for text replacement on selection
 });
+```
+
+**Detailed Example: Image Handling with `preserveImageTags`**
+
+The `preserveImageTags` option provides fine-grained control over how image `src` attributes are handled within the source view and during copy-to-clipboard actions. By default (`true`), SquibView keeps external image links as they are in your source Markdown, which is often preferred for readability and maintainability of the source. When set to `false`, images are converted to inline data URLs directly in the source view upon rendering. Regardless of this setting, when content is copied to the clipboard, images are always converted to data URLs to ensure maximum portability and that the images are embedded within the copied content.
+
+```javascript
+// Create editor with default image handling (preserves original URLs in source view)
+const editor1 = new SquibView('#editor1'); // preserveImageTags defaults to true
+
+// Create editor that converts images to data URLs in source view
+const editor2 = new SquibView('#editor2', {
+  preserveImageTags: false
+});
+
+// Set content with images
+const markdown = `
+# Image Example
+
+![Local Image](./images/example.png)
+![Remote Image](https://example.com/image.jpg)
+`;
+
+editor1.setContent(markdown, 'md');
+// In editor1's source view, images will keep their original URLs (e.g., './images/example.png').
+// If content from editor1 is copied, the images in the clipboard HTML will use data URLs.
+
+editor2.setContent(markdown, 'md');
+// In editor2's source view, images will be converted to data URLs (e.g., 'data:image/png;base64,...').
+// If content from editor2 is copied, the images will also use data URLs.
 ```
 
 ## Getting Started
@@ -166,15 +200,17 @@ git clone https://github.com/deftio/squibview.git
 cd squibview
 ```
 
-Open the Application: Since this is a static HTML project, simply open index.html in your preferred web browser:
+**Running the Examples:**
+The `examples/` directory contains various HTML files demonstrating different SquibView features and build types.
+To run them:
+1. Navigate to the `examples/` directory.
+2. Open any of the `*.html` files (e.g., `example_ESM.html`) in your web browser.
 
-Double-click index.html or
-Right-click index.html and choose "Open with" your browser.
-Use the Converter:
-
-Select a view mode (md, html, split) using the buttons at the top.
-Enter your GitHub-flavored Markdown into the editor on the left (in split or md view).
-The right side will render the HTML output live, complete with diagrams, code highlighting, and more.
+You can typically do this by double-clicking the file or using "Open with" from your file explorer.
+Once an example is open:
+- You can switch view modes (source, rendered, split) using the control buttons.
+- For Markdown examples, enter your GitHub-Flavored Markdown into the editor on the left (in split or source view).
+- The right side (in split or rendered view) will update live, showcasing diagrams, code highlighting, and other features.
 
 ## Testing
 
@@ -226,31 +262,4 @@ Please make sure your contributions follow the project's coding style and that t
 
 This project is licensed under the BSD-2 License. See the LICENSE file for details.
 
-#### Example: Image Handling
 
-```javascript
-// Create editor with default image handling (preserves original URLs)
-const editor1 = new SquibView('#editor1', {
-  preserveImageTags: true  // default
-});
-
-// Create editor that converts images to data URLs in source view
-const editor2 = new SquibView('#editor2', {
-  preserveImageTags: false
-});
-
-// Set content with images
-const markdown = `
-# Image Example
-
-![Local Image](./images/example.png)
-![Remote Image](https://example.com/image.jpg)
-`;
-
-editor1.setContent(markdown, 'md');  // Images remain as URLs in source
-editor2.setContent(markdown, 'md');  // Images converted to data URLs in source
-
-// Both editors will convert images to data URLs when copying
-editor1.copyHTML();  // Images in clipboard are data URLs
-editor2.copyHTML();  // Images in clipboard are data URLs
-```
