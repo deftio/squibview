@@ -33,7 +33,7 @@
   },
   "scripts": {
     "test": "jest --config jest.config.cjs --coverage",
-    "test:e2e": "npx concurrently -k --names \"HTTP,E2E\" -c \"bgBlue.bold,bgMagenta.bold\" \"npx http-server -p 8000\" \"wait-on -t 300000 -i 2000 http://127.0.0.1:8000 && jest -c e2e-tests/jest.config.cjs --ci\"",
+    "test:e2e": "npx concurrently -k --success first --names \"HTTP,E2E\" -c \"bgBlue.bold,bgMagenta.bold\" \"npx http-server -p 8000\" \"wait-on -t 300000 -i 2000 http://127.0.0.1:8000 && jest -c e2e-tests/jest.config.cjs --ci\"",
     "test:all": "npm run test && npm run test:e2e",
     "build": "npm run updateVersion && npm run makeIndexHTML && rollup -c && npm run minifyCSS",
     "build:umd": "npm run updateVersion && rollup -c --environment BUILD:umd && npm run minifyCSS",
