@@ -9,6 +9,7 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     strategy:
       matrix:
@@ -31,7 +32,8 @@ jobs:
       run: npm run build
 
     - name: Run all tests
-      run: npm run test:all
+      run: npm run test:all -- --ci
+      timeout-minutes: 2
       # If npm run test:all doesn't exist, you might use:
       # run: |
       #   npm test
