@@ -31,9 +31,16 @@ jobs:
     - name: Build project
       run: npm run build
 
-    - name: Run all tests
-      run: npm run test:all -- --ci
-      timeout-minutes: 2
+    - name: Run unit tests
+      run: npm run test # Runs 'jest --config jest.config.cjs --coverage'
+      # Consider adding --ci to Jest if beneficial: npm run test -- --ci
+      timeout-minutes: 3
+
+    - name: Run E2E tests
+      run: |
+        echo "Starting E2E tests..."
+        npm run test:e2e
+      timeout-minutes: 7
       # If npm run test:all doesn't exist, you might use:
       # run: |
       #   npm test
