@@ -1,106 +1,164 @@
 /* squibview.css */
 
-/* globals for suppressing mermaid msgs */
-.error-icon {
-    display: none;
-}
+/*
+  Core SquibView Styles
+  Utilizes CSS Custom Properties for easy theming.
+*/
 
-text.error-text {
-    display: none;
-}
-
-/* squibview specific styles */
-
+/* Define global CSS variables within the .squibview scope for theming */
 .squibview {
+    /* Color Palette */
+    --squibview-primary-color: #2a57d3;
+    --squibview-primary-text-color: white;
+    --squibview-secondary-color: #e0e0e0;
+    --squibview-secondary-text-color: #255ff1;
+    --squibview-border-color: #ccc;
+    --squibview-background-color: white; /* Overall background, if needed */
+    --squibview-input-background-color: white;
+    --squibview-output-background-color: white;
+    --squibview-table-header-bg: #f0f0f0;
+    --squibview-code-block-bg: #f7f7f7;
+    --squibview-caret-color: red;
+
+    /* Typography */
+    --squibview-font-family-monospace: monospace;
+    --squibview-font-size-base: 1rem; /* Base for relative units */
+    --squibview-font-size-input: 1em; /* Relative to .squibview-input's parent or base */
+    --squibview-font-size-title: 1.5em; /* Relative to .squibview-title's parent or base */
+    --squibview-button-font-size: 1rem;
+
+
+    /* Spacing & Sizing */
+    --squibview-padding-base: 1em;
+    --squibview-padding-controls: 0.2em 0;
+    --squibview-button-padding: 0.4em 0.7em;
+    --squibview-button-margin-right: 0.5em;
+    --squibview-table-cell-padding: 0.5em;
+    --squibview-code-block-padding: 0.5em;
+
+    /* Borders & Radius */
+    --squibview-border-width: 2px;
+    --squibview-border-style: solid;
+    --squibview-border-radius-main: 8px;
+    --squibview-border-radius-button: 4px;
+    --squibview-button-active-border-width: 1px;
+
+
+    /* SquibView main container layout */
     height: 100%;
     display: flex;
     flex-direction: column;
+    background-color: var(--squibview-background-color);
 }
 
+/* Control bar for view switching and other actions */
 .squibview-controls {
-    padding: 0.2em 0;
+    padding: var(--squibview-padding-controls);
     text-align: left;
 }
 
 .squibview-controls button {
-    border-radius: 4px;
-    background-color: #2a57d3;
-    border: none;
-    color: white;
-    padding: 0.4em 0.7em;
+    border-radius: var(--squibview-border-radius-button);
+    background-color: var(--squibview-primary-color);
+    border: none; /* Default button state has no border */
+    color: var(--squibview-primary-text-color);
+    padding: var(--squibview-button-padding);
     cursor: pointer;
-    font-size: 1rem;
-    margin-right: 0.5em;
+    font-size: var(--squibview-button-font-size);
+    margin-right: var(--squibview-button-margin-right);
 }
 
+/* Active state for control buttons */
 .squibview-controls button.active {
-    background-color: #e0e0e0;
-    border: 1px solid #2a57d3;
-    color: #255ff1;
+    background-color: var(--squibview-secondary-color);
+    border: var(--squibview-button-active-border-width) var(--squibview-border-style) var(--squibview-primary-color);
+    color: var(--squibview-secondary-text-color);
 }
 
+/* Editor area containing input and output panels */
 .squibview-editor {
     display: flex;
-    flex: 1;
-    min-height: 0;
-    /* Important for Firefox */
+    flex: 1; /* Allows editor to fill available vertical space */
+    min-height: 0; /* Important for Firefox flexbox behavior to allow shrinking */
 }
 
+/* Input (source) and Output (rendered) panels common styling */
 .squibview-input,
 .squibview-output {
     height: 100%;
-    box-sizing: border-box;
-    border: 2px solid #ccc;
-    border-radius: 8px;
+    box-sizing: border-box; /* Includes padding and border in the element's total width and height */
+    border: var(--squibview-border-width) var(--squibview-border-style) var(--squibview-border-color);
+    border-radius: var(--squibview-border-radius-main);
 }
 
+/* Styling for the Markdown/source input textarea */
 .squibview-input {
-    padding: 1em;
-    font-family: monospace;
-    font-size: 1em;
-    resize: none;
+    padding: var(--squibview-padding-base);
+    font-family: var(--squibview-font-family-monospace);
+    font-size: var(--squibview-font-size-input);
+    background-color: var(--squibview-input-background-color);
+    resize: none; /* Typically, resizing is handled by SquibView's layout */
 }
 
+/* Styling for the rendered HTML output panel */
 .squibview-output {
-    padding: 1em;
-    overflow: auto;
+    padding: var(--squibview-padding-base);
+    overflow: auto; /* Allows scrolling for content that exceeds panel dimensions */
+    background-color: var(--squibview-output-background-color);
 }
 
+/* Utility class to hide elements */
 .squibview-hidden {
-    display: none !important;
+    display: none !important; /* !important is used here to ensure override */
 }
 
+/* Styling for tables within the rendered output */
 .squibview-output table {
-    border-collapse: collapse;
+    border-collapse: collapse; /* Clean table borders */
     width: 100%;
-    margin-bottom: 1em;
+    margin-bottom: var(--squibview-padding-base); /* Space below tables */
 }
 
 .squibview-output th,
 .squibview-output td {
-    border: 1px solid #ccc;
-    padding: 0.5em;
+    border: 1px var(--squibview-border-style) var(--squibview-border-color); /* Cell borders */
+    padding: var(--squibview-table-cell-padding);
     text-align: left;
 }
 
 .squibview-output th {
-    background: #f0f0f0;
+    background: var(--squibview-table-header-bg); /* Header background color */
 }
 
+/* Styling for preformatted code blocks within the rendered output */
 .squibview-output pre code {
     display: block;
-    padding: 0.5em;
-    background: #f7f7f7;
-    border-radius: 4px;
+    padding: var(--squibview-code-block-padding);
+    background: var(--squibview-code-block-bg);
+    border-radius: var(--squibview-border-radius-button); /* Consistent with button radius */
 }
 
+/* Styling for contenteditable elements (e.g., rendered output if editable) */
 [contenteditable] {
-    outline: 0px solid transparent;
-    caret-color: red;
+    outline: 0px solid transparent; /* Removes default focus outline */
+    caret-color: var(--squibview-caret-color); /* Custom caret color */
 }
 
+/* Styling for the optional title section */
 .squibview-title {
-    padding: 0 0;
-    font-size: 1.5em;
+    padding: 0 0; /* Minimal vertical padding by default */
+    font-size: var(--squibview-font-size-title);
     text-align: left;
+    /* color: can be set by a variable if needed e.g. var(--squibview-title-text-color) */
+}
+
+/* 
+  Mermaid Diagram Specific Styles
+  Scoped to within SquibView's output to avoid global conflicts.
+*/
+
+/* Suppress default Mermaid error messages/icons within SquibView output */
+.squibview-output .mermaid .error-icon,
+.squibview-output .mermaid text.error-text {
+    display: none;
 }

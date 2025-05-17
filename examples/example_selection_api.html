@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SquibView - Selection API Example</title>
+    <!-- Required dependencies for SquibView ESM -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
+    <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/default.min.css">
+
+    <!-- SquibView CSS -->
+    <link rel="stylesheet" href="../dist/squibview.css">
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; }
+        #editor-container { height: 400px; margin-bottom: 20px; }
+        .controls { margin-bottom: 20px; padding: 10px; background-color: #fff; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .controls-group { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; /* New style for grouping buttons */}
+        .controls button, .controls input { /*margin-right: 10px;*/ padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; }
+        .controls input { cursor: text; flex-grow: 1; /* Allow input to take more space */ }
+        .controls button:hover { background-color: #f0f0f0; }
+        #selection-info-container { margin-bottom: 20px; } /* Renamed for clarity */
+        #selection-info { margin-top: 5px; padding: 10px; border: 1px solid #eee; background-color: #f9f9f9; border-radius: 4px; white-space: pre-wrap; font-family: monospace; min-height: 50px; }
+        .info-label { font-weight: bold; display: block; margin-bottom: 5px; }
+        .note { font-size: 0.9em; color: #555; margin-top: 5px; display: block;}
+    </style>
+</head>
+<body>
+
+    <h1>SquibView - Selection API Example</h1>
+    <p>Select text in either the source (left) or rendered (right) panel to see selection data update automatically. Use the buttons to interact with the selection.</p>
+
+    <div id="editor-container"></div>
+
+    <div id="selection-info-container" class="controls"> <!-- Changed class to controls for consistent styling -->
+        <span class="info-label">Selection Info (updates on selection change):</span>
+        <div id="selection-info">No selection yet.</div>
+        <small class="note">
+            - `selectionRange` is most relevant for the source panel (textarea).
+            - `element` refers to the DOM element where the selection occurred (source textarea or output div).
+        </small>
+    </div>
+
+    <div class="controls">
+        <div class="controls-group">
+            <button id="btn-get-current">Get Current Selection</button>
+            <input type="text" id="input-replace-text" value="**text to replace with**" title="Text to replace selection with">
+            <button id="btn-replace-text">Replace Selected</button>
+            <button id="btn-clear-selection">Clear Selection</button>
+        </div>
+        <!-- <hr style="margin: 10px 0;"> -->
+        <!-- <div class="controls-group">
+            <button id="btn-selection-readonly">Make Read-only</button>
+            <button id="btn-selection-editable">Make Editable</button>
+            <button id="btn-toggle-lock">Toggle Lock</button>
+        </div> -->
+    </div>
+
+    <script type="module">
+        import SquibView from '../dist/squibview.esm.js';
+
+        const initialContent = `## Selection API Demo\n\nSelect some text here in the **source panel**.\n\nOr, select some *rendered text* over on the right.\n\n- List item 1\n- List item 2\n\n---\n\n\`\`\`javascript\nfunction hello() {\n  console.log(\"Hello, SquibView!\");\n}\n\`\`\`\n\n<p>This is an <em>HTML</em> paragraph.</p>\n`;
+
+        const editor = new SquibView('#editor-container', {
+            initialContent: initialContent,
+            inputContentType: 'md',
+            showControls: true, // Show default SquibView controls
+            titleShow: true,
+            titleContent: "Selection API Demo"
+        });
+
+        const selectionInfoDiv = document.getElementById('selection-info');
+        let currentSelectionData = null; // To store the latest selection data
+
+        // 1. Listen for selection changes
+        editor.onTextSelected((selectionData) => {
+            currentSelectionData = selectionData;
+            if (selectionData) {
+                const displayData = { ...selectionData };
+                if (displayData.element) {
+                    let details = {
+                        tagName: displayData.element.tagName
+                    };
+                    if (displayData.element === editor.input) { // editor.input is the textarea
+                        details.panel = 'source';
+                        details.id = displayData.element.id; 
+                        details.className = displayData.element.className;
+                    } else if (displayData.element === editor.output) { // editor.output is the output div
+                        details.panel = 'rendered';
+                        details.id = displayData.element.id;
+                        details.className = displayData.element.className;
+                    } else {
+                        // It might be an element within the rendered view
+                        details.panel = 'rendered (child element)';
+                        details.id = displayData.element.id;
+                        details.className = displayData.element.className;
+                    }
+                    displayData.element_details = details;
+                }
+                // delete displayData.element; // Keep this commented to show element is still there, just stringifies to {}
+
+                selectionInfoDiv.textContent = JSON.stringify(displayData, null, 2);
+            } else {
+                selectionInfoDiv.textContent = 'Selection cleared or lost.';
+                currentSelectionData = null;
+            }
+        });
+
+        // 2. Manually get current selection
+        document.getElementById('btn-get-current').addEventListener('click', () => {
+            const selData = editor.getCurrentSelection();
+            currentSelectionData = selData; // Update our stored version
+            if (selData) {
+                const displayData = { ...selData };
+                if (displayData.element) {
+                    let details = {
+                        tagName: displayData.element.tagName
+                    };
+                    if (displayData.element === editor.input) {
+                        details.panel = 'source';
+                        details.id = displayData.element.id;
+                        details.className = displayData.element.className;
+                    } else if (displayData.element === editor.output) {
+                        details.panel = 'rendered';
+                        details.id = displayData.element.id;
+                        details.className = displayData.element.className;
+                    } else {
+                        details.panel = 'rendered (child element)';
+                        details.id = displayData.element.id;
+                        details.className = displayData.element.className;
+                    }
+                    displayData.element_details = details;
+                }
+                // delete displayData.element;
+
+                selectionInfoDiv.textContent = "Manually Fetched:\\n" + JSON.stringify(displayData, null, 2);
+            } else {
+                selectionInfoDiv.textContent = 'Manually Fetched: No active selection.';
+            }
+        });
+
+        // 3. Replace selected text
+        document.getElementById('btn-replace-text').addEventListener('click', () => {
+            const replacementText = document.getElementById('input-replace-text').value;
+            if (currentSelectionData) {
+                editor.replaceSelectedText(replacementText, currentSelectionData);
+                // The onTextSelected event should fire if the selection changes as a result.
+            } else {
+                alert("No active selection to replace. Select some text first, or click 'Get Current Selection'.");
+            }
+        });
+
+        // 4. Clear selection
+        document.getElementById('btn-clear-selection').addEventListener('click', () => {
+            editor.clearSelection();
+            // onTextSelected should fire with null or an empty selection.
+            selectionInfoDiv.textContent = 'Selection cleared programmatically.';
+            currentSelectionData = null;
+        });
+
+    </script>
+
+</body>
+</html>

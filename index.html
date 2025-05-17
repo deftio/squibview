@@ -99,13 +99,16 @@ Any manual edits may be lost.
 <script>hljs.highlightAll();</script>
 </head>
 <body class="bw-def-page-setup bw-font-sans-serif dbat" ><br><br><h1 id="squibview">SquibView</h1>
+<p><a href="https://www.npmjs.com/package/squibview"><img src="https://img.shields.io/npm/v/squibview.svg" alt="NPM Version"></a>
+<a href="LICENSE"><img src="https://img.shields.io/badge/License-BSD_2--Clause-orange.svg" alt="License"></a>
+<a href="https://github.com/deftio/squibview/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/deftio/squibview/ci.yml?branch=main&style=flat&logo=github&label=Build&color=blue" alt="Build Status"></a></p>
 <p><a href="https://deftio.github.io/squibview/examples/example_ESM.html">Live Demo (github)</a></p>
 <p><a href="./examples/example_ESM.html">Live Demo (local)</a></p>
 <p>SquibView is a headless JavaScript embeddable editor/viewer that renders GitHub-Flavored Markdown (or full HTML pages) on the fly.</p>
 <p>For Markdown inputs, it supports rendering Mermaid diagrams, syntax-highlighted code blocks, tables, and inline SVG graphics. This provides a powerful and interactive way to view and export Markdown content as HTML.</p>
 <p>For HTML inputs, it embeds the content within an iframe for viewing.</p>
 <p>SquibView supports full cut-and-paste functionality and allows edits made in the rendered view to be reflected back in the source.</p>
-<img src="./squibview-example.png" alt="SquibView Example" width="600">
+<img src="./squibview-example.png" alt="SquibView Example" width="100%">
 
 <h2 id="documentation">Documentation</h2>
 <ul>
@@ -227,6 +230,20 @@ Any manual edits may be lost.
 <li><strong>Revision History</strong>: Track changes with undo/redo functionality.</li>
 <li><strong>Plugin System</strong>: Extend functionality with custom plugins and renderers.</li>
 <li><strong>Image Handling</strong>: Control how images are displayed in source view and when copying content.</li>
+<li><strong>Standard Markdown Line Breaks</strong>: SquibView follows standard Markdown behavior for line breaks.<ul>
+<li>A single newline in your source Markdown is treated as a soft break and will typically render as a space, not a new line, if it&#39;s within the same paragraph.</li>
+<li>To force a hard line break (inserting a <code>&lt;br&gt;</code> tag), end a line with two or more spaces.</li>
+<li>To start a new paragraph (wrapping content in <code>&lt;p&gt;</code> tags), leave a blank line between blocks of text.</li>
+<li>Example:<pre><code class="language-markdown"># Title
+This is line one.··
+This is line two (after two spaces, so it&#39;s a hard break).
+
+This is a new paragraph.
+This line is part of the new paragraph.
+</code></pre>
+(In the example, <code>··</code> represents two spaces.)</li>
+</ul>
+</li>
 </ul>
 <h2 id="configuration-options">Configuration Options</h2>
 <p>SquibView can be configured with various options when initializing:</p>
@@ -317,7 +334,7 @@ Once an example is open:</p>
 <li><p><strong>Run All Tests (Recommended before releases):</strong></p>
 <ul>
 <li>To ensure all checks pass, run both test suites sequentially.</li>
-<li>Command: <code>npm run test:all</code> (We will add this script next)</li>
+<li>Command: <code>npm run test:all</code></li>
 </ul>
 </li>
 </ul>

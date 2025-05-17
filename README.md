@@ -1,5 +1,9 @@
 # SquibView
 
+[![NPM Version](https://img.shields.io/npm/v/squibview.svg)](https://www.npmjs.com/package/squibview)
+[![License](https://img.shields.io/badge/License-BSD_2--Clause-orange.svg)](LICENSE)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/deftio/squibview/ci.yml?branch=main&style=flat&logo=github&label=Build&color=blue)](https://github.com/deftio/squibview/actions/workflows/ci.yml)
+
 [Live Demo (github)](https://deftio.github.io/squibview/examples/example_ESM.html)
 
 [Live Demo (local)](./examples/example_ESM.html)
@@ -13,7 +17,7 @@ For HTML inputs, it embeds the content within an iframe for viewing.
 
 SquibView supports full cut-and-paste functionality and allows edits made in the rendered view to be reflected back in the source.
 
-<img src="./squibview-example.png" alt="SquibView Example" width="600">
+<img src="./squibview-example.png" alt="SquibView Example" width="100%">
 
 ## Documentation
 
@@ -134,6 +138,20 @@ See the [examples folder](./examples)
 - **Revision History**: Track changes with undo/redo functionality.
 - **Plugin System**: Extend functionality with custom plugins and renderers.
 - **Image Handling**: Control how images are displayed in source view and when copying content.
+- **Standard Markdown Line Breaks**: SquibView follows standard Markdown behavior for line breaks.
+    - A single newline in your source Markdown is treated as a soft break and will typically render as a space, not a new line, if it's within the same paragraph.
+    - To force a hard line break (inserting a `<br>` tag), end a line with two or more spaces.
+    - To start a new paragraph (wrapping content in `<p>` tags), leave a blank line between blocks of text.
+    - Example:
+      ```markdown
+      # Title
+      This is line one.··
+      This is line two (after two spaces, so it's a hard break).
+
+      This is a new paragraph.
+      This line is part of the new paragraph.
+      ```
+      (In the example, `··` represents two spaces.)
 
 ## Configuration Options
 
@@ -229,7 +247,7 @@ SquibView uses Jest for unit/integration tests and Puppeteer for End-to-End (E2E
 
 *   **Run All Tests (Recommended before releases):**
     *   To ensure all checks pass, run both test suites sequentially.
-    *   Command: `npm run test:all` (We will add this script next)
+    *   Command: `npm run test:all` 
 
 ## Contributing
 

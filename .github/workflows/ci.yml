@@ -1,0 +1,38 @@
+name: SquibView CI
+
+on:
+  push:
+    branches: [ main ] # Or master, or your default branch
+  pull_request:
+    branches: [ main ] # Or master, or your default branch
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x] # You can add other versions like 16.x, 20.x if needed
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build project
+      run: npm run build
+
+    - name: Run all tests
+      run: npm run test:all
+      # If npm run test:all doesn't exist, you might use:
+      # run: |
+      #   npm test
+      #   npm run test:e2e 
