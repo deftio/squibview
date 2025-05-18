@@ -359,16 +359,17 @@ class SquibView {
 
     this.md.renderer.rules.fence = (tokens, idx, options, env, self) => {
       const token = tokens[idx];
-      const info = token.info.trim();
+      const info = token.info.trim().toLowerCase(); // Normalize to lowercase
+      const content = token.content;
       
       // Handle Mermaid diagrams
       if (info === 'mermaid') {
-        return '<div class="mermaid">' + token.content + '</div>';
+        return '<div class="mermaid">' + content + '</div>';
       }
       
       // Handle SVG directly
       if (info === 'svg') {
-        return token.content;
+        return content; // Assuming content is valid SVG
       }
       
       // Handle GeoJSON maps
@@ -387,7 +388,7 @@ class SquibView {
                           }).addTo(map);
                           
                           try {
-                            const geojsonData = ${token.content};
+                            const geojsonData = ${content};
                             const geojsonLayer = L.geoJSON(geojsonData).addTo(map);
                             map.fitBounds(geojsonLayer.getBounds(), { padding: [20, 20] });
                             mapContainer.dataset.initialized = 'true';
@@ -425,7 +426,7 @@ class SquibView {
         // Create unique ID for this math block
         const mathId = 'math-' + Math.random().toString(36).substring(2, 15);
         
-        return `<div id="${mathId}" class="math-display">$$${token.content}$$</div>
+        return `<div id="${mathId}" class="math-display">$$${content}$$</div>
                 <script>
                   (function() {
                     function initMathJax() {
@@ -464,10 +465,92 @@ class SquibView {
                   })();
                 </script>`;
       }
+
+      // Handle data tables (csv, tsv, psv)
+      const supportedTableFormats = { // Map language id to delimiter
+        'csv': ',',
+        'tsv': '	', // USE LITERAL TAB CHARACTER
+        'psv': '|'
+      };
+
+      if (supportedTableFormats.hasOwnProperty(info)) {
+        // const delimiter = supportedTableFormats[info]; // Keep for CSV and PSV, but TSV will auto-detect
+        try {
+          // Ensure Papa is available (globally)
+          if (typeof Papa === 'undefined' || typeof Papa.parse !== 'function') {
+            console.error('PapaParse library is not available. Please include it on the page.');
+            return '<pre class="squibview-error">Error: PapaParse library not loaded.</pre>';
+          }
+          
+          let parseConfig = {
+            skipEmptyLines: true
+          };
+
+          if (info === 'tsv') {
+            // For TSV, let PapaParse auto-detect the delimiter
+            // No explicit delimiter set here, PapaParse will infer it.
+          } else {
+            // For CSV and PSV, use the defined delimiter
+            parseConfig.delimiter = supportedTableFormats[info];
+          }
+
+          const parsedData = Papa.parse(content, parseConfig);
+
+          if (parsedData.errors && parsedData.errors.length > 0) {
+            let errorMessages = parsedData.errors.map(err => `${err.type}: ${err.message} (Row: ${err.row})`).join('\\n');
+            console.warn(`PapaParse errors for ${info}:`, parsedData.errors);
+            return `<pre class="squibview-error">Error parsing ${info} data:\\n${this.md.utils.escapeHtml(errorMessages)}</pre>`;
+          }
+          return this._dataToHtmlTable(parsedData.data);
+        } catch (e) {
+          console.error(`Error rendering ${info} table:`, e);
+          return '<pre class="squibview-error">Could not render ' + this.md.utils.escapeHtml(info) + ' table.</pre>';
+        }
+      }
       
       // Default rendering for other code blocks
       return defaultFence(tokens, idx, options, env, self);
     };
+  }
+
+  /**
+   * Converts parsed data (array of arrays) to an HTML table string.
+   *
+   * @param {Array<Array<string>>} rows - The data rows, where the first row is the header.
+   * @returns {string} An HTML table string.
+   * @private
+   */
+  _dataToHtmlTable(rows) {
+    if (!rows || rows.length === 0) {
+      return '<p class="squibview-info">No data to display.</p>';
+    }
+
+    let html = '<table class="squibview-data-table">';
+
+    // Header
+    const headerCells = rows[0];
+    html += '<thead><tr>';
+    headerCells.forEach(cell => {
+      html += `<th>${this.md.utils.escapeHtml(String(cell))}</th>`;
+    });
+    html += '</tr></thead>';
+
+    // Body
+    html += '<tbody>';
+    for (let i = 1; i < rows.length; i++) {
+      html += '<tr>';
+      const bodyCells = rows[i];
+      // Ensure all rows have the same number of cells as the header
+      // by either truncating or padding with empty cells
+      for (let j = 0; j < headerCells.length; j++) {
+          const cellContent = bodyCells[j] !== undefined ? String(bodyCells[j]) : '';
+          html += `<td>${this.md.utils.escapeHtml(cellContent)}</td>`;
+      }
+      html += '</tr>';
+    }
+    html += '</tbody></table>';
+
+    return html;
   }
 
   /**

@@ -2601,7 +2601,7 @@
   var DiffMatchPatch = /*@__PURE__*/getDefaultExportFromCjs(diffMatchPatchExports);
 
   // src/version.js
-  var VERSION = "0.0.34";
+  var VERSION = "0.0.35";
   var REPO_URL = "https://github.com/deftio/squibview";
 
   // Fix for development mode
@@ -2945,6 +2945,7 @@
     }, {
       key: "initializeLibraries",
       value: function initializeLibraries() {
+        var _this = this;
         // Initialize Mermaid for diagram rendering
         mermaid.initialize({
           startOnLoad: false,
@@ -2980,34 +2981,117 @@
         };
         this.md.renderer.rules.fence = function (tokens, idx, options, env, self) {
           var token = tokens[idx];
-          var info = token.info.trim();
+          var info = token.info.trim().toLowerCase(); // Normalize to lowercase
+          var content = token.content;
 
           // Handle Mermaid diagrams
           if (info === 'mermaid') {
-            return '<div class="mermaid">' + token.content + '</div>';
+            return '<div class="mermaid">' + content + '</div>';
           }
 
           // Handle SVG directly
           if (info === 'svg') {
-            return token.content;
+            return content; // Assuming content is valid SVG
           }
 
           // Handle GeoJSON maps
           if (info === 'geojson') {
             var geojsonId = 'geojson-' + Math.random().toString(36).substring(2, 15);
-            return "<div id=\"".concat(geojsonId, "\" class=\"geojson-map\" style=\"width: 100%; height: 300px;\"></div>\n                <script>\n                  (function() {\n                    const initMap = function() {\n                      if (typeof L !== 'undefined') {\n                        const mapContainer = document.getElementById('").concat(geojsonId, "');\n                        if (mapContainer && !mapContainer.dataset.initialized) {\n                          const map = L.map('").concat(geojsonId, "').setView([0, 0], 2);\n                          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {\n                            attribution: '&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors'\n                          }).addTo(map);\n                          \n                          try {\n                            const geojsonData = ").concat(token.content, ";\n                            const geojsonLayer = L.geoJSON(geojsonData).addTo(map);\n                            map.fitBounds(geojsonLayer.getBounds(), { padding: [20, 20] });\n                            mapContainer.dataset.initialized = 'true';\n                          } catch (e) {\n                            console.error('Error parsing GeoJSON:', e);\n                            mapContainer.innerHTML = '<div class=\"error\">Error parsing GeoJSON: ' + e.message + '</div>';\n                          }\n                        }\n                      } else {\n                        // Leaflet not loaded yet, load it\n                        const link = document.createElement('link');\n                        link.rel = 'stylesheet';\n                        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';\n                        document.head.appendChild(link);\n                        \n                        const script = document.createElement('script');\n                        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';\n                        script.onload = initMap;\n                        document.head.appendChild(script);\n                      }\n                    };\n                    \n                    // Try to initialize immediately, or wait for document to load\n                    if (document.readyState === 'complete') {\n                      initMap();\n                    } else {\n                      window.addEventListener('load', initMap);\n                    }\n                  })();\n                </script>");
+            return "<div id=\"".concat(geojsonId, "\" class=\"geojson-map\" style=\"width: 100%; height: 300px;\"></div>\n                <script>\n                  (function() {\n                    const initMap = function() {\n                      if (typeof L !== 'undefined') {\n                        const mapContainer = document.getElementById('").concat(geojsonId, "');\n                        if (mapContainer && !mapContainer.dataset.initialized) {\n                          const map = L.map('").concat(geojsonId, "').setView([0, 0], 2);\n                          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {\n                            attribution: '&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors'\n                          }).addTo(map);\n                          \n                          try {\n                            const geojsonData = ").concat(content, ";\n                            const geojsonLayer = L.geoJSON(geojsonData).addTo(map);\n                            map.fitBounds(geojsonLayer.getBounds(), { padding: [20, 20] });\n                            mapContainer.dataset.initialized = 'true';\n                          } catch (e) {\n                            console.error('Error parsing GeoJSON:', e);\n                            mapContainer.innerHTML = '<div class=\"error\">Error parsing GeoJSON: ' + e.message + '</div>';\n                          }\n                        }\n                      } else {\n                        // Leaflet not loaded yet, load it\n                        const link = document.createElement('link');\n                        link.rel = 'stylesheet';\n                        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';\n                        document.head.appendChild(link);\n                        \n                        const script = document.createElement('script');\n                        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';\n                        script.onload = initMap;\n                        document.head.appendChild(script);\n                      }\n                    };\n                    \n                    // Try to initialize immediately, or wait for document to load\n                    if (document.readyState === 'complete') {\n                      initMap();\n                    } else {\n                      window.addEventListener('load', initMap);\n                    }\n                  })();\n                </script>");
           }
 
           // Handle mathematical expressions
           if (info === 'math') {
             // Create unique ID for this math block
             var mathId = 'math-' + Math.random().toString(36).substring(2, 15);
-            return "<div id=\"".concat(mathId, "\" class=\"math-display\">$$").concat(token.content, "$$</div>\n                <script>\n                  (function() {\n                    function initMathJax() {\n                      if (typeof MathJax === 'undefined') {\n                        // Load MathJax script\n                        var script = document.createElement('script');\n                        script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';\n                        script.async = true;\n                        \n                        script.onload = function() {\n                          // Configure MathJax\n                          window.MathJax = {\n                            tex: {\n                              inlineMath: [['$', '$']],\n                              displayMath: [['$$', '$$']]\n                            },\n                            svg: { fontCache: 'global' }\n                          };\n                          // Render math\n                          MathJax.typeset();\n                        };\n                        \n                        document.head.appendChild(script);\n                      } else {\n                        // MathJax already loaded\n                        MathJax.typeset();\n                      }\n                    }\n                    \n                    // Initialize either now or when page loads\n                    if (document.readyState === 'complete') {\n                      initMathJax();\n                    } else {\n                      window.addEventListener('load', initMathJax);\n                    }\n                  })();\n                </script>");
+            return "<div id=\"".concat(mathId, "\" class=\"math-display\">$$").concat(content, "$$</div>\n                <script>\n                  (function() {\n                    function initMathJax() {\n                      if (typeof MathJax === 'undefined') {\n                        // Load MathJax script\n                        var script = document.createElement('script');\n                        script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';\n                        script.async = true;\n                        \n                        script.onload = function() {\n                          // Configure MathJax\n                          window.MathJax = {\n                            tex: {\n                              inlineMath: [['$', '$']],\n                              displayMath: [['$$', '$$']]\n                            },\n                            svg: { fontCache: 'global' }\n                          };\n                          // Render math\n                          MathJax.typeset();\n                        };\n                        \n                        document.head.appendChild(script);\n                      } else {\n                        // MathJax already loaded\n                        MathJax.typeset();\n                      }\n                    }\n                    \n                    // Initialize either now or when page loads\n                    if (document.readyState === 'complete') {\n                      initMathJax();\n                    } else {\n                      window.addEventListener('load', initMathJax);\n                    }\n                  })();\n                </script>");
+          }
+
+          // Handle data tables (csv, tsv, psv)
+          var supportedTableFormats = {
+            // Map language id to delimiter
+            'csv': ',',
+            'tsv': '	',
+            // USE LITERAL TAB CHARACTER
+            'psv': '|'
+          };
+          if (supportedTableFormats.hasOwnProperty(info)) {
+            // const delimiter = supportedTableFormats[info]; // Keep for CSV and PSV, but TSV will auto-detect
+            try {
+              // Ensure Papa is available (globally)
+              if (typeof Papa === 'undefined' || typeof Papa.parse !== 'function') {
+                console.error('PapaParse library is not available. Please include it on the page.');
+                return '<pre class="squibview-error">Error: PapaParse library not loaded.</pre>';
+              }
+              var parseConfig = {
+                skipEmptyLines: true
+              };
+              if (info === 'tsv') {
+                // For TSV, let PapaParse auto-detect the delimiter
+                // No explicit delimiter set here, PapaParse will infer it.
+              } else {
+                // For CSV and PSV, use the defined delimiter
+                parseConfig.delimiter = supportedTableFormats[info];
+              }
+              var parsedData = Papa.parse(content, parseConfig);
+              if (parsedData.errors && parsedData.errors.length > 0) {
+                var errorMessages = parsedData.errors.map(function (err) {
+                  return "".concat(err.type, ": ").concat(err.message, " (Row: ").concat(err.row, ")");
+                }).join('\\n');
+                console.warn("PapaParse errors for ".concat(info, ":"), parsedData.errors);
+                return "<pre class=\"squibview-error\">Error parsing ".concat(info, " data:\\n").concat(_this.md.utils.escapeHtml(errorMessages), "</pre>");
+              }
+              return _this._dataToHtmlTable(parsedData.data);
+            } catch (e) {
+              console.error("Error rendering ".concat(info, " table:"), e);
+              return '<pre class="squibview-error">Could not render ' + _this.md.utils.escapeHtml(info) + ' table.</pre>';
+            }
           }
 
           // Default rendering for other code blocks
           return defaultFence(tokens, idx, options, env, self);
         };
+      }
+
+      /**
+       * Converts parsed data (array of arrays) to an HTML table string.
+       *
+       * @param {Array<Array<string>>} rows - The data rows, where the first row is the header.
+       * @returns {string} An HTML table string.
+       * @private
+       */
+    }, {
+      key: "_dataToHtmlTable",
+      value: function _dataToHtmlTable(rows) {
+        var _this2 = this;
+        if (!rows || rows.length === 0) {
+          return '<p class="squibview-info">No data to display.</p>';
+        }
+        var html = '<table class="squibview-data-table">';
+
+        // Header
+        var headerCells = rows[0];
+        html += '<thead><tr>';
+        headerCells.forEach(function (cell) {
+          html += "<th>".concat(_this2.md.utils.escapeHtml(String(cell)), "</th>");
+        });
+        html += '</tr></thead>';
+
+        // Body
+        html += '<tbody>';
+        for (var i = 1; i < rows.length; i++) {
+          html += '<tr>';
+          var bodyCells = rows[i];
+          // Ensure all rows have the same number of cells as the header
+          // by either truncating or padding with empty cells
+          for (var j = 0; j < headerCells.length; j++) {
+            var cellContent = bodyCells[j] !== undefined ? String(bodyCells[j]) : '';
+            html += "<td>".concat(this.md.utils.escapeHtml(cellContent), "</td>");
+          }
+          html += '</tr>';
+        }
+        html += '</tbody></table>';
+        return html;
       }
 
       /**
@@ -3043,25 +3127,25 @@
     }, {
       key: "registerDefaultRenderers",
       value: function registerDefaultRenderers() {
-        var _this = this;
+        var _this3 = this;
         // Markdown renderer
         this.registerRenderer('md', {
           render: function render(source) {
-            return _this.renderMarkdown(source);
+            return _this3.renderMarkdown(source);
           },
           sourceToOutput: function sourceToOutput(source) {
-            return _this.md.render(source);
+            return _this3.md.render(source);
           },
           outputToSource: function outputToSource(output) {
             var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-            return _this.htmlToMarkdown(output, options);
+            return _this3.htmlToMarkdown(output, options);
           },
           operations: {
             increaseHeadings: function increaseHeadings(src) {
-              return _this.markdownAdjustHeadings(src, 1);
+              return _this3.markdownAdjustHeadings(src, 1);
             },
             decreaseHeadings: function decreaseHeadings(src) {
-              return _this.markdownAdjustHeadings(src, -1);
+              return _this3.markdownAdjustHeadings(src, -1);
             },
             removeHR: function removeHR(src) {
               return src.replace(/---/g, '');
@@ -3085,7 +3169,7 @@
         // HTML renderer
         this.registerRenderer('html', {
           render: function render(source) {
-            return _this.renderHTML(source);
+            return _this3.renderHTML(source);
           },
           sourceToOutput: function sourceToOutput(source) {
             return source;
@@ -3100,10 +3184,10 @@
         // RevealJS renderer
         this.registerRenderer('reveal', {
           render: function render(source) {
-            return _this.renderHTML(_this.makeRevealJSFullPage(source));
+            return _this3.renderHTML(_this3.makeRevealJSFullPage(source));
           },
           sourceToOutput: function sourceToOutput(source) {
-            return _this.makeRevealJSFullPage(source);
+            return _this3.makeRevealJSFullPage(source);
           },
           outputToSource: function outputToSource(output) {
             return output;
@@ -3115,14 +3199,14 @@
         // CSV renderer
         this.registerRenderer('csv', {
           render: function render(source) {
-            var markdownTable = _this.csvOrTsvToMarkdownTable(source, ',');
-            _this.renderMarkdown(markdownTable);
+            var markdownTable = _this3.csvOrTsvToMarkdownTable(source, ',');
+            _this3.renderMarkdown(markdownTable);
           },
           sourceToOutput: function sourceToOutput(source) {
-            return _this.csvOrTsvToMarkdownTable(source, ',');
+            return _this3.csvOrTsvToMarkdownTable(source, ',');
           },
           outputToSource: function outputToSource(output) {
-            return _this.tableToCSV(output);
+            return _this3.tableToCSV(output);
           },
           operations: {},
           buttons: []
@@ -3131,14 +3215,14 @@
         // TSV renderer
         this.registerRenderer('tsv', {
           render: function render(source) {
-            var markdownTable = _this.csvOrTsvToMarkdownTable(source, '\t');
-            _this.renderMarkdown(markdownTable);
+            var markdownTable = _this3.csvOrTsvToMarkdownTable(source, '\t');
+            _this3.renderMarkdown(markdownTable);
           },
           sourceToOutput: function sourceToOutput(source) {
-            return _this.csvOrTsvToMarkdownTable(source, '\t');
+            return _this3.csvOrTsvToMarkdownTable(source, '\t');
           },
           outputToSource: function outputToSource(output) {
-            return _this.tableToCSV(output, '\t');
+            return _this3.tableToCSV(output, '\t');
           },
           operations: {},
           buttons: []
@@ -3147,14 +3231,14 @@
         // Semicolon separated values renderer
         this.registerRenderer('semisv', {
           render: function render(source) {
-            var markdownTable = _this.csvOrTsvToMarkdownTable(source, ';');
-            _this.renderMarkdown(markdownTable);
+            var markdownTable = _this3.csvOrTsvToMarkdownTable(source, ';');
+            _this3.renderMarkdown(markdownTable);
           },
           sourceToOutput: function sourceToOutput(source) {
-            return _this.csvOrTsvToMarkdownTable(source, ';');
+            return _this3.csvOrTsvToMarkdownTable(source, ';');
           },
           outputToSource: function outputToSource(output) {
-            return _this.tableToCSV(output, ';');
+            return _this3.tableToCSV(output, ';');
           },
           operations: {},
           buttons: []
@@ -3163,14 +3247,14 @@
         // Space separated values renderer
         this.registerRenderer('ssv', {
           render: function render(source) {
-            var markdownTable = _this.csvOrTsvToMarkdownTable(source, ' ');
-            _this.renderMarkdown(markdownTable);
+            var markdownTable = _this3.csvOrTsvToMarkdownTable(source, ' ');
+            _this3.renderMarkdown(markdownTable);
           },
           sourceToOutput: function sourceToOutput(source) {
-            return _this.csvOrTsvToMarkdownTable(source, ' ');
+            return _this3.csvOrTsvToMarkdownTable(source, ' ');
           },
           outputToSource: function outputToSource(output) {
-            return _this.tableToCSV(output, ' ');
+            return _this3.tableToCSV(output, ' ');
           },
           operations: {},
           buttons: []
@@ -3205,7 +3289,7 @@
     }, {
       key: "updateTypeButtons",
       value: function updateTypeButtons() {
-        var _this2 = this;
+        var _this4 = this;
         // Clear current buttons
         this.typeButtonsContainer.innerHTML = '';
 
@@ -3220,11 +3304,11 @@
             }
             btn.addEventListener('click', function () {
               if (renderer.operations && renderer.operations[button.action]) {
-                var newContent = renderer.operations[button.action](_this2.getContent());
-                _this2.setContent(newContent, _this2.inputContentType);
+                var newContent = renderer.operations[button.action](_this4.getContent());
+                _this4.setContent(newContent, _this4.inputContentType);
               }
             });
-            _this2.typeButtonsContainer.appendChild(btn);
+            _this4.typeButtonsContainer.appendChild(btn);
           });
         }
       }
@@ -3238,33 +3322,33 @@
     }, {
       key: "initializeEventHandlers",
       value: function initializeEventHandlers() {
-        var _this3 = this;
+        var _this5 = this;
         // View buttons
         this.controls.querySelectorAll('button[data-view]').forEach(function (button) {
           button.addEventListener('click', function () {
-            return _this3.setView(button.dataset.view);
+            return _this5.setView(button.dataset.view);
           });
         });
 
         // Copy buttons
         this.controls.querySelector('.copy-src-button').addEventListener('click', function () {
-          return _this3.copySource();
+          return _this5.copySource();
         });
         this.controls.querySelector('.copy-html-button').addEventListener('click', function () {
-          return _this3.copyHTML();
+          return _this5.copyHTML();
         });
 
         // Undo/redo buttons
         this.controls.querySelector('.revision-undo').addEventListener('click', function () {
-          return _this3.revisionUndo();
+          return _this5.revisionUndo();
         });
         this.controls.querySelector('.revision-redo').addEventListener('click', function () {
-          return _this3.revisionRedo();
+          return _this5.revisionRedo();
         });
 
         // Input source change event
         this.input.addEventListener('input', function () {
-          _this3.setContent();
+          _this5.setContent();
         });
 
         // Text selection event in source panel
@@ -3275,12 +3359,12 @@
               panel: 'source',
               text: selection.toString(),
               range: {
-                start: _this3.input.selectionStart,
-                end: _this3.input.selectionEnd
+                start: _this5.input.selectionStart,
+                end: _this5.input.selectionEnd
               }
             };
-            _this3.lastSelectionData = selectionData;
-            _this3.events.emit('text:selected', selectionData);
+            _this5.lastSelectionData = selectionData;
+            _this5.events.emit('text:selected', selectionData);
           }
         });
 
@@ -3291,8 +3375,8 @@
         // Create a map to store special content blocks
         this.specialContentBlocks = new Map();
         this.output.addEventListener('input', function () {
-          if (_this3.currentView === 'html' || _this3.currentView === 'split') {
-            var editableContent = _this3.output.querySelector('[contenteditable="true"]');
+          if (_this5.currentView === 'html' || _this5.currentView === 'split') {
+            var editableContent = _this5.output.querySelector('[contenteditable="true"]');
             if (editableContent) {
               // Clear any existing timer
               if (editDebounceTimer) {
@@ -3302,10 +3386,10 @@
               // Set a new timer to process the edit after a short delay (300ms)
               editDebounceTimer = setTimeout(function () {
                 var renderedContent = editableContent.innerHTML;
-                var renderer = _this3.renderers[_this3.inputContentType];
+                var renderer = _this5.renderers[_this5.inputContentType];
                 if (renderer && renderer.outputToSource) {
                   // Get the original source markdown
-                  var originalSource = _this3.input.value;
+                  var originalSource = _this5.input.value;
 
                   // Process the HTML back to markdown, passing original source for context
                   var newSource = renderer.outputToSource(renderedContent, {
@@ -3313,13 +3397,13 @@
                   });
 
                   // Update source without triggering render cycle
-                  _this3.input.value = newSource;
+                  _this5.input.value = newSource;
 
                   // Only save revision after editing stops for a moment
-                  _this3.revisionManager.addRevision(newSource, _this3.inputContentType);
+                  _this5.revisionManager.addRevision(newSource, _this5.inputContentType);
 
                   // Emit content change event
-                  _this3.events.emit('content:change', newSource, _this3.inputContentType);
+                  _this5.events.emit('content:change', newSource, _this5.inputContentType);
                 }
 
                 // Clear the timer reference
@@ -3338,10 +3422,10 @@
               panel: 'rendered',
               text: selection.toString(),
               range: range,
-              element: _this3.output.querySelector('[contenteditable="true"]')
+              element: _this5.output.querySelector('[contenteditable="true"]')
             };
-            _this3.lastSelectionData = selectionData;
-            _this3.events.emit('text:selected', selectionData);
+            _this5.lastSelectionData = selectionData;
+            _this5.events.emit('text:selected', selectionData);
           }
         });
       }
@@ -3492,15 +3576,15 @@
     }, {
       key: "initializeResizeObserver",
       value: function initializeResizeObserver() {
-        var _this4 = this;
+        var _this6 = this;
         var resizeObserver = new ResizeObserver(function (entries) {
           var _iterator = _createForOfIteratorHelper(entries),
             _step;
           try {
             for (_iterator.s(); !(_step = _iterator.n()).done;) {
               var entry = _step.value;
-              if (entry.target === _this4.container) {
-                _this4.adjustLayout();
+              if (entry.target === _this6.container) {
+                _this6.adjustLayout();
               }
             }
           } catch (err) {
@@ -3702,7 +3786,7 @@
       key: "renderMarkdown",
       value: (function () {
         var _renderMarkdown = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee2(md) {
-          var _this5 = this;
+          var _this7 = this;
           var markdown, html, contentDiv, images, _iterator2, _step2, _loop;
           return _regeneratorRuntime().wrap(function _callee2$(_context3) {
             while (1) switch (_context3.prev = _context3.next) {
@@ -3725,7 +3809,7 @@
                         _context2.prev = 1;
                         // Store original src if we need to preserve it
                         originalSrc = img.src; // Only convert to data URL if not preserving tags
-                        if (_this5.options.preserveImageTags) {
+                        if (_this7.options.preserveImageTags) {
                           _context2.next = 10;
                           break;
                         }
@@ -4131,7 +4215,7 @@
     }, {
       key: "onTextSelected",
       value: function onTextSelected(callback) {
-        var _this6 = this;
+        var _this8 = this;
         if (typeof callback !== 'function') {
           throw new Error('Callback must be a function');
         }
@@ -4139,7 +4223,7 @@
 
         // Return unsubscribe function
         return function () {
-          _this6.events.off('text:selected', callback);
+          _this8.events.off('text:selected', callback);
         };
       }
 
@@ -4406,9 +4490,9 @@
        * @returns {Function|null} The current handler function or null if none is set
        */
       function get() {
-        var _this7 = this;
+        var _this9 = this;
         return this._onTextReplacementHandler ? function (selectionData) {
-          var result = _this7._onTextReplacementHandler(selectionData);
+          var result = _this9._onTextReplacementHandler(selectionData);
           return result;
         } : null;
       }
@@ -4418,7 +4502,7 @@
        * Processes code blocks, SVG elements, and images to ensure they copy correctly.
        */,
       set: function set(handler) {
-        var _this8 = this;
+        var _this10 = this;
         if (handler !== null && typeof handler !== 'function') {
           throw new Error('onReplaceSelectedText handler must be a function or null');
         }
@@ -4436,7 +4520,7 @@
 
             // If the handler returns a string, use it to replace the selected text
             if (typeof result === 'string') {
-              _this8.replaceSelectedText(result, selectionData);
+              _this10.replaceSelectedText(result, selectionData);
             }
           };
 
@@ -4448,7 +4532,7 @@
       key: "copyHTML",
       value: (function () {
         var _copyHTML = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee4() {
-          var _this9 = this;
+          var _this11 = this;
           var copyButton, contentDiv, clone, images, _iterator3, _step3, _loop2, svgElements, _iterator4, _step4, _loop3, htmlContent, platform, tempDiv, selection, range, successful;
           return _regeneratorRuntime().wrap(function _callee4$(_context7) {
             while (1) switch (_context7.prev = _context7.next) {
@@ -4565,7 +4649,7 @@
                         svg = _step4.value;
                         _context6.prev = 1;
                         _context6.next = 4;
-                        return _this9.svgToPng(svg);
+                        return _this11.svgToPng(svg);
                       case 4:
                         pngBlob = _context6.sent;
                         _context6.next = 7;

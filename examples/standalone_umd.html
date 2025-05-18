@@ -5,7 +5,6 @@ Squibview Markdown Viewer with Graphics Support
 This is the standalone UMD bundle.  It is a single file that can be used in any project with no external dependencies but is a large file.
 Author: @deftio
 -->
-
 <head>
   <meta charset="UTF-8" />
   <title>SquibView Editor with Live Render Support</title>
@@ -45,12 +44,7 @@ Author: @deftio
 
 <body>
   <div id="editorContainer"></div>
-
   <script>
-   
-
-    // This is the main code that creates the editor and sets the content
-    // it has nothing to do with the GraphicalMD editor
     const editor = new SquibView('#editorContainer', {
       titleShow: true,
       titleContent: "SquibView Editor (Standalone UMD Bundle) " + SquibView.version.version
@@ -66,8 +60,6 @@ Author: @deftio
       }
     })("./sample-content.md");
 
-    // or make your own
-    // editor.setContent("# Hello World\n Here is some content\n","md")
   </script>
 </body>
 

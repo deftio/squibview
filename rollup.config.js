@@ -5,6 +5,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import babel from '@rollup/plugin-babel';
 import terser from '@rollup/plugin-terser';
 import postcss from 'rollup-plugin-postcss';
+import polyfillNode from 'rollup-plugin-polyfill-node';
 // If you actually import package.json or other JSON files, uncomment the next line:
 // import json from '@rollup/plugin-json';
 
@@ -78,10 +79,14 @@ const umdStandaloneConfig = {
     sourcemap: true,
     inlineDynamicImports: true,
   },
+  external: ['debug'],
   plugins: [
     // json(), // if needed
-    resolve({ extensions }),
-    commonjs(),
+    polyfillNode(),
+    resolve({ extensions, browser: true }),
+    commonjs({
+      include: /node_modules/
+    }),
     postcss({
       extract: 'squibview.css',
       minimize: false
@@ -141,6 +146,7 @@ const esmStandaloneConfig = {
   // them to be bundled, you can rely on 'src/standalone.squibview.js'
   // or just remove them from `external`.
   input: 'src/standalone.squibview.js',
+  external: ['debug'],
   output: [
     {
       file: 'dist/squibview.standalone.esm.js',
@@ -159,8 +165,11 @@ const esmStandaloneConfig = {
   // No externals -> everything is bundled
   plugins: [
     // json(), // if needed
-    resolve({ extensions }),
-    commonjs(),
+    polyfillNode(),
+    resolve({ extensions, browser: true }),
+    commonjs({
+      include: /node_modules/
+    }),
     postcss({
       extract: 'squibview.css',
       minimize: false

@@ -54,7 +54,7 @@ let x = {
 
 ```
 
-## Table Example
+## Basic Table Example
 
 The table below lists some features and their statuses:
 
@@ -66,6 +66,7 @@ The table below lists some features and their statuses:
 | Table Styling     | Yes       |
 | SVG Rendering     | Yes       |
 
+
 ## Inline SVG Example
 
 Below is an inline SVG graphic rendered directly from Markdown:
@@ -74,6 +75,42 @@ Below is an inline SVG graphic rendered directly from Markdown:
 <svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
     <circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" />
 </svg>
+```
+]
+## CSV / TSV / PSV Support
+Squibview allows inline tables via CSV, TSV, or PSV separated entries
+
+### CSV Example
+
+```csv
+Name,Age,City
+Alice,30,New York
+Bob,24,Paris
+Charlie,35,London
+David,29,Berlin
+Eve,42,Tokyo
+```
+
+### TSV Example
+
+```tsv
+Fruit	Color	Taste
+Apple	Red	Sweet
+Banana	Yellow	Sweet
+Lemon	Yellow	Sour
+Orange	Orange	Sweet
+Grape	Purple	Sweet
+```
+
+### PSV (Pipe-Separated Values) Example
+
+```psv
+ID|Product|Price|InStock
+101|Laptop|1200|Yes
+102|Mouse|25|Yes
+103|Keyboard|75|No
+104|Monitor|300|Yes
+105|Webcam|50|No
 ```
 
 ## Additional Content

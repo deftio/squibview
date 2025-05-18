@@ -5,6 +5,7 @@
 import hljs from 'highlight.js/lib/core';
 import markdownit from 'markdown-it';
 import mermaid from 'mermaid';
+import Papa from 'papaparse';
 
 // Optionally, import the necessary CSS (if you want them inlined or processed by your CSS plugin)
 import 'highlight.js/styles/default.css';
@@ -13,6 +14,7 @@ import 'highlight.js/styles/default.css';
 window.hljs = hljs;
 window.markdownit = markdownit;
 window.mermaid = mermaid;
+window.Papa = Papa;
 
 // Now import SquibView itself
 import SquibView from './squibview.js';
