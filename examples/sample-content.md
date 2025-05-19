@@ -76,7 +76,7 @@ Below is an inline SVG graphic rendered directly from Markdown:
     <circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" />
 </svg>
 ```
-]
+
 ## CSV / TSV / PSV Support
 Squibview allows inline tables via CSV, TSV, or PSV separated entries
 
