@@ -1847,4 +1847,29 @@ describe('SquibView Tests', () => {
     //   }
     // });
   });
+
+  test('should fix linefeeds in markdown', () => {
+    squibView = new SquibView(container);
+    const input = '# Heading\nThis is a line\nAnother line\n- List item\n';
+    const expected = '# Heading\nThis is a line  \nAnother line  \n- List item\n';
+    expect(squibView.fixLinefeedsInMarkdown(input)).toBe(expected);
+  });
+
+  test('should not add spaces to code blocks, lists, headings, or empty lines', () => {
+    squibView = new SquibView(container);
+    const input = '```\ncode block\nmore code\n```\n# Heading\n- List\n> Quote\n\nNormal line';
+    const expected = '```\ncode block\nmore code\n```\n# Heading\n- List\n> Quote\n\nNormal line  ';
+    expect(squibView.fixLinefeedsInMarkdown(input)).toBe(expected);
+  });
+
+  test('should toggle linefeed view and call renderOutput', () => {
+    squibView = new SquibView(container);
+    squibView.renderOutput = jest.fn();
+    expect(squibView.linefeedViewEnabled).toBeUndefined();
+    squibView.toggleLinefeedView();
+    expect(squibView.linefeedViewEnabled).toBe(true);
+    expect(squibView.renderOutput).toHaveBeenCalled();
+    squibView.toggleLinefeedView();
+    expect(squibView.linefeedViewEnabled).toBe(false);
+  });
 });

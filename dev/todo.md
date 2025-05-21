@@ -31,7 +31,7 @@
 - ⬜ Make the button system modular based on content type
 - ⬜ Change "md" terminology to "src" throughout the codebase
 
-### Enhanced Features
+### Enhanced Features (Maybe)
 - ⬜ Enable syntax highlighting in source editor
 - ⬜ Add support for React as render type (iframe)
 - ⬜ Create CLI version for transformations (MD → HTML, slides → HTML)

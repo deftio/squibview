@@ -590,12 +590,15 @@ class SquibView {
       operations: {
         increaseHeadings: (src) => this.markdownAdjustHeadings(src, 1),
         decreaseHeadings: (src) => this.markdownAdjustHeadings(src, -1),
-        removeHR: (src) => src.replace(/---/g, '')
+        removeHR: (src) => src.replace(/---/g, ''),
+        fixLinefeeds: (src) => this.fixLinefeedsInMarkdown(src),
+        toggleLinefeedView: () => { this.toggleLinefeedView(); return this.getContent(); }
       },
       buttons: [
         { label: 'H-', action: 'decreaseHeadings', title: 'Decrease heading levels' },
         { label: 'H+', action: 'increaseHeadings', title: 'Increase heading levels' },
-        { label: 'Remove HR', action: 'removeHR', title: 'Remove horizontal rules' }
+        { label: 'Remove HR', action: 'removeHR', title: 'Remove horizontal rules' },
+        { label: 'Smart Linefeeds', action: 'fixLinefeeds', title: 'Convert all single line breaks to hard line breaks (two spaces + newline) in the source.' }
       ]
     });
     
@@ -1171,7 +1174,23 @@ class SquibView {
   async renderMarkdown(md) {
     const markdown = md || this.input.value;
     const html = this.md.render(markdown);
-    this.output.innerHTML = "<div contenteditable='true'>" + html + "</div>";
+    let processedHtml = html;
+    if (this.linefeedViewEnabled) {
+      // Only process paragraphs, not code blocks or pre
+      processedHtml = processedHtml.replace(/(<p>)([\s\S]*?)(<\/p>)/g, (match, open, content, close) => {
+        // Split by <br> or by line
+        const lines = content.split(/<br\s*\/?>(?![^<]*<\/code>)/g);
+        const processedLines = lines.map(line => {
+          // If line is empty or already ends with <br>, skip
+          if (/\s*<\/?.*?>\s*/.test(line) || line.trim() === '') return line;
+          // If line already ends with <br>, skip
+          if (/<br\s*\/?>(\s*)$/.test(line)) return line;
+          return line + '<br>';
+        });
+        return open + processedLines.join('') + close;
+      });
+    }
+    this.output.innerHTML = "<div contenteditable='true'>" + processedHtml + "</div>";
 
     // Convert all images to data URLs immediately after rendering
     const contentDiv = this.output.querySelector('div[contenteditable="true"]');
@@ -2367,6 +2386,39 @@ class SquibView {
     this.options.preserveImageTags = value;
     // Re-render content to apply the new setting
     this.renderMarkdown();
+  }
+
+  /**
+   * Fixes linefeeds in markdown by adding two spaces at the end of lines that are not already hard breaks, not empty, and not part of a list, heading, or code block.
+   * @param {string} markdown - The markdown text to process
+   * @returns {string} - The markdown text with fixed linefeeds
+   */
+  fixLinefeedsInMarkdown(markdown) {
+    if (typeof markdown !== 'string') return markdown;
+    const lines = markdown.split('\n');
+    let inCodeBlock = false;
+    return lines.map(line => {
+      // Toggle code block state
+      if (/^```/.test(line)) {
+        inCodeBlock = !inCodeBlock;
+        return line;
+      }
+      if (inCodeBlock) return line;
+      // Skip headings, lists, blockquotes, tables, and empty lines
+      if (/^\s*([#\-*>]|\d+\.|\|)/.test(line) || line.trim() === '') return line;
+      // If line already ends with two or more spaces, or is just whitespace, skip
+      if (/\s{2,}$/.test(line)) return line;
+      // Otherwise, add two spaces
+      return line + '  ';
+    }).join('\n');
+  }
+
+  /**
+   * Toggles the linefeed view state. When enabled, rendered HTML will have <br> at the end of lines that would otherwise be collapsed.
+   */
+  toggleLinefeedView() {
+    this.linefeedViewEnabled = !this.linefeedViewEnabled;
+    this.renderOutput();
   }
 }
 

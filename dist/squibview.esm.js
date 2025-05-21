@@ -2776,7 +2776,7 @@ var diffMatchPatchExports = diffMatchPatch.exports;
 var DiffMatchPatch = /*@__PURE__*/getDefaultExportFromCjs(diffMatchPatchExports);
 
 // src/version.js
-var VERSION = "0.0.35";
+var VERSION = "0.0.36";
 var REPO_URL = "https://github.com/deftio/squibview";
 
 // Fix for development mode
@@ -3324,6 +3324,13 @@ var SquibView = /*#__PURE__*/function () {
           },
           removeHR: function removeHR(src) {
             return src.replace(/---/g, '');
+          },
+          fixLinefeeds: function fixLinefeeds(src) {
+            return _this3.fixLinefeedsInMarkdown(src);
+          },
+          toggleLinefeedView: function toggleLinefeedView() {
+            _this3.toggleLinefeedView();
+            return _this3.getContent();
           }
         },
         buttons: [{
@@ -3338,6 +3345,10 @@ var SquibView = /*#__PURE__*/function () {
           label: 'Remove HR',
           action: 'removeHR',
           title: 'Remove horizontal rules'
+        }, {
+          label: 'Smart Linefeeds',
+          action: 'fixLinefeeds',
+          title: 'Convert all single line breaks to hard line breaks (two spaces + newline) in the source.'
         }]
       });
 
@@ -3962,19 +3973,35 @@ var SquibView = /*#__PURE__*/function () {
     value: (function () {
       var _renderMarkdown = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee2(md) {
         var _this7 = this;
-        var markdown, html, contentDiv, images, _iterator2, _step2, _loop;
+        var markdown, html, processedHtml, contentDiv, images, _iterator2, _step2, _loop;
         return _regeneratorRuntime().wrap(function _callee2$(_context3) {
           while (1) switch (_context3.prev = _context3.next) {
             case 0:
               markdown = md || this.input.value;
               html = this.md.render(markdown);
-              this.output.innerHTML = "<div contenteditable='true'>" + html + "</div>";
+              processedHtml = html;
+              if (this.linefeedViewEnabled) {
+                // Only process paragraphs, not code blocks or pre
+                processedHtml = processedHtml.replace(/(<p>)([\s\S]*?)(<\/p>)/g, function (match, open, content, close) {
+                  // Split by <br> or by line
+                  var lines = content.split(/<br\s*\/?>(?![^<]*<\/code>)/g);
+                  var processedLines = lines.map(function (line) {
+                    // If line is empty or already ends with <br>, skip
+                    if (/\s*<\/?.*?>\s*/.test(line) || line.trim() === '') return line;
+                    // If line already ends with <br>, skip
+                    if (/<br\s*\/?>(\s*)$/.test(line)) return line;
+                    return line + '<br>';
+                  });
+                  return open + processedLines.join('') + close;
+                });
+              }
+              this.output.innerHTML = "<div contenteditable='true'>" + processedHtml + "</div>";
 
               // Convert all images to data URLs immediately after rendering
               contentDiv = this.output.querySelector('div[contenteditable="true"]');
               images = contentDiv.querySelectorAll('img'); // render images to data urls
               _iterator2 = _createForOfIteratorHelper(images);
-              _context3.prev = 6;
+              _context3.prev = 8;
               _loop = /*#__PURE__*/_regeneratorRuntime().mark(function _loop() {
                 var img, originalSrc, canvas, ctx, tempImg;
                 return _regeneratorRuntime().wrap(function _loop$(_context2) {
@@ -4026,37 +4053,37 @@ var SquibView = /*#__PURE__*/function () {
                 }, _loop, null, [[1, 12]]);
               });
               _iterator2.s();
-            case 9:
+            case 11:
               if ((_step2 = _iterator2.n()).done) {
-                _context3.next = 13;
+                _context3.next = 15;
                 break;
               }
-              return _context3.delegateYield(_loop(), "t0", 11);
-            case 11:
-              _context3.next = 9;
-              break;
+              return _context3.delegateYield(_loop(), "t0", 13);
             case 13:
-              _context3.next = 18;
+              _context3.next = 11;
               break;
             case 15:
-              _context3.prev = 15;
-              _context3.t1 = _context3["catch"](6);
+              _context3.next = 20;
+              break;
+            case 17:
+              _context3.prev = 17;
+              _context3.t1 = _context3["catch"](8);
               _iterator2.e(_context3.t1);
-            case 18:
-              _context3.prev = 18;
+            case 20:
+              _context3.prev = 20;
               _iterator2.f();
-              return _context3.finish(18);
-            case 21:
+              return _context3.finish(20);
+            case 23:
               // Initialize mermaid diagrams after all images are processed
               mermaid.init(undefined, this.output.querySelectorAll('.mermaid'));
 
               // Emit markdown:rendered event
               this.events.emit('markdown:rendered', markdown, html);
-            case 23:
+            case 25:
             case "end":
               return _context3.stop();
           }
-        }, _callee2, this, [[6, 15, 18, 21]]);
+        }, _callee2, this, [[8, 17, 20, 23]]);
       }));
       function renderMarkdown(_x) {
         return _renderMarkdown.apply(this, arguments);
@@ -5278,6 +5305,43 @@ var SquibView = /*#__PURE__*/function () {
       this.options.preserveImageTags = value;
       // Re-render content to apply the new setting
       this.renderMarkdown();
+    }
+
+    /**
+     * Fixes linefeeds in markdown by adding two spaces at the end of lines that are not already hard breaks, not empty, and not part of a list, heading, or code block.
+     * @param {string} markdown - The markdown text to process
+     * @returns {string} - The markdown text with fixed linefeeds
+     */
+  }, {
+    key: "fixLinefeedsInMarkdown",
+    value: function fixLinefeedsInMarkdown(markdown) {
+      if (typeof markdown !== 'string') return markdown;
+      var lines = markdown.split('\n');
+      var inCodeBlock = false;
+      return lines.map(function (line) {
+        // Toggle code block state
+        if (/^```/.test(line)) {
+          inCodeBlock = !inCodeBlock;
+          return line;
+        }
+        if (inCodeBlock) return line;
+        // Skip headings, lists, blockquotes, tables, and empty lines
+        if (/^\s*([#\-*>]|\d+\.|\|)/.test(line) || line.trim() === '') return line;
+        // If line already ends with two or more spaces, or is just whitespace, skip
+        if (/\s{2,}$/.test(line)) return line;
+        // Otherwise, add two spaces
+        return line + '  ';
+      }).join('\n');
+    }
+
+    /**
+     * Toggles the linefeed view state. When enabled, rendered HTML will have <br> at the end of lines that would otherwise be collapsed.
+     */
+  }, {
+    key: "toggleLinefeedView",
+    value: function toggleLinefeedView() {
+      this.linefeedViewEnabled = !this.linefeedViewEnabled;
+      this.renderOutput();
     }
   }]);
 }(); // The React component wrapper has been moved to a separate file
