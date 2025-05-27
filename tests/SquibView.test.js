@@ -1914,3 +1914,96 @@ describe('SquibView Tests', () => {
     });
   });
 });
+
+describe('Round-trip Conversion Tests', () => {
+  let squibViewInstance;
+  let container;
+
+  beforeEach(() => {
+    // Use unmocked SquibView and its dependencies for these integration-style tests
+    jest.unmock('../src/squibview.js');
+    jest.unmock('../src/HtmlToMarkdown.js');
+    jest.unmock('papaparse'); // Ensure PapaParse is not mocked
+
+    const OriginalSquibView = jest.requireActual('../src/squibview.js').default;
+    container = setupDomEnvironment();
+    squibViewInstance = new OriginalSquibView(container, { preserveImageTags: true });
+    
+    // Restore a basic hljs mock as it might be used by markdown-it during render
+    // but we don't want it to be the complex one from the top of the file for these tests.
+    global.hljs = {
+      getLanguage: jest.fn().mockReturnValue(true),
+      highlight: jest.fn((str, langOptions) => ({ value: str })) // Simple pass-through
+    };
+  });
+
+  afterEach(() => {
+    jest.resetModules();
+  });
+
+  test('should correctly round-trip a complex Markdown document with various fenced blocks', () => {
+    const originalMarkdown = `
+# Document Title
+
+Some introductory text.
+
+\`\`\`javascript
+function greet(name) {
+  console.log("Hello, " + name + "!");
+}
+greet("World");
+\`\`\`
+
+Paragraph after JS.
+
+\`\`\`mermaid
+graph TD;
+  A-->B;
+  B-->C;
+\`\`\`
+
+Text after Mermaid.
+
+\`\`\`svg
+<svg width="100" height="100">
+  <circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" />
+</svg>
+\`\`\`
+
+Then some CSV data:
+
+\`\`\`csv
+Year,Make,Model
+1997,Ford,E350
+2000,Mercury,Cougar
+\`\`\`
+
+An image:
+![Test Image](http://example.com/test.png)
+
+And a final paragraph.
+    `.trim();
+
+    // Forward conversion: Markdown -> HTML
+    const generatedHtml = squibViewInstance.md.render(originalMarkdown);
+    // console.log('---- Generated HTML ----');
+    // console.log(generatedHtml);
+
+    // Reverse conversion: HTML -> Markdown
+    const roundTrippedMarkdown = squibViewInstance.htmlToMarkdown(generatedHtml).trim();
+    // console.log('---- Round-tripped Markdown ----');
+    // console.log(roundTrippedMarkdown);
+    // console.log('---- Original Markdown ----');
+    // console.log(originalMarkdown);
+
+    // Normalize both for comparison (simple normalization for now)
+    const normalize = (str) => str.replace(/\\r\\n/g, '\\n').replace(/\\s+$/gm, '').trim();
+
+    // For this initial test, we'll aim for near-exact match after normalization.
+    // Differences in trailing newlines within code blocks or subtle whitespace changes are common.
+    // The most critical part is the correct reconstruction of fenced blocks and their content.
+    expect(normalize(roundTrippedMarkdown)).toEqual(normalize(originalMarkdown));
+  });
+
+  // Add more test cases for different complex documents or edge cases
+});

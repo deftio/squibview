@@ -66,19 +66,24 @@ export default class HtmlToMarkdown {
             let contentFromHtml = node.innerHTML;
             // Convert <br> tags to newlines first
             contentFromHtml = contentFromHtml.replace(/<br\s*\/?>/gi, '\n');
-            // Strip any other HTML tags (simple regex, not for complex/nested HTML)
-            contentFromHtml = contentFromHtml.replace(/<[^>]+>/g, '');
-            // Use a textarea to unescape HTML entities & normalize
-            const tempTextArea = document.createElement('textarea');
-            tempTextArea.innerHTML = contentFromHtml;
-            innerContent = tempTextArea.value.trim();
+            // For Mermaid and Math, the content is expected to be text-like after <br> replacement.
+            // Avoid stripping other tags if they are part of the intended content (e.g. MathML in MathJax)
+            // Instead, rely on a robust way to get text content, then trim.
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = contentFromHtml; // Let browser parse it
+            innerContent = tempDiv.textContent || tempDiv.innerText || ''; // Get text content
+            innerContent = innerContent.trim(); // Trim whitespace
             break;
           case 'svg':
-            // For SVG, we want the raw innerHTML.
-            // console.warn('[HtmlToMarkdown] squibviewFencedBlock SVG replacement - node.innerHTML:', node.innerHTML);
-            // This console.warn is inside the replacement. If not reached, filter or lang extraction is the issue.
-            // console.warn('[HtmlToMarkdown] squibviewFencedBlock REPLACEMENT for SVG. Node outerHTML:', node.outerHTML, 'Node innerHTML:', node.innerHTML);
-            innerContent = node.innerHTML;
+            const svgElement = node.querySelector('svg');
+            if (svgElement) {
+              // We want the raw outerHTML of the <svg> element itself.
+              innerContent = svgElement.outerHTML;
+            } else {
+              // Fallback if no <svg> element found, though unlikely for our structure.
+              innerContent = node.innerHTML; 
+              console.warn('[HtmlToMarkdown] squibviewFencedBlock SVG: No <svg> child found, using div.innerHTML.');
+            }
             break;
           case 'csv':
           case 'tsv':
@@ -107,10 +112,19 @@ export default class HtmlToMarkdown {
 
         const langTag = (lang === 'code') ? '' : lang;
         // Ensure there's a newline before the closing fence if content doesn't end with one.
+        // And ensure content starts with a newline if it doesn't already, for consistency.
+        if (innerContent && !innerContent.startsWith('\n') && lang !== 'svg') { // SVG content might be on one line
+            innerContent = '\n' + innerContent;
+        }
         if (innerContent && !innerContent.endsWith('\n')) {
           innerContent += '\n';
         }
-        return '\n```' + langTag + '\n' + innerContent + '```\n';
+        // For empty blocks, ensure a newline for valid fence structure
+        if (!innerContent.trim() && !innerContent.includes('\n')) {
+            innerContent = '\n';
+        }
+
+        return '\n```' + langTag + innerContent + '```\n';
       }
     });
     

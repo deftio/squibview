@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Create tests directory if it doesn't exist
+mkdir -p tests
+
+# Redirect stdout and stderr to a log file and also to the terminal
+exec > >(tee tests/log.out) 2>&1
+
 echo "****************************************************************************************"
 echo "****************************************************************************************"
 echo ""
