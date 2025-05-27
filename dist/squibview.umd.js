@@ -1,16 +1,13 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-  typeof define === 'function' && define.amd ? define(factory) :
-  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.SquibView = factory());
-})(this, (function () { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('markdown-it')) :
+  typeof define === 'function' && define.amd ? define(['markdown-it'], factory) :
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.SquibView = factory(global.markdownit));
+})(this, (function (MarkdownIt) { 'use strict';
 
   function _arrayLikeToArray(r, a) {
     (null == a || a > r.length) && (a = r.length);
     for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e];
     return n;
-  }
-  function _arrayWithHoles(r) {
-    if (Array.isArray(r)) return r;
   }
   function asyncGeneratorStep(n, t, e, r, o, a, c) {
     try {
@@ -106,33 +103,6 @@
       configurable: true,
       writable: true
     }) : e[r] = t, e;
-  }
-  function _iterableToArrayLimit(r, l) {
-    var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"];
-    if (null != t) {
-      var e,
-        n,
-        i,
-        u,
-        a = [],
-        f = true,
-        o = false;
-      try {
-        if (i = (t = t.call(r)).next, 0 === l) ; else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0);
-      } catch (r) {
-        o = true, n = r;
-      } finally {
-        try {
-          if (!f && null != t.return && (u = t.return(), Object(u) !== u)) return;
-        } finally {
-          if (o) throw n;
-        }
-      }
-      return a;
-    }
-  }
-  function _nonIterableRest() {
-    throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
   }
   function ownKeys(e, r) {
     var t = Object.keys(e);
@@ -455,9 +425,6 @@
         }, "next" === this.method && (this.arg = t), y;
       }
     }, e;
-  }
-  function _slicedToArray(r, e) {
-    return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest();
   }
   function _toPrimitive(t, r) {
     if ("object" != typeof t || !t) return t;
@@ -2597,12 +2564,1638 @@
     module.exports['DIFF_INSERT'] = DIFF_INSERT;
     module.exports['DIFF_EQUAL'] = DIFF_EQUAL;
   })(diffMatchPatch);
-  var diffMatchPatchExports = diffMatchPatch.exports;
-  var DiffMatchPatch = /*@__PURE__*/getDefaultExportFromCjs(diffMatchPatchExports);
 
   // src/version.js
-  var VERSION = "0.0.36";
+  var VERSION = "0.0.37.1";
   var REPO_URL = "https://github.com/deftio/squibview";
+
+  var eventemitter3 = {exports: {}};
+
+  (function (module) {
+
+    var has = Object.prototype.hasOwnProperty,
+      prefix = '~';
+
+    /**
+     * Constructor to create a storage for our `EE` objects.
+     * An `Events` instance is a plain object whose properties are event names.
+     *
+     * @constructor
+     * @private
+     */
+    function Events() {}
+
+    //
+    // We try to not inherit from `Object.prototype`. In some engines creating an
+    // instance in this way is faster than calling `Object.create(null)` directly.
+    // If `Object.create(null)` is not supported we prefix the event names with a
+    // character to make sure that the built-in object properties are not
+    // overridden or used as an attack vector.
+    //
+    if (Object.create) {
+      Events.prototype = Object.create(null);
+
+      //
+      // This hack is needed because the `__proto__` property is still inherited in
+      // some old browsers like Android 4, iPhone 5.1, Opera 11 and Safari 5.
+      //
+      if (!new Events().__proto__) prefix = false;
+    }
+
+    /**
+     * Representation of a single event listener.
+     *
+     * @param {Function} fn The listener function.
+     * @param {*} context The context to invoke the listener with.
+     * @param {Boolean} [once=false] Specify if the listener is a one-time listener.
+     * @constructor
+     * @private
+     */
+    function EE(fn, context, once) {
+      this.fn = fn;
+      this.context = context;
+      this.once = once || false;
+    }
+
+    /**
+     * Add a listener for a given event.
+     *
+     * @param {EventEmitter} emitter Reference to the `EventEmitter` instance.
+     * @param {(String|Symbol)} event The event name.
+     * @param {Function} fn The listener function.
+     * @param {*} context The context to invoke the listener with.
+     * @param {Boolean} once Specify if the listener is a one-time listener.
+     * @returns {EventEmitter}
+     * @private
+     */
+    function addListener(emitter, event, fn, context, once) {
+      if (typeof fn !== 'function') {
+        throw new TypeError('The listener must be a function');
+      }
+      var listener = new EE(fn, context || emitter, once),
+        evt = prefix ? prefix + event : event;
+      if (!emitter._events[evt]) emitter._events[evt] = listener, emitter._eventsCount++;else if (!emitter._events[evt].fn) emitter._events[evt].push(listener);else emitter._events[evt] = [emitter._events[evt], listener];
+      return emitter;
+    }
+
+    /**
+     * Clear event by name.
+     *
+     * @param {EventEmitter} emitter Reference to the `EventEmitter` instance.
+     * @param {(String|Symbol)} evt The Event name.
+     * @private
+     */
+    function clearEvent(emitter, evt) {
+      if (--emitter._eventsCount === 0) emitter._events = new Events();else delete emitter._events[evt];
+    }
+
+    /**
+     * Minimal `EventEmitter` interface that is molded against the Node.js
+     * `EventEmitter` interface.
+     *
+     * @constructor
+     * @public
+     */
+    function EventEmitter() {
+      this._events = new Events();
+      this._eventsCount = 0;
+    }
+
+    /**
+     * Return an array listing the events for which the emitter has registered
+     * listeners.
+     *
+     * @returns {Array}
+     * @public
+     */
+    EventEmitter.prototype.eventNames = function eventNames() {
+      var names = [],
+        events,
+        name;
+      if (this._eventsCount === 0) return names;
+      for (name in events = this._events) {
+        if (has.call(events, name)) names.push(prefix ? name.slice(1) : name);
+      }
+      if (Object.getOwnPropertySymbols) {
+        return names.concat(Object.getOwnPropertySymbols(events));
+      }
+      return names;
+    };
+
+    /**
+     * Return the listeners registered for a given event.
+     *
+     * @param {(String|Symbol)} event The event name.
+     * @returns {Array} The registered listeners.
+     * @public
+     */
+    EventEmitter.prototype.listeners = function listeners(event) {
+      var evt = prefix ? prefix + event : event,
+        handlers = this._events[evt];
+      if (!handlers) return [];
+      if (handlers.fn) return [handlers.fn];
+      for (var i = 0, l = handlers.length, ee = new Array(l); i < l; i++) {
+        ee[i] = handlers[i].fn;
+      }
+      return ee;
+    };
+
+    /**
+     * Return the number of listeners listening to a given event.
+     *
+     * @param {(String|Symbol)} event The event name.
+     * @returns {Number} The number of listeners.
+     * @public
+     */
+    EventEmitter.prototype.listenerCount = function listenerCount(event) {
+      var evt = prefix ? prefix + event : event,
+        listeners = this._events[evt];
+      if (!listeners) return 0;
+      if (listeners.fn) return 1;
+      return listeners.length;
+    };
+
+    /**
+     * Calls each of the listeners registered for a given event.
+     *
+     * @param {(String|Symbol)} event The event name.
+     * @returns {Boolean} `true` if the event had listeners, else `false`.
+     * @public
+     */
+    EventEmitter.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
+      var evt = prefix ? prefix + event : event;
+      if (!this._events[evt]) return false;
+      var listeners = this._events[evt],
+        len = arguments.length,
+        args,
+        i;
+      if (listeners.fn) {
+        if (listeners.once) this.removeListener(event, listeners.fn, undefined, true);
+        switch (len) {
+          case 1:
+            return listeners.fn.call(listeners.context), true;
+          case 2:
+            return listeners.fn.call(listeners.context, a1), true;
+          case 3:
+            return listeners.fn.call(listeners.context, a1, a2), true;
+          case 4:
+            return listeners.fn.call(listeners.context, a1, a2, a3), true;
+          case 5:
+            return listeners.fn.call(listeners.context, a1, a2, a3, a4), true;
+          case 6:
+            return listeners.fn.call(listeners.context, a1, a2, a3, a4, a5), true;
+        }
+        for (i = 1, args = new Array(len - 1); i < len; i++) {
+          args[i - 1] = arguments[i];
+        }
+        listeners.fn.apply(listeners.context, args);
+      } else {
+        var length = listeners.length,
+          j;
+        for (i = 0; i < length; i++) {
+          if (listeners[i].once) this.removeListener(event, listeners[i].fn, undefined, true);
+          switch (len) {
+            case 1:
+              listeners[i].fn.call(listeners[i].context);
+              break;
+            case 2:
+              listeners[i].fn.call(listeners[i].context, a1);
+              break;
+            case 3:
+              listeners[i].fn.call(listeners[i].context, a1, a2);
+              break;
+            case 4:
+              listeners[i].fn.call(listeners[i].context, a1, a2, a3);
+              break;
+            default:
+              if (!args) for (j = 1, args = new Array(len - 1); j < len; j++) {
+                args[j - 1] = arguments[j];
+              }
+              listeners[i].fn.apply(listeners[i].context, args);
+          }
+        }
+      }
+      return true;
+    };
+
+    /**
+     * Add a listener for a given event.
+     *
+     * @param {(String|Symbol)} event The event name.
+     * @param {Function} fn The listener function.
+     * @param {*} [context=this] The context to invoke the listener with.
+     * @returns {EventEmitter} `this`.
+     * @public
+     */
+    EventEmitter.prototype.on = function on(event, fn, context) {
+      return addListener(this, event, fn, context, false);
+    };
+
+    /**
+     * Add a one-time listener for a given event.
+     *
+     * @param {(String|Symbol)} event The event name.
+     * @param {Function} fn The listener function.
+     * @param {*} [context=this] The context to invoke the listener with.
+     * @returns {EventEmitter} `this`.
+     * @public
+     */
+    EventEmitter.prototype.once = function once(event, fn, context) {
+      return addListener(this, event, fn, context, true);
+    };
+
+    /**
+     * Remove the listeners of a given event.
+     *
+     * @param {(String|Symbol)} event The event name.
+     * @param {Function} fn Only remove the listeners that match this function.
+     * @param {*} context Only remove the listeners that have this context.
+     * @param {Boolean} once Only remove one-time listeners.
+     * @returns {EventEmitter} `this`.
+     * @public
+     */
+    EventEmitter.prototype.removeListener = function removeListener(event, fn, context, once) {
+      var evt = prefix ? prefix + event : event;
+      if (!this._events[evt]) return this;
+      if (!fn) {
+        clearEvent(this, evt);
+        return this;
+      }
+      var listeners = this._events[evt];
+      if (listeners.fn) {
+        if (listeners.fn === fn && (!once || listeners.once) && (!context || listeners.context === context)) {
+          clearEvent(this, evt);
+        }
+      } else {
+        for (var i = 0, events = [], length = listeners.length; i < length; i++) {
+          if (listeners[i].fn !== fn || once && !listeners[i].once || context && listeners[i].context !== context) {
+            events.push(listeners[i]);
+          }
+        }
+
+        //
+        // Reset the array, or remove it completely if we have no more listeners.
+        //
+        if (events.length) this._events[evt] = events.length === 1 ? events[0] : events;else clearEvent(this, evt);
+      }
+      return this;
+    };
+
+    /**
+     * Remove all listeners, or those of the specified event.
+     *
+     * @param {(String|Symbol)} [event] The event name.
+     * @returns {EventEmitter} `this`.
+     * @public
+     */
+    EventEmitter.prototype.removeAllListeners = function removeAllListeners(event) {
+      var evt;
+      if (event) {
+        evt = prefix ? prefix + event : event;
+        if (this._events[evt]) clearEvent(this, evt);
+      } else {
+        this._events = new Events();
+        this._eventsCount = 0;
+      }
+      return this;
+    };
+
+    //
+    // Alias methods names because people roll like that.
+    //
+    EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
+    EventEmitter.prototype.addListener = EventEmitter.prototype.on;
+
+    //
+    // Expose the prefix.
+    //
+    EventEmitter.prefixed = prefix;
+
+    //
+    // Allow `EventEmitter` to be imported as module namespace.
+    //
+    EventEmitter.EventEmitter = EventEmitter;
+
+    //
+    // Expose the module.
+    //
+    {
+      module.exports = EventEmitter;
+    }
+  })(eventemitter3);
+
+  function extend(destination) {
+    for (var i = 1; i < arguments.length; i++) {
+      var source = arguments[i];
+      for (var key in source) {
+        if (source.hasOwnProperty(key)) destination[key] = source[key];
+      }
+    }
+    return destination;
+  }
+  function repeat(character, count) {
+    return Array(count + 1).join(character);
+  }
+  function trimLeadingNewlines(string) {
+    return string.replace(/^\n*/, '');
+  }
+  function trimTrailingNewlines(string) {
+    // avoid match-at-end regexp bottleneck, see #370
+    var indexEnd = string.length;
+    while (indexEnd > 0 && string[indexEnd - 1] === '\n') indexEnd--;
+    return string.substring(0, indexEnd);
+  }
+  var blockElements = ['ADDRESS', 'ARTICLE', 'ASIDE', 'AUDIO', 'BLOCKQUOTE', 'BODY', 'CANVAS', 'CENTER', 'DD', 'DIR', 'DIV', 'DL', 'DT', 'FIELDSET', 'FIGCAPTION', 'FIGURE', 'FOOTER', 'FORM', 'FRAMESET', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HEADER', 'HGROUP', 'HR', 'HTML', 'ISINDEX', 'LI', 'MAIN', 'MENU', 'NAV', 'NOFRAMES', 'NOSCRIPT', 'OL', 'OUTPUT', 'P', 'PRE', 'SECTION', 'TABLE', 'TBODY', 'TD', 'TFOOT', 'TH', 'THEAD', 'TR', 'UL'];
+  function isBlock(node) {
+    return is(node, blockElements);
+  }
+  var voidElements = ['AREA', 'BASE', 'BR', 'COL', 'COMMAND', 'EMBED', 'HR', 'IMG', 'INPUT', 'KEYGEN', 'LINK', 'META', 'PARAM', 'SOURCE', 'TRACK', 'WBR'];
+  function isVoid(node) {
+    return is(node, voidElements);
+  }
+  function hasVoid(node) {
+    return has(node, voidElements);
+  }
+  var meaningfulWhenBlankElements = ['A', 'TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TH', 'TD', 'IFRAME', 'SCRIPT', 'AUDIO', 'VIDEO'];
+  function isMeaningfulWhenBlank(node) {
+    return is(node, meaningfulWhenBlankElements);
+  }
+  function hasMeaningfulWhenBlank(node) {
+    return has(node, meaningfulWhenBlankElements);
+  }
+  function is(node, tagNames) {
+    return tagNames.indexOf(node.nodeName) >= 0;
+  }
+  function has(node, tagNames) {
+    return node.getElementsByTagName && tagNames.some(function (tagName) {
+      return node.getElementsByTagName(tagName).length;
+    });
+  }
+  var rules = {};
+  rules.paragraph = {
+    filter: 'p',
+    replacement: function replacement(content) {
+      return '\n\n' + content + '\n\n';
+    }
+  };
+  rules.lineBreak = {
+    filter: 'br',
+    replacement: function replacement(content, node, options) {
+      return options.br + '\n';
+    }
+  };
+  rules.heading = {
+    filter: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+    replacement: function replacement(content, node, options) {
+      var hLevel = Number(node.nodeName.charAt(1));
+      if (options.headingStyle === 'setext' && hLevel < 3) {
+        var underline = repeat(hLevel === 1 ? '=' : '-', content.length);
+        return '\n\n' + content + '\n' + underline + '\n\n';
+      } else {
+        return '\n\n' + repeat('#', hLevel) + ' ' + content + '\n\n';
+      }
+    }
+  };
+  rules.blockquote = {
+    filter: 'blockquote',
+    replacement: function replacement(content) {
+      content = content.replace(/^\n+|\n+$/g, '');
+      content = content.replace(/^/gm, '> ');
+      return '\n\n' + content + '\n\n';
+    }
+  };
+  rules.list = {
+    filter: ['ul', 'ol'],
+    replacement: function replacement(content, node) {
+      var parent = node.parentNode;
+      if (parent.nodeName === 'LI' && parent.lastElementChild === node) {
+        return '\n' + content;
+      } else {
+        return '\n\n' + content + '\n\n';
+      }
+    }
+  };
+  rules.listItem = {
+    filter: 'li',
+    replacement: function replacement(content, node, options) {
+      content = content.replace(/^\n+/, '') // remove leading newlines
+      .replace(/\n+$/, '\n') // replace trailing newlines with just a single one
+      .replace(/\n/gm, '\n    '); // indent
+      var prefix = options.bulletListMarker + '   ';
+      var parent = node.parentNode;
+      if (parent.nodeName === 'OL') {
+        var start = parent.getAttribute('start');
+        var index = Array.prototype.indexOf.call(parent.children, node);
+        prefix = (start ? Number(start) + index : index + 1) + '.  ';
+      }
+      return prefix + content + (node.nextSibling && !/\n$/.test(content) ? '\n' : '');
+    }
+  };
+  rules.indentedCodeBlock = {
+    filter: function filter(node, options) {
+      return options.codeBlockStyle === 'indented' && node.nodeName === 'PRE' && node.firstChild && node.firstChild.nodeName === 'CODE';
+    },
+    replacement: function replacement(content, node, options) {
+      return '\n\n    ' + node.firstChild.textContent.replace(/\n/g, '\n    ') + '\n\n';
+    }
+  };
+  rules.fencedCodeBlock = {
+    filter: function filter(node, options) {
+      return options.codeBlockStyle === 'fenced' && node.nodeName === 'PRE' && node.firstChild && node.firstChild.nodeName === 'CODE';
+    },
+    replacement: function replacement(content, node, options) {
+      var className = node.firstChild.getAttribute('class') || '';
+      var language = (className.match(/language-(\S+)/) || [null, ''])[1];
+      var code = node.firstChild.textContent;
+      var fenceChar = options.fence.charAt(0);
+      var fenceSize = 3;
+      var fenceInCodeRegex = new RegExp('^' + fenceChar + '{3,}', 'gm');
+      var match;
+      while (match = fenceInCodeRegex.exec(code)) {
+        if (match[0].length >= fenceSize) {
+          fenceSize = match[0].length + 1;
+        }
+      }
+      var fence = repeat(fenceChar, fenceSize);
+      return '\n\n' + fence + language + '\n' + code.replace(/\n$/, '') + '\n' + fence + '\n\n';
+    }
+  };
+  rules.horizontalRule = {
+    filter: 'hr',
+    replacement: function replacement(content, node, options) {
+      return '\n\n' + options.hr + '\n\n';
+    }
+  };
+  rules.inlineLink = {
+    filter: function filter(node, options) {
+      return options.linkStyle === 'inlined' && node.nodeName === 'A' && node.getAttribute('href');
+    },
+    replacement: function replacement(content, node) {
+      var href = node.getAttribute('href');
+      if (href) href = href.replace(/([()])/g, '\\$1');
+      var title = cleanAttribute(node.getAttribute('title'));
+      if (title) title = ' "' + title.replace(/"/g, '\\"') + '"';
+      return '[' + content + '](' + href + title + ')';
+    }
+  };
+  rules.referenceLink = {
+    filter: function filter(node, options) {
+      return options.linkStyle === 'referenced' && node.nodeName === 'A' && node.getAttribute('href');
+    },
+    replacement: function replacement(content, node, options) {
+      var href = node.getAttribute('href');
+      var title = cleanAttribute(node.getAttribute('title'));
+      if (title) title = ' "' + title + '"';
+      var replacement;
+      var reference;
+      switch (options.linkReferenceStyle) {
+        case 'collapsed':
+          replacement = '[' + content + '][]';
+          reference = '[' + content + ']: ' + href + title;
+          break;
+        case 'shortcut':
+          replacement = '[' + content + ']';
+          reference = '[' + content + ']: ' + href + title;
+          break;
+        default:
+          var id = this.references.length + 1;
+          replacement = '[' + content + '][' + id + ']';
+          reference = '[' + id + ']: ' + href + title;
+      }
+      this.references.push(reference);
+      return replacement;
+    },
+    references: [],
+    append: function append(options) {
+      var references = '';
+      if (this.references.length) {
+        references = '\n\n' + this.references.join('\n') + '\n\n';
+        this.references = []; // Reset references
+      }
+      return references;
+    }
+  };
+  rules.emphasis = {
+    filter: ['em', 'i'],
+    replacement: function replacement(content, node, options) {
+      if (!content.trim()) return '';
+      return options.emDelimiter + content + options.emDelimiter;
+    }
+  };
+  rules.strong = {
+    filter: ['strong', 'b'],
+    replacement: function replacement(content, node, options) {
+      if (!content.trim()) return '';
+      return options.strongDelimiter + content + options.strongDelimiter;
+    }
+  };
+  rules.code = {
+    filter: function filter(node) {
+      var hasSiblings = node.previousSibling || node.nextSibling;
+      var isCodeBlock = node.parentNode.nodeName === 'PRE' && !hasSiblings;
+      return node.nodeName === 'CODE' && !isCodeBlock;
+    },
+    replacement: function replacement(content) {
+      if (!content) return '';
+      content = content.replace(/\r?\n|\r/g, ' ');
+      var extraSpace = /^`|^ .*?[^ ].* $|`$/.test(content) ? ' ' : '';
+      var delimiter = '`';
+      var matches = content.match(/`+/gm) || [];
+      while (matches.indexOf(delimiter) !== -1) delimiter = delimiter + '`';
+      return delimiter + extraSpace + content + extraSpace + delimiter;
+    }
+  };
+  rules.image = {
+    filter: 'img',
+    replacement: function replacement(content, node) {
+      var alt = cleanAttribute(node.getAttribute('alt'));
+      var src = node.getAttribute('src') || '';
+      var title = cleanAttribute(node.getAttribute('title'));
+      var titlePart = title ? ' "' + title + '"' : '';
+      return src ? '![' + alt + ']' + '(' + src + titlePart + ')' : '';
+    }
+  };
+  function cleanAttribute(attribute) {
+    return attribute ? attribute.replace(/(\n+\s*)+/g, '\n') : '';
+  }
+
+  /**
+   * Manages a collection of rules used to convert HTML to Markdown
+   */
+
+  function Rules(options) {
+    this.options = options;
+    this._keep = [];
+    this._remove = [];
+    this.blankRule = {
+      replacement: options.blankReplacement
+    };
+    this.keepReplacement = options.keepReplacement;
+    this.defaultRule = {
+      replacement: options.defaultReplacement
+    };
+    this.array = [];
+    for (var key in options.rules) this.array.push(options.rules[key]);
+  }
+  Rules.prototype = {
+    add: function add(key, rule) {
+      this.array.unshift(rule);
+    },
+    keep: function keep(filter) {
+      this._keep.unshift({
+        filter: filter,
+        replacement: this.keepReplacement
+      });
+    },
+    remove: function remove(filter) {
+      this._remove.unshift({
+        filter: filter,
+        replacement: function replacement() {
+          return '';
+        }
+      });
+    },
+    forNode: function forNode(node) {
+      if (node.isBlank) return this.blankRule;
+      var rule;
+      if (rule = findRule(this.array, node, this.options)) return rule;
+      if (rule = findRule(this._keep, node, this.options)) return rule;
+      if (rule = findRule(this._remove, node, this.options)) return rule;
+      return this.defaultRule;
+    },
+    forEach: function forEach(fn) {
+      for (var i = 0; i < this.array.length; i++) fn(this.array[i], i);
+    }
+  };
+  function findRule(rules, node, options) {
+    for (var i = 0; i < rules.length; i++) {
+      var rule = rules[i];
+      if (filterValue(rule, node, options)) return rule;
+    }
+    return void 0;
+  }
+  function filterValue(rule, node, options) {
+    var filter = rule.filter;
+    if (typeof filter === 'string') {
+      if (filter === node.nodeName.toLowerCase()) return true;
+    } else if (Array.isArray(filter)) {
+      if (filter.indexOf(node.nodeName.toLowerCase()) > -1) return true;
+    } else if (typeof filter === 'function') {
+      if (filter.call(rule, node, options)) return true;
+    } else {
+      throw new TypeError('`filter` needs to be a string, array, or function');
+    }
+  }
+
+  /**
+   * The collapseWhitespace function is adapted from collapse-whitespace
+   * by Luc Thevenard.
+   *
+   * The MIT License (MIT)
+   *
+   * Copyright (c) 2014 Luc Thevenard <lucthevenard@gmail.com>
+   *
+   * Permission is hereby granted, free of charge, to any person obtaining a copy
+   * of this software and associated documentation files (the "Software"), to deal
+   * in the Software without restriction, including without limitation the rights
+   * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   * copies of the Software, and to permit persons to whom the Software is
+   * furnished to do so, subject to the following conditions:
+   *
+   * The above copyright notice and this permission notice shall be included in
+   * all copies or substantial portions of the Software.
+   *
+   * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   * THE SOFTWARE.
+   */
+
+  /**
+   * collapseWhitespace(options) removes extraneous whitespace from an the given element.
+   *
+   * @param {Object} options
+   */
+  function collapseWhitespace(options) {
+    var element = options.element;
+    var isBlock = options.isBlock;
+    var isVoid = options.isVoid;
+    var isPre = options.isPre || function (node) {
+      return node.nodeName === 'PRE';
+    };
+    if (!element.firstChild || isPre(element)) return;
+    var prevText = null;
+    var keepLeadingWs = false;
+    var prev = null;
+    var node = next(prev, element, isPre);
+    while (node !== element) {
+      if (node.nodeType === 3 || node.nodeType === 4) {
+        // Node.TEXT_NODE or Node.CDATA_SECTION_NODE
+        var text = node.data.replace(/[ \r\n\t]+/g, ' ');
+        if ((!prevText || / $/.test(prevText.data)) && !keepLeadingWs && text[0] === ' ') {
+          text = text.substr(1);
+        }
+
+        // `text` might be empty at this point.
+        if (!text) {
+          node = remove(node);
+          continue;
+        }
+        node.data = text;
+        prevText = node;
+      } else if (node.nodeType === 1) {
+        // Node.ELEMENT_NODE
+        if (isBlock(node) || node.nodeName === 'BR') {
+          if (prevText) {
+            prevText.data = prevText.data.replace(/ $/, '');
+          }
+          prevText = null;
+          keepLeadingWs = false;
+        } else if (isVoid(node) || isPre(node)) {
+          // Avoid trimming space around non-block, non-BR void elements and inline PRE.
+          prevText = null;
+          keepLeadingWs = true;
+        } else if (prevText) {
+          // Drop protection if set previously.
+          keepLeadingWs = false;
+        }
+      } else {
+        node = remove(node);
+        continue;
+      }
+      var nextNode = next(prev, node, isPre);
+      prev = node;
+      node = nextNode;
+    }
+    if (prevText) {
+      prevText.data = prevText.data.replace(/ $/, '');
+      if (!prevText.data) {
+        remove(prevText);
+      }
+    }
+  }
+
+  /**
+   * remove(node) removes the given node from the DOM and returns the
+   * next node in the sequence.
+   *
+   * @param {Node} node
+   * @return {Node} node
+   */
+  function remove(node) {
+    var next = node.nextSibling || node.parentNode;
+    node.parentNode.removeChild(node);
+    return next;
+  }
+
+  /**
+   * next(prev, current, isPre) returns the next node in the sequence, given the
+   * current and previous nodes.
+   *
+   * @param {Node} prev
+   * @param {Node} current
+   * @param {Function} isPre
+   * @return {Node}
+   */
+  function next(prev, current, isPre) {
+    if (prev && prev.parentNode === current || isPre(current)) {
+      return current.nextSibling || current.parentNode;
+    }
+    return current.firstChild || current.nextSibling || current.parentNode;
+  }
+
+  /*
+   * Set up window for Node.js
+   */
+
+  var root = typeof window !== 'undefined' ? window : {};
+
+  /*
+   * Parsing HTML strings
+   */
+
+  function canParseHTMLNatively() {
+    var Parser = root.DOMParser;
+    var canParse = false;
+
+    // Adapted from https://gist.github.com/1129031
+    // Firefox/Opera/IE throw errors on unsupported types
+    try {
+      // WebKit returns null on unsupported types
+      if (new Parser().parseFromString('', 'text/html')) {
+        canParse = true;
+      }
+    } catch (e) {}
+    return canParse;
+  }
+  function createHTMLParser() {
+    var Parser = function Parser() {};
+    {
+      var domino = require('@mixmark-io/domino');
+      Parser.prototype.parseFromString = function (string) {
+        return domino.createDocument(string);
+      };
+    }
+    return Parser;
+  }
+  var HTMLParser = canParseHTMLNatively() ? root.DOMParser : createHTMLParser();
+  function RootNode(input, options) {
+    var root;
+    if (typeof input === 'string') {
+      var doc = htmlParser().parseFromString(
+      // DOM parsers arrange elements in the <head> and <body>.
+      // Wrapping in a custom element ensures elements are reliably arranged in
+      // a single element.
+      '<x-turndown id="turndown-root">' + input + '</x-turndown>', 'text/html');
+      root = doc.getElementById('turndown-root');
+    } else {
+      root = input.cloneNode(true);
+    }
+    collapseWhitespace({
+      element: root,
+      isBlock: isBlock,
+      isVoid: isVoid,
+      isPre: options.preformattedCode ? isPreOrCode : null
+    });
+    return root;
+  }
+  var _htmlParser;
+  function htmlParser() {
+    _htmlParser = _htmlParser || new HTMLParser();
+    return _htmlParser;
+  }
+  function isPreOrCode(node) {
+    return node.nodeName === 'PRE' || node.nodeName === 'CODE';
+  }
+  function Node$1(node, options) {
+    node.isBlock = isBlock(node);
+    node.isCode = node.nodeName === 'CODE' || node.parentNode.isCode;
+    node.isBlank = isBlank(node);
+    node.flankingWhitespace = flankingWhitespace(node, options);
+    return node;
+  }
+  function isBlank(node) {
+    return !isVoid(node) && !isMeaningfulWhenBlank(node) && /^\s*$/i.test(node.textContent) && !hasVoid(node) && !hasMeaningfulWhenBlank(node);
+  }
+  function flankingWhitespace(node, options) {
+    if (node.isBlock || options.preformattedCode && node.isCode) {
+      return {
+        leading: '',
+        trailing: ''
+      };
+    }
+    var edges = edgeWhitespace(node.textContent);
+
+    // abandon leading ASCII WS if left-flanked by ASCII WS
+    if (edges.leadingAscii && isFlankedByWhitespace('left', node, options)) {
+      edges.leading = edges.leadingNonAscii;
+    }
+
+    // abandon trailing ASCII WS if right-flanked by ASCII WS
+    if (edges.trailingAscii && isFlankedByWhitespace('right', node, options)) {
+      edges.trailing = edges.trailingNonAscii;
+    }
+    return {
+      leading: edges.leading,
+      trailing: edges.trailing
+    };
+  }
+  function edgeWhitespace(string) {
+    var m = string.match(/^(([ \t\r\n]*)(\s*))(?:(?=\S)[\s\S]*\S)?((\s*?)([ \t\r\n]*))$/);
+    return {
+      leading: m[1],
+      // whole string for whitespace-only strings
+      leadingAscii: m[2],
+      leadingNonAscii: m[3],
+      trailing: m[4],
+      // empty for whitespace-only strings
+      trailingNonAscii: m[5],
+      trailingAscii: m[6]
+    };
+  }
+  function isFlankedByWhitespace(side, node, options) {
+    var sibling;
+    var regExp;
+    var isFlanked;
+    if (side === 'left') {
+      sibling = node.previousSibling;
+      regExp = / $/;
+    } else {
+      sibling = node.nextSibling;
+      regExp = /^ /;
+    }
+    if (sibling) {
+      if (sibling.nodeType === 3) {
+        isFlanked = regExp.test(sibling.nodeValue);
+      } else if (options.preformattedCode && sibling.nodeName === 'CODE') {
+        isFlanked = false;
+      } else if (sibling.nodeType === 1 && !isBlock(sibling)) {
+        isFlanked = regExp.test(sibling.textContent);
+      }
+    }
+    return isFlanked;
+  }
+  var reduce = Array.prototype.reduce;
+  var escapes = [[/\\/g, '\\\\'], [/\*/g, '\\*'], [/^-/g, '\\-'], [/^\+ /g, '\\+ '], [/^(=+)/g, '\\$1'], [/^(#{1,6}) /g, '\\$1 '], [/`/g, '\\`'], [/^~~~/g, '\\~~~'], [/\[/g, '\\['], [/\]/g, '\\]'], [/^>/g, '\\>'], [/_/g, '\\_'], [/^(\d+)\. /g, '$1\\. ']];
+  function TurndownService(options) {
+    if (!(this instanceof TurndownService)) return new TurndownService(options);
+    var defaults = {
+      rules: rules,
+      headingStyle: 'setext',
+      hr: '* * *',
+      bulletListMarker: '*',
+      codeBlockStyle: 'indented',
+      fence: '```',
+      emDelimiter: '_',
+      strongDelimiter: '**',
+      linkStyle: 'inlined',
+      linkReferenceStyle: 'full',
+      br: '  ',
+      preformattedCode: false,
+      blankReplacement: function blankReplacement(content, node) {
+        return node.isBlock ? '\n\n' : '';
+      },
+      keepReplacement: function keepReplacement(content, node) {
+        return node.isBlock ? '\n\n' + node.outerHTML + '\n\n' : node.outerHTML;
+      },
+      defaultReplacement: function defaultReplacement(content, node) {
+        return node.isBlock ? '\n\n' + content + '\n\n' : content;
+      }
+    };
+    this.options = extend({}, defaults, options);
+    this.rules = new Rules(this.options);
+  }
+  TurndownService.prototype = {
+    /**
+     * The entry point for converting a string or DOM node to Markdown
+     * @public
+     * @param {String|HTMLElement} input The string or DOM node to convert
+     * @returns A Markdown representation of the input
+     * @type String
+     */
+
+    turndown: function turndown(input) {
+      if (!canConvert(input)) {
+        throw new TypeError(input + ' is not a string, or an element/document/fragment node.');
+      }
+      if (input === '') return '';
+      var output = process.call(this, new RootNode(input, this.options));
+      return postProcess.call(this, output);
+    },
+    /**
+     * Add one or more plugins
+     * @public
+     * @param {Function|Array} plugin The plugin or array of plugins to add
+     * @returns The Turndown instance for chaining
+     * @type Object
+     */
+
+    use: function use(plugin) {
+      if (Array.isArray(plugin)) {
+        for (var i = 0; i < plugin.length; i++) this.use(plugin[i]);
+      } else if (typeof plugin === 'function') {
+        plugin(this);
+      } else {
+        throw new TypeError('plugin must be a Function or an Array of Functions');
+      }
+      return this;
+    },
+    /**
+     * Adds a rule
+     * @public
+     * @param {String} key The unique key of the rule
+     * @param {Object} rule The rule
+     * @returns The Turndown instance for chaining
+     * @type Object
+     */
+
+    addRule: function addRule(key, rule) {
+      this.rules.add(key, rule);
+      return this;
+    },
+    /**
+     * Keep a node (as HTML) that matches the filter
+     * @public
+     * @param {String|Array|Function} filter The unique key of the rule
+     * @returns The Turndown instance for chaining
+     * @type Object
+     */
+
+    keep: function keep(filter) {
+      this.rules.keep(filter);
+      return this;
+    },
+    /**
+     * Remove a node that matches the filter
+     * @public
+     * @param {String|Array|Function} filter The unique key of the rule
+     * @returns The Turndown instance for chaining
+     * @type Object
+     */
+
+    remove: function remove(filter) {
+      this.rules.remove(filter);
+      return this;
+    },
+    /**
+     * Escapes Markdown syntax
+     * @public
+     * @param {String} string The string to escape
+     * @returns A string with Markdown syntax escaped
+     * @type String
+     */
+
+    escape: function escape(string) {
+      return escapes.reduce(function (accumulator, escape) {
+        return accumulator.replace(escape[0], escape[1]);
+      }, string);
+    }
+  };
+
+  /**
+   * Reduces a DOM node down to its Markdown string equivalent
+   * @private
+   * @param {HTMLElement} parentNode The node to convert
+   * @returns A Markdown representation of the node
+   * @type String
+   */
+
+  function process(parentNode) {
+    var self = this;
+    return reduce.call(parentNode.childNodes, function (output, node) {
+      node = new Node$1(node, self.options);
+      var replacement = '';
+      if (node.nodeType === 3) {
+        replacement = node.isCode ? node.nodeValue : self.escape(node.nodeValue);
+      } else if (node.nodeType === 1) {
+        replacement = replacementForNode.call(self, node);
+      }
+      return join(output, replacement);
+    }, '');
+  }
+
+  /**
+   * Appends strings as each rule requires and trims the output
+   * @private
+   * @param {String} output The conversion output
+   * @returns A trimmed version of the ouput
+   * @type String
+   */
+
+  function postProcess(output) {
+    var self = this;
+    this.rules.forEach(function (rule) {
+      if (typeof rule.append === 'function') {
+        output = join(output, rule.append(self.options));
+      }
+    });
+    return output.replace(/^[\t\r\n]+/, '').replace(/[\t\r\n\s]+$/, '');
+  }
+
+  /**
+   * Converts an element node to its Markdown equivalent
+   * @private
+   * @param {HTMLElement} node The node to convert
+   * @returns A Markdown representation of the node
+   * @type String
+   */
+
+  function replacementForNode(node) {
+    var rule = this.rules.forNode(node);
+    var content = process.call(this, node);
+    var whitespace = node.flankingWhitespace;
+    if (whitespace.leading || whitespace.trailing) content = content.trim();
+    return whitespace.leading + rule.replacement(content, node, this.options) + whitespace.trailing;
+  }
+
+  /**
+   * Joins replacement to the current output with appropriate number of new lines
+   * @private
+   * @param {String} output The current conversion output
+   * @param {String} replacement The string to append to the output
+   * @returns Joined output
+   * @type String
+   */
+
+  function join(output, replacement) {
+    var s1 = trimTrailingNewlines(output);
+    var s2 = trimLeadingNewlines(replacement);
+    var nls = Math.max(output.length - s1.length, replacement.length - s2.length);
+    var separator = '\n\n'.substring(0, nls);
+    return s1 + separator + s2;
+  }
+
+  /**
+   * Determines whether an input can be converted
+   * @private
+   * @param {String|HTMLElement} input Describe this parameter
+   * @returns Describe what it returns
+   * @type String|Object|Array|Boolean|Number
+   */
+
+  function canConvert(input) {
+    return input != null && (typeof input === 'string' || input.nodeType && (input.nodeType === 1 || input.nodeType === 9 || input.nodeType === 11));
+  }
+
+  /**
+   * Converts HTML content to Markdown format using the Turndown library with 
+   * customizations specific to SquibView's needs.
+   */
+  var HtmlToMarkdown = /*#__PURE__*/function () {
+    function HtmlToMarkdown() {
+      var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      _classCallCheck(this, HtmlToMarkdown);
+      console.warn('[HtmlToMarkdown] CONSTRUCTOR CALLED');
+      this.turndownService = new TurndownService(_objectSpread2({
+        headingStyle: 'atx',
+        // Use # style headings
+        codeBlockStyle: 'fenced',
+        // Use ``` style code blocks
+        emDelimiter: '*',
+        // Use * for emphasis
+        bulletListMarker: '-'
+      }, options));
+
+      // Add a simple cache for converted content to improve performance
+      this.cache = new Map();
+      this.cacheSize = options.cacheSize || 10;
+
+      // Store special blocks for preservation
+      this._specialBlocks = new Map();
+      this.configureTurndownRules();
+    }
+
+    /**
+     * Configure custom Turndown rules
+     */
+    return _createClass(HtmlToMarkdown, [{
+      key: "configureTurndownRules",
+      value: function configureTurndownRules() {
+        var _this = this;
+        // Preserve HTML image tags by returning their outerHTML
+        this.turndownService.addRule('keepImageTags', {
+          filter: 'img',
+          replacement: function replacement(content, node) {
+            return node.outerHTML;
+          }
+        });
+
+        // Rule for our data-source-type wrapper divs - should be high priority
+        this.turndownService.addRule('squibviewFencedBlock', {
+          filter: function filter(node) {
+            var hasAttr = node.nodeName === 'DIV' && node.hasAttribute('data-source-type');
+            if (hasAttr) {
+              var lang = node.getAttribute('data-source-type') || 'code';
+              console.warn("[HtmlToMarkdown] squibviewFencedBlock filter: Matched div with data-source-type=\"".concat(lang, "\". Node outerHTML:"), node.outerHTML);
+            }
+            return hasAttr;
+          },
+          replacement: function replacement(content, node, options) {
+            var lang = node.getAttribute('data-source-type') || 'code';
+            var innerContent = '';
+            switch (lang) {
+              case 'mermaid':
+              case 'math':
+                var contentFromHtml = node.innerHTML;
+                // Convert <br> tags to newlines first
+                contentFromHtml = contentFromHtml.replace(/<br\s*\/?>/gi, '\n');
+                // Strip any other HTML tags (simple regex, not for complex/nested HTML)
+                contentFromHtml = contentFromHtml.replace(/<[^>]+>/g, '');
+                // Use a textarea to unescape HTML entities & normalize
+                var tempTextArea = document.createElement('textarea');
+                tempTextArea.innerHTML = contentFromHtml;
+                innerContent = tempTextArea.value.trim();
+                break;
+              case 'svg':
+                // This console.warn is inside the replacement. If not reached, filter or lang extraction is the issue.
+                console.warn('[HtmlToMarkdown] squibviewFencedBlock REPLACEMENT for SVG. Node outerHTML:', node.outerHTML, 'Node innerHTML:', node.innerHTML);
+                innerContent = node.innerHTML.trim();
+                break;
+              case 'csv':
+              case 'tsv':
+              case 'psv':
+                var tableElement = node.querySelector('table');
+                if (tableElement) {
+                  innerContent = _this._htmlTableToDelimitedText(tableElement, lang);
+                } else {
+                  innerContent = 'Error: Table not found for ' + lang;
+                  console.warn('Could not find table inside div[data-source-type="' + lang + '"]');
+                }
+                break;
+              default:
+                // Handles 'javascript', 'python', 'code', etc.
+                var preElement = node.querySelector('pre');
+                if (preElement) {
+                  var codeElement = preElement.querySelector('code');
+                  // textContent of <code> or <pre> contains the code.
+                  innerContent = (codeElement || preElement).textContent.trimEnd(); // trimEnd to preserve leading newlines if any, but remove trailing ones from block.
+                } else {
+                  // Fallback if <pre> not found (e.g. if it was just a div with code)
+                  innerContent = node.textContent.trimEnd();
+                  console.warn('Could not find <pre> inside div[data-source-type="' + lang + '"]');
+                }
+                break;
+            }
+            var langTag = lang === 'code' ? '' : lang;
+            // Ensure there's a newline before the closing fence if content doesn't end with one.
+            if (innerContent && !innerContent.endsWith('\n')) {
+              innerContent += '\n';
+            }
+            return '\n```' + langTag + '\n' + innerContent + '```\n';
+          }
+        });
+
+        // Preserve Mermaid diagram blocks with special identifiers
+        this.turndownService.addRule('mermaid', {
+          filter: function filter(node) {
+            return node.nodeName === 'DIV' && node.classList.contains('mermaid');
+          },
+          replacement: function replacement(content, node) {
+            // Generate a unique ID for this mermaid block to help with matching later
+            var blockId = 'mermaid_' + Math.random().toString(36).substring(2, 10);
+
+            // Store the raw content for later use
+            if (_this._specialBlocks) {
+              _this._specialBlocks.set(blockId, {
+                type: 'mermaid',
+                content: node.textContent
+              });
+            }
+
+            // Return with special marker that can be identified later
+            return "\n<div data-special-block=\"".concat(blockId, "\" class=\"mermaid\">\n") + node.textContent + "\n</div>\n";
+          }
+        });
+
+        // Preserve SVG elements with special identifiers
+        this.turndownService.addRule('svg', {
+          filter: function filter(node) {
+            var isSvg = node.nodeName === 'SVG';
+            var isChildOfSquibViewSvgDiv = !!(node.parentElement && node.parentElement.nodeName === 'DIV' && node.parentElement.getAttribute('data-source-type') === 'svg');
+            if (isSvg) {
+              console.warn("[HtmlToMarkdown] standalone 'svg' rule filter: Matched <svg>. Is child of SquibView SVG div? ".concat(isChildOfSquibViewSvgDiv, ". Node outerHTML:"), node.outerHTML);
+            }
+            return isSvg && !isChildOfSquibViewSvgDiv;
+          },
+          replacement: function replacement(content, node) {
+            // Generate a unique ID for this SVG block
+            var blockId = 'svg_' + Math.random().toString(36).substring(2, 10);
+
+            // Store the raw SVG for later use
+            var serializer = new XMLSerializer();
+            var svgString = serializer.serializeToString(node);
+            if (_this._specialBlocks) {
+              _this._specialBlocks.set(blockId, {
+                type: 'svg',
+                content: svgString
+              });
+            }
+
+            // Return with special marker
+            return "\n<div data-special-block=\"".concat(blockId, "\" class=\"svg-container\">\n") + svgString + "\n</div>\n";
+          }
+        });
+
+        // Preserve GeoJSON map blocks
+        this.turndownService.addRule('geojson', {
+          filter: function filter(node) {
+            return node.nodeName === 'DIV' && node.classList.contains('geojson-map');
+          },
+          replacement: function replacement(content, node) {
+            // Generate a unique ID for this GeoJSON block
+            var blockId = 'geojson_' + Math.random().toString(36).substring(2, 10);
+
+            // Try to extract the GeoJSON data from the script element
+            var geojsonContent = '';
+            try {
+              // The actual GeoJSON would be in a script tag or in a data attribute
+              // Here we'll use a placeholder since the actual data is hard to extract
+              geojsonContent = node.dataset.geojson || '{"type":"FeatureCollection","features":[]}';
+            } catch (e) {
+              console.error('Error extracting GeoJSON data:', e);
+            }
+            if (_this._specialBlocks) {
+              _this._specialBlocks.set(blockId, {
+                type: 'geojson',
+                content: geojsonContent
+              });
+            }
+            return "\n<div data-special-block=\"".concat(blockId, "\" class=\"geojson-container\">\n") + geojsonContent + "\n</div>\n";
+          }
+        });
+
+        // Preserve Math blocks
+        this.turndownService.addRule('math', {
+          filter: function filter(node) {
+            return node.nodeName === 'DIV' && node.classList.contains('math-display');
+          },
+          replacement: function replacement(content, node) {
+            // Generate a unique ID for this math block
+            var blockId = 'math_' + Math.random().toString(36).substring(2, 10);
+
+            // Get the raw math content (might be wrapped in $$...$$ in the original)
+            var mathContent = node.textContent;
+
+            // Remove $$ delimiters if present
+            mathContent = mathContent.replace(/^\$\$([\s\S]*)\$\$$/, '$1');
+            if (_this._specialBlocks) {
+              _this._specialBlocks.set(blockId, {
+                type: 'math',
+                content: mathContent
+              });
+            }
+            return "\n<div data-special-block=\"".concat(blockId, "\" class=\"math-container\">\n") + mathContent + "\n</div>\n";
+          }
+        });
+
+        // Special handling for code blocks
+        this.turndownService.addRule('codeBlock', {
+          filter: function filter(node) {
+            return node.nodeName === 'PRE' && node.firstChild && node.firstChild.nodeName === 'CODE';
+          },
+          replacement: function replacement(content, node) {
+            var code = node.firstChild.textContent;
+            var language = '';
+
+            // Try to detect language from class
+            if (node.firstChild.className) {
+              var match = node.firstChild.className.match(/language-(\w+)/);
+              if (match) {
+                language = match[1];
+              }
+            }
+            return '\n```' + language + '\n' + code.trim() + '\n```\n';
+          }
+        });
+
+        // Improve table handling
+        this.turndownService.addRule('tableCell', {
+          filter: ['th', 'td'],
+          replacement: function replacement(content, node) {
+            return ' ' + content.trim() + ' |';
+          }
+        });
+        this.turndownService.addRule('tableRow', {
+          filter: 'tr',
+          replacement: function replacement(content, node) {
+            var prefix = '|';
+
+            // Handle header rows
+            if (node.parentNode.nodeName === 'THEAD') {
+              var cells = node.querySelectorAll('th, td').length;
+              var separatorRow = '\n|' + ' --- |'.repeat(cells);
+              return prefix + content + separatorRow;
+            }
+            return prefix + content + '\n';
+          }
+        });
+        this.turndownService.addRule('table', {
+          filter: 'table',
+          replacement: function replacement(content, node) {
+            // If this table is inside our data-source-type div, it's already handled.
+            if (node.parentElement && node.parentElement.hasAttribute('data-source-type')) {
+              var type = node.parentElement.getAttribute('data-source-type');
+              if (type === 'csv' || type === 'tsv' || type === 'psv') {
+                return content; // Turndown will process children, but our main rule handles the fence.
+              }
+            }
+            // Default table processing otherwise
+            // (Existing complex table rule logic from Turndown or custom might be here)
+            // For simplicity, using a basic version of Turndown's own table handling as a placeholder
+            // if not already handled by a more specific rule like the one above for data-source-type.
+            var markdown = '';
+            var headerRow = node.querySelector('thead tr');
+            if (headerRow) {
+              markdown += '|';
+              headerRow.querySelectorAll('th').forEach(function (th) {
+                markdown += " ".concat(_this.turndownService.turndown(th.innerHTML).trim(), " |");
+              });
+              markdown += '\n|';
+              headerRow.querySelectorAll('th').forEach(function () {
+                markdown += ' --- |';
+              });
+              markdown += '\n';
+            }
+            var bodyRows = node.querySelectorAll('tbody tr');
+            bodyRows.forEach(function (row) {
+              markdown += '|';
+              row.querySelectorAll('td').forEach(function (td) {
+                markdown += " ".concat(_this.turndownService.turndown(td.innerHTML).trim(), " |");
+              });
+              markdown += '\n';
+            });
+            return '\n' + markdown + '\n';
+          }
+        });
+
+        // Ensure this class is aware of custom GFM task list items if not default in Turndown version
+        this.turndownService.keep(['li']); // Keep <li> to allow custom rule for task list items
+        this.turndownService.addRule('taskListItems', {
+          filter: function filter(node) {
+            return node.nodeName === 'LI' && node.firstChild && node.firstChild.nodeName === 'INPUT' && node.firstChild.type === 'checkbox';
+          },
+          replacement: function replacement(content, node) {
+            var checkbox = node.firstChild;
+            var checked = checkbox.checked;
+            // Need to remove the input from the content that turndown processes for the <li>
+            // The first child (input) is already handled, process the rest of the <li> content.
+            // Create a temporary div to hold the rest of the li children
+            var restOfLiContent = '';
+            var current = checkbox.nextSibling;
+            while (current) {
+              restOfLiContent += current.outerHTML || current.textContent;
+              current = current.nextSibling;
+            }
+            // Turndown the rest of the LI content
+            var markdownContent = this.turndownService.turndown(restOfLiContent).trim();
+            return (checked ? '[x] ' : '[ ] ') + markdownContent;
+          }
+        });
+      }
+
+      /**
+       * Get a simplified hash code of a string for caching
+       * 
+       * @private
+       * @param {string} str - The string to hash
+       * @returns {string} A hash representation of the string
+       */
+    }, {
+      key: "_getStringHash",
+      value: function _getStringHash(str) {
+        // Simple and fast hash function for strings
+        // This is not a cryptographic hash, just for caching purposes
+        var hash = 0;
+        for (var i = 0; i < str.length; i++) {
+          var _char = str.charCodeAt(i);
+          hash = (hash << 5) - hash + _char;
+          hash = hash & hash; // Convert to 32bit integer
+        }
+        return hash.toString(36); // Convert to base36 for shorter string
+      }
+
+      /**
+       * Convert HTML to Markdown with caching for performance
+       * 
+       * @param {string} html - The HTML content to convert
+       * @param {Object} options - Additional options
+       * @param {string} options.originalSource - The original source if available
+       * @returns {string} The converted Markdown content
+       */
+    }, {
+      key: "convert",
+      value: function convert(html) {
+        var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+        console.warn('[HtmlToMarkdown] CONVERT METHOD CALLED. HTML input (first 100 chars):', html.substring(0, 100));
+        // Clear special blocks map for this conversion
+        this._specialBlocks.clear();
+
+        // Use a hash of the HTML as the cache key
+        var cacheKey = this._getStringHash(html);
+
+        // Check if we have a cached version
+        if (this.cache.has(cacheKey)) {
+          return this.cache.get(cacheKey);
+        }
+
+        // Convert the HTML to Markdown
+        var markdown = this.turndownService.turndown(html);
+
+        // Post-process the markdown to restore special blocks
+        markdown = this._postProcessMarkdown(markdown, options.originalSource);
+
+        // Cache the result
+        this.cache.set(cacheKey, markdown);
+
+        // Keep the cache size under control
+        if (this.cache.size > this.cacheSize) {
+          // Remove the oldest entry
+          var firstKey = this.cache.keys().next().value;
+          this.cache["delete"](firstKey);
+        }
+        return markdown;
+      }
+
+      /**
+       * Post-process markdown to restore special blocks and apply additional formatting
+       * 
+       * @private
+       * @param {string} markdown - The converted markdown 
+       * @param {string} originalSource - The original markdown source if available
+       * @returns {string} - The processed markdown
+       */
+    }, {
+      key: "_postProcessMarkdown",
+      value: function _postProcessMarkdown(markdown, originalSource) {
+        // First pass: Convert the special blocks markers back to proper markdown
+
+        // Convert mermaid blocks
+        var mermaidBlockRegex = /<div data-special-block="mermaid_[^"]*" class="mermaid">\s*([\s\S]*?)\s*<\/div>/g;
+        markdown = markdown.replace(mermaidBlockRegex, function (match, content) {
+          return "\n```mermaid\n".concat(content.trim(), "\n```\n");
+        });
+
+        // Convert SVG blocks
+        var svgBlockRegex = /<div data-special-block="svg_[^"]*" class="svg-container">\s*([\s\S]*?)\s*<\/div>/g;
+        markdown = markdown.replace(svgBlockRegex, function (match, content) {
+          // Try to find a closing SVG tag
+          var svgMatch = content.match(/<svg[\s\S]*?<\/svg>/);
+          if (svgMatch) {
+            return "\n```svg\n".concat(svgMatch[0], "\n```\n");
+          }
+          return match;
+        });
+
+        // Convert GeoJSON blocks
+        var geojsonBlockRegex = /<div data-special-block="geojson_[^"]*" class="geojson-container">\s*([\s\S]*?)\s*<\/div>/g;
+        markdown = markdown.replace(geojsonBlockRegex, function (match, content) {
+          try {
+            // Ensure content is valid JSON before creating the code block
+            JSON.parse(content);
+            return "\n```geojson\n".concat(content.trim(), "\n```\n");
+          } catch (e) {
+            console.error('Invalid GeoJSON data:', e);
+            return "\n```geojson\n{\"type\":\"FeatureCollection\",\"features\":[]}\n```\n";
+          }
+        });
+
+        // Convert Math blocks
+        var mathBlockRegex = /<div data-special-block="math_[^"]*" class="math-container">\s*([\s\S]*?)\s*<\/div>/g;
+        markdown = markdown.replace(mathBlockRegex, function (match, content) {
+          return "\n```math\n".concat(content.trim(), "\n```\n");
+        });
+
+        // Second pass: Restore blocks from original source if possible
+        if (originalSource) {
+          // Extract code blocks from original source
+          var codeBlockRegex = /```(\w+)\s*([\s\S]*?)```/g;
+          var match;
+          var blockIndex = 0;
+          var originalBlocks = [];
+          while ((match = codeBlockRegex.exec(originalSource)) !== null) {
+            var type = match[1];
+            match[2];
+            if (type === 'mermaid' || type === 'svg' || type === 'geojson' || type === 'math') {
+              originalBlocks.push({
+                type: type,
+                content: match[0],
+                index: blockIndex++
+              });
+            }
+          }
+
+          // Try to match original blocks with current blocks
+          // This is a simplistic approach that assumes blocks are in the same order
+
+          var mermaidIndex = 0;
+          var svgIndex = 0;
+          var geojsonIndex = 0;
+          var mathIndex = 0;
+
+          // Replace mermaid blocks
+          markdown = markdown.replace(/```mermaid\s*([\s\S]*?)```/g, function (match, content) {
+            var mermaidBlocks = originalBlocks.filter(function (b) {
+              return b.type === 'mermaid';
+            });
+            if (mermaidIndex < mermaidBlocks.length) {
+              return mermaidBlocks[mermaidIndex++].content;
+            }
+            return match;
+          });
+
+          // Replace SVG blocks
+          markdown = markdown.replace(/```svg\s*([\s\S]*?)```/g, function (match, content) {
+            var svgBlocks = originalBlocks.filter(function (b) {
+              return b.type === 'svg';
+            });
+            if (svgIndex < svgBlocks.length) {
+              return svgBlocks[svgIndex++].content;
+            }
+            return match;
+          });
+
+          // Replace GeoJSON blocks
+          markdown = markdown.replace(/```geojson\s*([\s\S]*?)```/g, function (match, content) {
+            var geojsonBlocks = originalBlocks.filter(function (b) {
+              return b.type === 'geojson';
+            });
+            if (geojsonIndex < geojsonBlocks.length) {
+              return geojsonBlocks[geojsonIndex++].content;
+            }
+            return match;
+          });
+
+          // Replace Math blocks
+          markdown = markdown.replace(/```math\s*([\s\S]*?)```/g, function (match, content) {
+            var mathBlocks = originalBlocks.filter(function (b) {
+              return b.type === 'math';
+            });
+            if (mathIndex < mathBlocks.length) {
+              return mathBlocks[mathIndex++].content;
+            }
+            return match;
+          });
+        }
+        return markdown;
+      }
+
+      /**
+       * Converts an HTML table element to a delimited string (CSV, TSV, etc.).
+       * @param {HTMLTableElement} tableElement The HTML table element.
+       * @param {string} type The type of delimited format ('csv', 'tsv', 'psv').
+       * @returns {string} The delimited text representation of the table.
+       * @private
+       */
+    }, {
+      key: "_htmlTableToDelimitedText",
+      value: function _htmlTableToDelimitedText(tableElement, type) {
+        var delimiter;
+        switch (type) {
+          case 'csv':
+            delimiter = ',';
+            break;
+          case 'tsv':
+            delimiter = '\t';
+            break;
+          case 'psv':
+            delimiter = '|';
+            break;
+          default:
+            delimiter = ',';
+          // Default to CSV
+        }
+        var data = [];
+        var rows = tableElement.querySelectorAll('tr');
+        rows.forEach(function (row) {
+          var rowData = [];
+          var cells = row.querySelectorAll('th, td');
+          cells.forEach(function (cell) {
+            // Basic text content extraction. For complex cell content, might need refinement.
+            // Replace newlines within a cell with a space, trim content.
+            var cellText = cell.textContent || '';
+            cellText = cellText.replace(/\r?\n|\r/g, ' ').trim();
+            // If delimiter is comma, and cellText contains comma, quote it.
+            if (delimiter === ',' && cellText.includes(',')) {
+              cellText = "\"".concat(cellText.replace(/"/g, '""'), "\"");
+            }
+            // If delimiter is tab, and cellText contains tab, it might be an issue depending on consumer.
+            // For PSV, if cellText contains pipe, it's an issue unless handled by quoting (not standard for PSV).
+            rowData.push(cellText);
+          });
+          data.push(rowData.join(delimiter));
+        });
+        return data.join('\n');
+      }
+    }]);
+  }();
+
+  var HtmlToMarkdown$1 = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    default: HtmlToMarkdown
+  });
 
   // Fix for development mode
   /*
@@ -2618,190 +4211,6 @@
   }
   */
 
-  /**
-   * RevisionManager class handles content revisions with memory-efficient diff storage
-   */
-  var RevisionManager = /*#__PURE__*/function () {
-    /**
-     * Creates a new RevisionManager instance
-     */
-    function RevisionManager() {
-      _classCallCheck(this, RevisionManager);
-      this.initialContent = '';
-      this.contentType = '';
-      this.diffs = [];
-      this.currentIndex = -1;
-      this.diffEngine = new DiffMatchPatch();
-    }
-
-    /**
-     * Initializes the revision manager with initial content
-     * 
-     * @param {string} content - The initial content
-     * @param {string} contentType - The content type
-     */
-    return _createClass(RevisionManager, [{
-      key: "initialize",
-      value: function initialize(content, contentType) {
-        this.initialContent = content;
-        this.contentType = contentType;
-        this.diffs = [];
-        this.currentIndex = -1;
-      }
-
-      /**
-       * Adds a new revision
-       * 
-       * @param {string} newContent - The new content to add as a revision
-       * @param {string} contentType - The content type of the revision
-       */
-    }, {
-      key: "addRevision",
-      value: function addRevision(newContent, contentType) {
-        // Calculate diff between current state and new state
-        var currentContent = this.getCurrentContent();
-        var diff = this.diffEngine.diff_main(currentContent, newContent);
-        this.diffEngine.diff_cleanupSemantic(diff);
-        var patchText = this.diffEngine.patch_toText(this.diffEngine.patch_make(currentContent, diff));
-
-        // Remove any forward history if we're branching
-        if (this.currentIndex < this.diffs.length - 1) {
-          this.diffs = this.diffs.slice(0, this.currentIndex + 1);
-        }
-
-        // Add new diff and update content type if it changed
-        this.diffs.push({
-          diff: patchText,
-          contentType: contentType !== this.contentType ? contentType : undefined
-        });
-
-        // Update the content type if it changed
-        if (contentType !== this.contentType) {
-          this.contentType = contentType;
-        }
-        this.currentIndex = this.diffs.length - 1;
-      }
-
-      /**
-       * Moves backward in the revision history
-       * 
-       * @returns {Object|null} The previous revision state or null if at the beginning
-       */
-    }, {
-      key: "undo",
-      value: function undo() {
-        if (this.currentIndex >= 0) {
-          this.currentIndex--;
-          return {
-            content: this.getCurrentContent(),
-            contentType: this.getCurrentContentType()
-          };
-        }
-        return null;
-      }
-
-      /**
-       * Moves forward in the revision history
-       * 
-       * @returns {Object|null} The next revision state or null if at the end
-       */
-    }, {
-      key: "redo",
-      value: function redo() {
-        if (this.currentIndex < this.diffs.length - 1) {
-          this.currentIndex++;
-          return {
-            content: this.getCurrentContent(),
-            contentType: this.getCurrentContentType()
-          };
-        }
-        return null;
-      }
-
-      /**
-       * Gets the content at the current revision point
-       * 
-       * @returns {string} The current content
-       */
-    }, {
-      key: "getCurrentContent",
-      value: function getCurrentContent() {
-        if (this.currentIndex < 0) return this.initialContent;
-
-        // Apply all diffs up to currentIndex
-        var content = this.initialContent;
-        for (var i = 0; i <= this.currentIndex; i++) {
-          var patches = this.diffEngine.patch_fromText(this.diffs[i].diff);
-          var _this$diffEngine$patc = this.diffEngine.patch_apply(patches, content),
-            _this$diffEngine$patc2 = _slicedToArray(_this$diffEngine$patc, 1),
-            patchedText = _this$diffEngine$patc2[0];
-          content = patchedText;
-        }
-        return content;
-      }
-
-      /**
-       * Gets the content type at the current revision point
-       * 
-       * @returns {string} The current content type
-       */
-    }, {
-      key: "getCurrentContentType",
-      value: function getCurrentContentType() {
-        if (this.currentIndex < 0) return this.contentType;
-
-        // Find the last content type change up to the current index
-        var currentType = this.contentType;
-        for (var i = 0; i <= this.currentIndex; i++) {
-          if (this.diffs[i].contentType !== undefined) {
-            currentType = this.diffs[i].contentType;
-          }
-        }
-        return currentType;
-      }
-
-      /**
-       * Sets the revision to a specific index
-       * 
-       * @param {number} index - The revision index to set
-       * @returns {Object|null} The revision state at the index or null if invalid
-       */
-    }, {
-      key: "setRevision",
-      value: function setRevision(index) {
-        if (index >= -1 && index < this.diffs.length) {
-          this.currentIndex = index;
-          return {
-            content: this.getCurrentContent(),
-            contentType: this.getCurrentContentType()
-          };
-        }
-        return null;
-      }
-
-      /**
-       * Returns the total number of revisions
-       * 
-       * @returns {number} The number of revisions
-       */
-    }, {
-      key: "getRevisionCount",
-      value: function getRevisionCount() {
-        return this.diffs.length;
-      }
-
-      /**
-       * Returns the current index in the revision history
-       * 
-       * @returns {number} The current revision index
-       */
-    }, {
-      key: "getCurrentIndex",
-      value: function getCurrentIndex() {
-        return this.currentIndex;
-      }
-    }]);
-  }();
   /**
    * SquibView is a lightweight editor that live-renders different content types
    */
@@ -2902,7 +4311,7 @@
                 break;
               case 5:
                 _context.next = 7;
-                return Promise.resolve().then(function () { return HtmlToMarkdown$2; });
+                return Promise.resolve().then(function () { return HtmlToMarkdown$1; });
               case 7:
                 module = _context.sent;
                 HtmlToMarkdownClass = module["default"];
@@ -2959,7 +4368,7 @@
         mermaid.init(undefined, ".mermaid");
 
         // Initialize markdown-it with options and syntax highlighting
-        this.md = window.markdownit({
+        this.md = new MarkdownIt({
           html: true,
           linkify: true,
           typographer: true,
@@ -2983,73 +4392,74 @@
           var token = tokens[idx];
           var info = token.info.trim().toLowerCase(); // Normalize to lowercase
           var content = token.content;
+          var escapedContent = _this.md.utils.escapeHtml(content);
+          var langAttr = token.info.trim() ? token.info.trim().toLowerCase().split(/\s+/)[0] : 'code';
+          var escapedLangAttr = _this.md.utils.escapeHtml(langAttr);
 
           // Handle Mermaid diagrams
           if (info === 'mermaid') {
-            return '<div class="mermaid">' + content + '</div>';
+            return "<div class=\"mermaid\" data-source-type=\"mermaid\">".concat(escapedContent, "</div>");
           }
 
-          // Handle SVG directly
+          // Handle SVG directly (wrapped for data attribute)
           if (info === 'svg') {
-            return content; // Assuming content is valid SVG
+            // We assume the content is valid SVG. For security, it might be better to sanitize or escape if not trusted.
+            // However, markdown-it's default behavior for HTML blocks is to pass them through if html:true.
+            // For consistency with data-source-type, we wrap it.
+            return "<div data-source-type=\"svg\">".concat(content, "</div>");
           }
 
           // Handle GeoJSON maps
           if (info === 'geojson') {
             var geojsonId = 'geojson-' + Math.random().toString(36).substring(2, 15);
-            return "<div id=\"".concat(geojsonId, "\" class=\"geojson-map\" style=\"width: 100%; height: 300px;\"></div>\n                <script>\n                  (function() {\n                    const initMap = function() {\n                      if (typeof L !== 'undefined') {\n                        const mapContainer = document.getElementById('").concat(geojsonId, "');\n                        if (mapContainer && !mapContainer.dataset.initialized) {\n                          const map = L.map('").concat(geojsonId, "').setView([0, 0], 2);\n                          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {\n                            attribution: '&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors'\n                          }).addTo(map);\n                          \n                          try {\n                            const geojsonData = ").concat(content, ";\n                            const geojsonLayer = L.geoJSON(geojsonData).addTo(map);\n                            map.fitBounds(geojsonLayer.getBounds(), { padding: [20, 20] });\n                            mapContainer.dataset.initialized = 'true';\n                          } catch (e) {\n                            console.error('Error parsing GeoJSON:', e);\n                            mapContainer.innerHTML = '<div class=\"error\">Error parsing GeoJSON: ' + e.message + '</div>';\n                          }\n                        }\n                      } else {\n                        // Leaflet not loaded yet, load it\n                        const link = document.createElement('link');\n                        link.rel = 'stylesheet';\n                        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';\n                        document.head.appendChild(link);\n                        \n                        const script = document.createElement('script');\n                        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';\n                        script.onload = initMap;\n                        document.head.appendChild(script);\n                      }\n                    };\n                    \n                    // Try to initialize immediately, or wait for document to load\n                    if (document.readyState === 'complete') {\n                      initMap();\n                    } else {\n                      window.addEventListener('load', initMap);\n                    }\n                  })();\n                </script>");
+            // Content for GeoJSON is expected to be JSON, so it should be directly embeddable in <script>
+            // No need for escaping here as it's part of a JS template literal for script content.
+            return "<div id=\"".concat(geojsonId, "\" class=\"geojson-map\" data-source-type=\"geojson\" style=\"width: 100%; height: 300px;\"></div>\n                <script>\n                  (function() {\n                    const initMap = function() {\n                      if (typeof L !== 'undefined') {\n                        const mapContainer = document.getElementById('").concat(geojsonId, "');\n                        if (mapContainer && !mapContainer.dataset.initialized) {\n                          const map = L.map('").concat(geojsonId, "').setView([0, 0], 2);\n                          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {\n                            attribution: '&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors'\n                          }).addTo(map);\n                          \n                          try {\n                            const geojsonData = ").concat(content, ";\n                            const geojsonLayer = L.geoJSON(geojsonData).addTo(map);\n                            map.fitBounds(geojsonLayer.getBounds(), { padding: [20, 20] });\n                            mapContainer.dataset.initialized = 'true';\n                          } catch (e) {\n                            console.error('Error parsing GeoJSON:', e);\n                            mapContainer.innerHTML = '<div class=\"error\">Error parsing GeoJSON: ' + e.message + '</div>';\n                          }\n                        }\n                      } else {\n                        const link = document.createElement('link');\n                        link.rel = 'stylesheet';\n                        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';\n                        document.head.appendChild(link);\n                        \n                        const script = document.createElement('script');\n                        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';\n                        script.onload = initMap;\n                        document.head.appendChild(script);\n                      }\n                    };\n                    if (document.readyState === 'complete') {\n                      initMap();\n                    } else {\n                      window.addEventListener('load', initMap);\n                    }\n                  })();\n                </script>");
           }
 
           // Handle mathematical expressions
           if (info === 'math') {
-            // Create unique ID for this math block
             var mathId = 'math-' + Math.random().toString(36).substring(2, 15);
-            return "<div id=\"".concat(mathId, "\" class=\"math-display\">$$").concat(content, "$$</div>\n                <script>\n                  (function() {\n                    function initMathJax() {\n                      if (typeof MathJax === 'undefined') {\n                        // Load MathJax script\n                        var script = document.createElement('script');\n                        script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';\n                        script.async = true;\n                        \n                        script.onload = function() {\n                          // Configure MathJax\n                          window.MathJax = {\n                            tex: {\n                              inlineMath: [['$', '$']],\n                              displayMath: [['$$', '$$']]\n                            },\n                            svg: { fontCache: 'global' }\n                          };\n                          // Render math\n                          MathJax.typeset();\n                        };\n                        \n                        document.head.appendChild(script);\n                      } else {\n                        // MathJax already loaded\n                        MathJax.typeset();\n                      }\n                    }\n                    \n                    // Initialize either now or when page loads\n                    if (document.readyState === 'complete') {\n                      initMathJax();\n                    } else {\n                      window.addEventListener('load', initMathJax);\n                    }\n                  })();\n                </script>");
+            // Content for math is LaTeX, escape it for HTML display before MathJax processes it.
+            return "<div id=\"".concat(mathId, "\" class=\"math-display\" data-source-type=\"math\">$$").concat(escapedContent, "$$</div>\n                <script>\n                  (function() {\n                    function initMathJax() {\n                      if (typeof MathJax === 'undefined') {\n                        var script = document.createElement('script');\n                        script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';\n                        script.async = true;\n                        script.onload = function() {\n                          window.MathJax = {\n                            tex: {\n                              inlineMath: [['$', '$']],\n                              displayMath: [['$$', '$$']]\n                            },\n                            svg: { fontCache: 'global' }\n                          };\n                          MathJax.typeset();\n                        };\n                        document.head.appendChild(script);\n                      } else {\n                        MathJax.typeset();\n                      }\n                    }\n                    if (document.readyState === 'complete') {\n                      initMathJax();\n                    } else {\n                      window.addEventListener('load', initMathJax);\n                    }\n                  })();\n                </script>");
           }
-
-          // Handle data tables (csv, tsv, psv)
           var supportedTableFormats = {
-            // Map language id to delimiter
             'csv': ',',
-            'tsv': '	',
-            // USE LITERAL TAB CHARACTER
+            'tsv': '\t',
             'psv': '|'
           };
           if (supportedTableFormats.hasOwnProperty(info)) {
-            // const delimiter = supportedTableFormats[info]; // Keep for CSV and PSV, but TSV will auto-detect
             try {
-              // Ensure Papa is available (globally)
               if (typeof Papa === 'undefined' || typeof Papa.parse !== 'function') {
                 console.error('PapaParse library is not available. Please include it on the page.');
-                return '<pre class="squibview-error">Error: PapaParse library not loaded.</pre>';
+                return "<pre class=\"squibview-error\" data-source-type=\"".concat(escapedLangAttr, "\">Error: PapaParse library not loaded.</pre>");
               }
               var parseConfig = {
                 skipEmptyLines: true
               };
-              if (info === 'tsv') {
-                // For TSV, let PapaParse auto-detect the delimiter
-                // No explicit delimiter set here, PapaParse will infer it.
-              } else {
-                // For CSV and PSV, use the defined delimiter
+              if (info !== 'tsv') {
+                // TSV auto-detects delimiter
                 parseConfig.delimiter = supportedTableFormats[info];
               }
               var parsedData = Papa.parse(content, parseConfig);
               if (parsedData.errors && parsedData.errors.length > 0) {
                 var errorMessages = parsedData.errors.map(function (err) {
                   return "".concat(err.type, ": ").concat(err.message, " (Row: ").concat(err.row, ")");
-                }).join('\\n');
+                }).join('\n');
                 console.warn("PapaParse errors for ".concat(info, ":"), parsedData.errors);
-                return "<pre class=\"squibview-error\">Error parsing ".concat(info, " data:\\n").concat(_this.md.utils.escapeHtml(errorMessages), "</pre>");
+                return "<pre class=\"squibview-error\" data-source-type=\"".concat(escapedLangAttr, "\">Error parsing ").concat(info, " data:\n").concat(_this.md.utils.escapeHtml(errorMessages), "</pre>");
               }
-              return _this._dataToHtmlTable(parsedData.data);
+              // Wrap the generated table with a div carrying the data-source-type
+              return "<div data-source-type=\"".concat(escapedLangAttr, "\">").concat(_this._dataToHtmlTable(parsedData.data), "</div>");
             } catch (e) {
               console.error("Error rendering ".concat(info, " table:"), e);
-              return '<pre class="squibview-error">Could not render ' + _this.md.utils.escapeHtml(info) + ' table.</pre>';
+              return "<pre class=\"squibview-error\" data-source-type=\"".concat(escapedLangAttr, "\">Could not render ").concat(_this.md.utils.escapeHtml(info), " table.</pre>");
             }
           }
 
-          // Default rendering for other code blocks
-          return defaultFence(tokens, idx, options, env, self);
+          // Default rendering for other code blocks, wrapped with data-source-type
+          var renderedByDefault = defaultFence(tokens, idx, options, env, self);
+          return "<div data-source-type=\"".concat(escapedLangAttr, "\">").concat(renderedByDefault, "</div>");
         };
       }
 
@@ -5171,7 +6581,7 @@
     }]);
   }(); // The React component wrapper has been moved to a separate file
   // to avoid dependency issues when React is not available
-  // Export the main class and RevisionManager
+  // Export the main class
   _defineProperty(SquibView, "defaultOptions", {
     initialContent: '',
     inputContentType: 'md',
@@ -5187,1145 +6597,6 @@
   _defineProperty(SquibView, "version", {
     version: VERSION,
     url: REPO_URL
-  });
-
-  function extend(destination) {
-    for (var i = 1; i < arguments.length; i++) {
-      var source = arguments[i];
-      for (var key in source) {
-        if (source.hasOwnProperty(key)) destination[key] = source[key];
-      }
-    }
-    return destination;
-  }
-  function repeat(character, count) {
-    return Array(count + 1).join(character);
-  }
-  function trimLeadingNewlines(string) {
-    return string.replace(/^\n*/, '');
-  }
-  function trimTrailingNewlines(string) {
-    // avoid match-at-end regexp bottleneck, see #370
-    var indexEnd = string.length;
-    while (indexEnd > 0 && string[indexEnd - 1] === '\n') indexEnd--;
-    return string.substring(0, indexEnd);
-  }
-  var blockElements = ['ADDRESS', 'ARTICLE', 'ASIDE', 'AUDIO', 'BLOCKQUOTE', 'BODY', 'CANVAS', 'CENTER', 'DD', 'DIR', 'DIV', 'DL', 'DT', 'FIELDSET', 'FIGCAPTION', 'FIGURE', 'FOOTER', 'FORM', 'FRAMESET', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HEADER', 'HGROUP', 'HR', 'HTML', 'ISINDEX', 'LI', 'MAIN', 'MENU', 'NAV', 'NOFRAMES', 'NOSCRIPT', 'OL', 'OUTPUT', 'P', 'PRE', 'SECTION', 'TABLE', 'TBODY', 'TD', 'TFOOT', 'TH', 'THEAD', 'TR', 'UL'];
-  function isBlock(node) {
-    return is(node, blockElements);
-  }
-  var voidElements = ['AREA', 'BASE', 'BR', 'COL', 'COMMAND', 'EMBED', 'HR', 'IMG', 'INPUT', 'KEYGEN', 'LINK', 'META', 'PARAM', 'SOURCE', 'TRACK', 'WBR'];
-  function isVoid(node) {
-    return is(node, voidElements);
-  }
-  function hasVoid(node) {
-    return has(node, voidElements);
-  }
-  var meaningfulWhenBlankElements = ['A', 'TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TH', 'TD', 'IFRAME', 'SCRIPT', 'AUDIO', 'VIDEO'];
-  function isMeaningfulWhenBlank(node) {
-    return is(node, meaningfulWhenBlankElements);
-  }
-  function hasMeaningfulWhenBlank(node) {
-    return has(node, meaningfulWhenBlankElements);
-  }
-  function is(node, tagNames) {
-    return tagNames.indexOf(node.nodeName) >= 0;
-  }
-  function has(node, tagNames) {
-    return node.getElementsByTagName && tagNames.some(function (tagName) {
-      return node.getElementsByTagName(tagName).length;
-    });
-  }
-  var rules = {};
-  rules.paragraph = {
-    filter: 'p',
-    replacement: function replacement(content) {
-      return '\n\n' + content + '\n\n';
-    }
-  };
-  rules.lineBreak = {
-    filter: 'br',
-    replacement: function replacement(content, node, options) {
-      return options.br + '\n';
-    }
-  };
-  rules.heading = {
-    filter: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-    replacement: function replacement(content, node, options) {
-      var hLevel = Number(node.nodeName.charAt(1));
-      if (options.headingStyle === 'setext' && hLevel < 3) {
-        var underline = repeat(hLevel === 1 ? '=' : '-', content.length);
-        return '\n\n' + content + '\n' + underline + '\n\n';
-      } else {
-        return '\n\n' + repeat('#', hLevel) + ' ' + content + '\n\n';
-      }
-    }
-  };
-  rules.blockquote = {
-    filter: 'blockquote',
-    replacement: function replacement(content) {
-      content = content.replace(/^\n+|\n+$/g, '');
-      content = content.replace(/^/gm, '> ');
-      return '\n\n' + content + '\n\n';
-    }
-  };
-  rules.list = {
-    filter: ['ul', 'ol'],
-    replacement: function replacement(content, node) {
-      var parent = node.parentNode;
-      if (parent.nodeName === 'LI' && parent.lastElementChild === node) {
-        return '\n' + content;
-      } else {
-        return '\n\n' + content + '\n\n';
-      }
-    }
-  };
-  rules.listItem = {
-    filter: 'li',
-    replacement: function replacement(content, node, options) {
-      content = content.replace(/^\n+/, '') // remove leading newlines
-      .replace(/\n+$/, '\n') // replace trailing newlines with just a single one
-      .replace(/\n/gm, '\n    '); // indent
-      var prefix = options.bulletListMarker + '   ';
-      var parent = node.parentNode;
-      if (parent.nodeName === 'OL') {
-        var start = parent.getAttribute('start');
-        var index = Array.prototype.indexOf.call(parent.children, node);
-        prefix = (start ? Number(start) + index : index + 1) + '.  ';
-      }
-      return prefix + content + (node.nextSibling && !/\n$/.test(content) ? '\n' : '');
-    }
-  };
-  rules.indentedCodeBlock = {
-    filter: function filter(node, options) {
-      return options.codeBlockStyle === 'indented' && node.nodeName === 'PRE' && node.firstChild && node.firstChild.nodeName === 'CODE';
-    },
-    replacement: function replacement(content, node, options) {
-      return '\n\n    ' + node.firstChild.textContent.replace(/\n/g, '\n    ') + '\n\n';
-    }
-  };
-  rules.fencedCodeBlock = {
-    filter: function filter(node, options) {
-      return options.codeBlockStyle === 'fenced' && node.nodeName === 'PRE' && node.firstChild && node.firstChild.nodeName === 'CODE';
-    },
-    replacement: function replacement(content, node, options) {
-      var className = node.firstChild.getAttribute('class') || '';
-      var language = (className.match(/language-(\S+)/) || [null, ''])[1];
-      var code = node.firstChild.textContent;
-      var fenceChar = options.fence.charAt(0);
-      var fenceSize = 3;
-      var fenceInCodeRegex = new RegExp('^' + fenceChar + '{3,}', 'gm');
-      var match;
-      while (match = fenceInCodeRegex.exec(code)) {
-        if (match[0].length >= fenceSize) {
-          fenceSize = match[0].length + 1;
-        }
-      }
-      var fence = repeat(fenceChar, fenceSize);
-      return '\n\n' + fence + language + '\n' + code.replace(/\n$/, '') + '\n' + fence + '\n\n';
-    }
-  };
-  rules.horizontalRule = {
-    filter: 'hr',
-    replacement: function replacement(content, node, options) {
-      return '\n\n' + options.hr + '\n\n';
-    }
-  };
-  rules.inlineLink = {
-    filter: function filter(node, options) {
-      return options.linkStyle === 'inlined' && node.nodeName === 'A' && node.getAttribute('href');
-    },
-    replacement: function replacement(content, node) {
-      var href = node.getAttribute('href');
-      if (href) href = href.replace(/([()])/g, '\\$1');
-      var title = cleanAttribute(node.getAttribute('title'));
-      if (title) title = ' "' + title.replace(/"/g, '\\"') + '"';
-      return '[' + content + '](' + href + title + ')';
-    }
-  };
-  rules.referenceLink = {
-    filter: function filter(node, options) {
-      return options.linkStyle === 'referenced' && node.nodeName === 'A' && node.getAttribute('href');
-    },
-    replacement: function replacement(content, node, options) {
-      var href = node.getAttribute('href');
-      var title = cleanAttribute(node.getAttribute('title'));
-      if (title) title = ' "' + title + '"';
-      var replacement;
-      var reference;
-      switch (options.linkReferenceStyle) {
-        case 'collapsed':
-          replacement = '[' + content + '][]';
-          reference = '[' + content + ']: ' + href + title;
-          break;
-        case 'shortcut':
-          replacement = '[' + content + ']';
-          reference = '[' + content + ']: ' + href + title;
-          break;
-        default:
-          var id = this.references.length + 1;
-          replacement = '[' + content + '][' + id + ']';
-          reference = '[' + id + ']: ' + href + title;
-      }
-      this.references.push(reference);
-      return replacement;
-    },
-    references: [],
-    append: function append(options) {
-      var references = '';
-      if (this.references.length) {
-        references = '\n\n' + this.references.join('\n') + '\n\n';
-        this.references = []; // Reset references
-      }
-      return references;
-    }
-  };
-  rules.emphasis = {
-    filter: ['em', 'i'],
-    replacement: function replacement(content, node, options) {
-      if (!content.trim()) return '';
-      return options.emDelimiter + content + options.emDelimiter;
-    }
-  };
-  rules.strong = {
-    filter: ['strong', 'b'],
-    replacement: function replacement(content, node, options) {
-      if (!content.trim()) return '';
-      return options.strongDelimiter + content + options.strongDelimiter;
-    }
-  };
-  rules.code = {
-    filter: function filter(node) {
-      var hasSiblings = node.previousSibling || node.nextSibling;
-      var isCodeBlock = node.parentNode.nodeName === 'PRE' && !hasSiblings;
-      return node.nodeName === 'CODE' && !isCodeBlock;
-    },
-    replacement: function replacement(content) {
-      if (!content) return '';
-      content = content.replace(/\r?\n|\r/g, ' ');
-      var extraSpace = /^`|^ .*?[^ ].* $|`$/.test(content) ? ' ' : '';
-      var delimiter = '`';
-      var matches = content.match(/`+/gm) || [];
-      while (matches.indexOf(delimiter) !== -1) delimiter = delimiter + '`';
-      return delimiter + extraSpace + content + extraSpace + delimiter;
-    }
-  };
-  rules.image = {
-    filter: 'img',
-    replacement: function replacement(content, node) {
-      var alt = cleanAttribute(node.getAttribute('alt'));
-      var src = node.getAttribute('src') || '';
-      var title = cleanAttribute(node.getAttribute('title'));
-      var titlePart = title ? ' "' + title + '"' : '';
-      return src ? '![' + alt + ']' + '(' + src + titlePart + ')' : '';
-    }
-  };
-  function cleanAttribute(attribute) {
-    return attribute ? attribute.replace(/(\n+\s*)+/g, '\n') : '';
-  }
-
-  /**
-   * Manages a collection of rules used to convert HTML to Markdown
-   */
-
-  function Rules(options) {
-    this.options = options;
-    this._keep = [];
-    this._remove = [];
-    this.blankRule = {
-      replacement: options.blankReplacement
-    };
-    this.keepReplacement = options.keepReplacement;
-    this.defaultRule = {
-      replacement: options.defaultReplacement
-    };
-    this.array = [];
-    for (var key in options.rules) this.array.push(options.rules[key]);
-  }
-  Rules.prototype = {
-    add: function add(key, rule) {
-      this.array.unshift(rule);
-    },
-    keep: function keep(filter) {
-      this._keep.unshift({
-        filter: filter,
-        replacement: this.keepReplacement
-      });
-    },
-    remove: function remove(filter) {
-      this._remove.unshift({
-        filter: filter,
-        replacement: function replacement() {
-          return '';
-        }
-      });
-    },
-    forNode: function forNode(node) {
-      if (node.isBlank) return this.blankRule;
-      var rule;
-      if (rule = findRule(this.array, node, this.options)) return rule;
-      if (rule = findRule(this._keep, node, this.options)) return rule;
-      if (rule = findRule(this._remove, node, this.options)) return rule;
-      return this.defaultRule;
-    },
-    forEach: function forEach(fn) {
-      for (var i = 0; i < this.array.length; i++) fn(this.array[i], i);
-    }
-  };
-  function findRule(rules, node, options) {
-    for (var i = 0; i < rules.length; i++) {
-      var rule = rules[i];
-      if (filterValue(rule, node, options)) return rule;
-    }
-    return void 0;
-  }
-  function filterValue(rule, node, options) {
-    var filter = rule.filter;
-    if (typeof filter === 'string') {
-      if (filter === node.nodeName.toLowerCase()) return true;
-    } else if (Array.isArray(filter)) {
-      if (filter.indexOf(node.nodeName.toLowerCase()) > -1) return true;
-    } else if (typeof filter === 'function') {
-      if (filter.call(rule, node, options)) return true;
-    } else {
-      throw new TypeError('`filter` needs to be a string, array, or function');
-    }
-  }
-
-  /**
-   * The collapseWhitespace function is adapted from collapse-whitespace
-   * by Luc Thevenard.
-   *
-   * The MIT License (MIT)
-   *
-   * Copyright (c) 2014 Luc Thevenard <lucthevenard@gmail.com>
-   *
-   * Permission is hereby granted, free of charge, to any person obtaining a copy
-   * of this software and associated documentation files (the "Software"), to deal
-   * in the Software without restriction, including without limitation the rights
-   * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-   * copies of the Software, and to permit persons to whom the Software is
-   * furnished to do so, subject to the following conditions:
-   *
-   * The above copyright notice and this permission notice shall be included in
-   * all copies or substantial portions of the Software.
-   *
-   * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-   * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-   * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-   * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-   * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-   * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-   * THE SOFTWARE.
-   */
-
-  /**
-   * collapseWhitespace(options) removes extraneous whitespace from an the given element.
-   *
-   * @param {Object} options
-   */
-  function collapseWhitespace(options) {
-    var element = options.element;
-    var isBlock = options.isBlock;
-    var isVoid = options.isVoid;
-    var isPre = options.isPre || function (node) {
-      return node.nodeName === 'PRE';
-    };
-    if (!element.firstChild || isPre(element)) return;
-    var prevText = null;
-    var keepLeadingWs = false;
-    var prev = null;
-    var node = next(prev, element, isPre);
-    while (node !== element) {
-      if (node.nodeType === 3 || node.nodeType === 4) {
-        // Node.TEXT_NODE or Node.CDATA_SECTION_NODE
-        var text = node.data.replace(/[ \r\n\t]+/g, ' ');
-        if ((!prevText || / $/.test(prevText.data)) && !keepLeadingWs && text[0] === ' ') {
-          text = text.substr(1);
-        }
-
-        // `text` might be empty at this point.
-        if (!text) {
-          node = remove(node);
-          continue;
-        }
-        node.data = text;
-        prevText = node;
-      } else if (node.nodeType === 1) {
-        // Node.ELEMENT_NODE
-        if (isBlock(node) || node.nodeName === 'BR') {
-          if (prevText) {
-            prevText.data = prevText.data.replace(/ $/, '');
-          }
-          prevText = null;
-          keepLeadingWs = false;
-        } else if (isVoid(node) || isPre(node)) {
-          // Avoid trimming space around non-block, non-BR void elements and inline PRE.
-          prevText = null;
-          keepLeadingWs = true;
-        } else if (prevText) {
-          // Drop protection if set previously.
-          keepLeadingWs = false;
-        }
-      } else {
-        node = remove(node);
-        continue;
-      }
-      var nextNode = next(prev, node, isPre);
-      prev = node;
-      node = nextNode;
-    }
-    if (prevText) {
-      prevText.data = prevText.data.replace(/ $/, '');
-      if (!prevText.data) {
-        remove(prevText);
-      }
-    }
-  }
-
-  /**
-   * remove(node) removes the given node from the DOM and returns the
-   * next node in the sequence.
-   *
-   * @param {Node} node
-   * @return {Node} node
-   */
-  function remove(node) {
-    var next = node.nextSibling || node.parentNode;
-    node.parentNode.removeChild(node);
-    return next;
-  }
-
-  /**
-   * next(prev, current, isPre) returns the next node in the sequence, given the
-   * current and previous nodes.
-   *
-   * @param {Node} prev
-   * @param {Node} current
-   * @param {Function} isPre
-   * @return {Node}
-   */
-  function next(prev, current, isPre) {
-    if (prev && prev.parentNode === current || isPre(current)) {
-      return current.nextSibling || current.parentNode;
-    }
-    return current.firstChild || current.nextSibling || current.parentNode;
-  }
-
-  /*
-   * Set up window for Node.js
-   */
-
-  var root = typeof window !== 'undefined' ? window : {};
-
-  /*
-   * Parsing HTML strings
-   */
-
-  function canParseHTMLNatively() {
-    var Parser = root.DOMParser;
-    var canParse = false;
-
-    // Adapted from https://gist.github.com/1129031
-    // Firefox/Opera/IE throw errors on unsupported types
-    try {
-      // WebKit returns null on unsupported types
-      if (new Parser().parseFromString('', 'text/html')) {
-        canParse = true;
-      }
-    } catch (e) {}
-    return canParse;
-  }
-  function createHTMLParser() {
-    var Parser = function Parser() {};
-    {
-      var domino = require('@mixmark-io/domino');
-      Parser.prototype.parseFromString = function (string) {
-        return domino.createDocument(string);
-      };
-    }
-    return Parser;
-  }
-  var HTMLParser = canParseHTMLNatively() ? root.DOMParser : createHTMLParser();
-  function RootNode(input, options) {
-    var root;
-    if (typeof input === 'string') {
-      var doc = htmlParser().parseFromString(
-      // DOM parsers arrange elements in the <head> and <body>.
-      // Wrapping in a custom element ensures elements are reliably arranged in
-      // a single element.
-      '<x-turndown id="turndown-root">' + input + '</x-turndown>', 'text/html');
-      root = doc.getElementById('turndown-root');
-    } else {
-      root = input.cloneNode(true);
-    }
-    collapseWhitespace({
-      element: root,
-      isBlock: isBlock,
-      isVoid: isVoid,
-      isPre: options.preformattedCode ? isPreOrCode : null
-    });
-    return root;
-  }
-  var _htmlParser;
-  function htmlParser() {
-    _htmlParser = _htmlParser || new HTMLParser();
-    return _htmlParser;
-  }
-  function isPreOrCode(node) {
-    return node.nodeName === 'PRE' || node.nodeName === 'CODE';
-  }
-  function Node$1(node, options) {
-    node.isBlock = isBlock(node);
-    node.isCode = node.nodeName === 'CODE' || node.parentNode.isCode;
-    node.isBlank = isBlank(node);
-    node.flankingWhitespace = flankingWhitespace(node, options);
-    return node;
-  }
-  function isBlank(node) {
-    return !isVoid(node) && !isMeaningfulWhenBlank(node) && /^\s*$/i.test(node.textContent) && !hasVoid(node) && !hasMeaningfulWhenBlank(node);
-  }
-  function flankingWhitespace(node, options) {
-    if (node.isBlock || options.preformattedCode && node.isCode) {
-      return {
-        leading: '',
-        trailing: ''
-      };
-    }
-    var edges = edgeWhitespace(node.textContent);
-
-    // abandon leading ASCII WS if left-flanked by ASCII WS
-    if (edges.leadingAscii && isFlankedByWhitespace('left', node, options)) {
-      edges.leading = edges.leadingNonAscii;
-    }
-
-    // abandon trailing ASCII WS if right-flanked by ASCII WS
-    if (edges.trailingAscii && isFlankedByWhitespace('right', node, options)) {
-      edges.trailing = edges.trailingNonAscii;
-    }
-    return {
-      leading: edges.leading,
-      trailing: edges.trailing
-    };
-  }
-  function edgeWhitespace(string) {
-    var m = string.match(/^(([ \t\r\n]*)(\s*))(?:(?=\S)[\s\S]*\S)?((\s*?)([ \t\r\n]*))$/);
-    return {
-      leading: m[1],
-      // whole string for whitespace-only strings
-      leadingAscii: m[2],
-      leadingNonAscii: m[3],
-      trailing: m[4],
-      // empty for whitespace-only strings
-      trailingNonAscii: m[5],
-      trailingAscii: m[6]
-    };
-  }
-  function isFlankedByWhitespace(side, node, options) {
-    var sibling;
-    var regExp;
-    var isFlanked;
-    if (side === 'left') {
-      sibling = node.previousSibling;
-      regExp = / $/;
-    } else {
-      sibling = node.nextSibling;
-      regExp = /^ /;
-    }
-    if (sibling) {
-      if (sibling.nodeType === 3) {
-        isFlanked = regExp.test(sibling.nodeValue);
-      } else if (options.preformattedCode && sibling.nodeName === 'CODE') {
-        isFlanked = false;
-      } else if (sibling.nodeType === 1 && !isBlock(sibling)) {
-        isFlanked = regExp.test(sibling.textContent);
-      }
-    }
-    return isFlanked;
-  }
-  var reduce = Array.prototype.reduce;
-  var escapes = [[/\\/g, '\\\\'], [/\*/g, '\\*'], [/^-/g, '\\-'], [/^\+ /g, '\\+ '], [/^(=+)/g, '\\$1'], [/^(#{1,6}) /g, '\\$1 '], [/`/g, '\\`'], [/^~~~/g, '\\~~~'], [/\[/g, '\\['], [/\]/g, '\\]'], [/^>/g, '\\>'], [/_/g, '\\_'], [/^(\d+)\. /g, '$1\\. ']];
-  function TurndownService(options) {
-    if (!(this instanceof TurndownService)) return new TurndownService(options);
-    var defaults = {
-      rules: rules,
-      headingStyle: 'setext',
-      hr: '* * *',
-      bulletListMarker: '*',
-      codeBlockStyle: 'indented',
-      fence: '```',
-      emDelimiter: '_',
-      strongDelimiter: '**',
-      linkStyle: 'inlined',
-      linkReferenceStyle: 'full',
-      br: '  ',
-      preformattedCode: false,
-      blankReplacement: function blankReplacement(content, node) {
-        return node.isBlock ? '\n\n' : '';
-      },
-      keepReplacement: function keepReplacement(content, node) {
-        return node.isBlock ? '\n\n' + node.outerHTML + '\n\n' : node.outerHTML;
-      },
-      defaultReplacement: function defaultReplacement(content, node) {
-        return node.isBlock ? '\n\n' + content + '\n\n' : content;
-      }
-    };
-    this.options = extend({}, defaults, options);
-    this.rules = new Rules(this.options);
-  }
-  TurndownService.prototype = {
-    /**
-     * The entry point for converting a string or DOM node to Markdown
-     * @public
-     * @param {String|HTMLElement} input The string or DOM node to convert
-     * @returns A Markdown representation of the input
-     * @type String
-     */
-
-    turndown: function turndown(input) {
-      if (!canConvert(input)) {
-        throw new TypeError(input + ' is not a string, or an element/document/fragment node.');
-      }
-      if (input === '') return '';
-      var output = process.call(this, new RootNode(input, this.options));
-      return postProcess.call(this, output);
-    },
-    /**
-     * Add one or more plugins
-     * @public
-     * @param {Function|Array} plugin The plugin or array of plugins to add
-     * @returns The Turndown instance for chaining
-     * @type Object
-     */
-
-    use: function use(plugin) {
-      if (Array.isArray(plugin)) {
-        for (var i = 0; i < plugin.length; i++) this.use(plugin[i]);
-      } else if (typeof plugin === 'function') {
-        plugin(this);
-      } else {
-        throw new TypeError('plugin must be a Function or an Array of Functions');
-      }
-      return this;
-    },
-    /**
-     * Adds a rule
-     * @public
-     * @param {String} key The unique key of the rule
-     * @param {Object} rule The rule
-     * @returns The Turndown instance for chaining
-     * @type Object
-     */
-
-    addRule: function addRule(key, rule) {
-      this.rules.add(key, rule);
-      return this;
-    },
-    /**
-     * Keep a node (as HTML) that matches the filter
-     * @public
-     * @param {String|Array|Function} filter The unique key of the rule
-     * @returns The Turndown instance for chaining
-     * @type Object
-     */
-
-    keep: function keep(filter) {
-      this.rules.keep(filter);
-      return this;
-    },
-    /**
-     * Remove a node that matches the filter
-     * @public
-     * @param {String|Array|Function} filter The unique key of the rule
-     * @returns The Turndown instance for chaining
-     * @type Object
-     */
-
-    remove: function remove(filter) {
-      this.rules.remove(filter);
-      return this;
-    },
-    /**
-     * Escapes Markdown syntax
-     * @public
-     * @param {String} string The string to escape
-     * @returns A string with Markdown syntax escaped
-     * @type String
-     */
-
-    escape: function escape(string) {
-      return escapes.reduce(function (accumulator, escape) {
-        return accumulator.replace(escape[0], escape[1]);
-      }, string);
-    }
-  };
-
-  /**
-   * Reduces a DOM node down to its Markdown string equivalent
-   * @private
-   * @param {HTMLElement} parentNode The node to convert
-   * @returns A Markdown representation of the node
-   * @type String
-   */
-
-  function process(parentNode) {
-    var self = this;
-    return reduce.call(parentNode.childNodes, function (output, node) {
-      node = new Node$1(node, self.options);
-      var replacement = '';
-      if (node.nodeType === 3) {
-        replacement = node.isCode ? node.nodeValue : self.escape(node.nodeValue);
-      } else if (node.nodeType === 1) {
-        replacement = replacementForNode.call(self, node);
-      }
-      return join(output, replacement);
-    }, '');
-  }
-
-  /**
-   * Appends strings as each rule requires and trims the output
-   * @private
-   * @param {String} output The conversion output
-   * @returns A trimmed version of the ouput
-   * @type String
-   */
-
-  function postProcess(output) {
-    var self = this;
-    this.rules.forEach(function (rule) {
-      if (typeof rule.append === 'function') {
-        output = join(output, rule.append(self.options));
-      }
-    });
-    return output.replace(/^[\t\r\n]+/, '').replace(/[\t\r\n\s]+$/, '');
-  }
-
-  /**
-   * Converts an element node to its Markdown equivalent
-   * @private
-   * @param {HTMLElement} node The node to convert
-   * @returns A Markdown representation of the node
-   * @type String
-   */
-
-  function replacementForNode(node) {
-    var rule = this.rules.forNode(node);
-    var content = process.call(this, node);
-    var whitespace = node.flankingWhitespace;
-    if (whitespace.leading || whitespace.trailing) content = content.trim();
-    return whitespace.leading + rule.replacement(content, node, this.options) + whitespace.trailing;
-  }
-
-  /**
-   * Joins replacement to the current output with appropriate number of new lines
-   * @private
-   * @param {String} output The current conversion output
-   * @param {String} replacement The string to append to the output
-   * @returns Joined output
-   * @type String
-   */
-
-  function join(output, replacement) {
-    var s1 = trimTrailingNewlines(output);
-    var s2 = trimLeadingNewlines(replacement);
-    var nls = Math.max(output.length - s1.length, replacement.length - s2.length);
-    var separator = '\n\n'.substring(0, nls);
-    return s1 + separator + s2;
-  }
-
-  /**
-   * Determines whether an input can be converted
-   * @private
-   * @param {String|HTMLElement} input Describe this parameter
-   * @returns Describe what it returns
-   * @type String|Object|Array|Boolean|Number
-   */
-
-  function canConvert(input) {
-    return input != null && (typeof input === 'string' || input.nodeType && (input.nodeType === 1 || input.nodeType === 9 || input.nodeType === 11));
-  }
-
-  /**
-   * Converts HTML content to Markdown format using the Turndown library with 
-   * customizations specific to SquibView's needs.
-   */
-  var HtmlToMarkdown$1 = /*#__PURE__*/function () {
-    function HtmlToMarkdown() {
-      var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-      _classCallCheck(this, HtmlToMarkdown);
-      this.turndownService = new TurndownService(_objectSpread2({
-        headingStyle: 'atx',
-        // Use # style headings
-        codeBlockStyle: 'fenced',
-        // Use ``` style code blocks
-        emDelimiter: '*',
-        // Use * for emphasis
-        bulletListMarker: '-'
-      }, options));
-
-      // Add a simple cache for converted content to improve performance
-      this.cache = new Map();
-      this.cacheSize = options.cacheSize || 10;
-
-      // Store special blocks for preservation
-      this._specialBlocks = new Map();
-      this.configureTurndownRules();
-    }
-
-    /**
-     * Configure custom Turndown rules
-     */
-    return _createClass(HtmlToMarkdown, [{
-      key: "configureTurndownRules",
-      value: function configureTurndownRules() {
-        var _this = this;
-        // Preserve Mermaid diagram blocks with special identifiers
-        this.turndownService.addRule('mermaid', {
-          filter: function filter(node) {
-            return node.nodeName === 'DIV' && node.classList.contains('mermaid');
-          },
-          replacement: function replacement(content, node) {
-            // Generate a unique ID for this mermaid block to help with matching later
-            var blockId = 'mermaid_' + Math.random().toString(36).substring(2, 10);
-
-            // Store the raw content for later use
-            if (_this._specialBlocks) {
-              _this._specialBlocks.set(blockId, {
-                type: 'mermaid',
-                content: node.textContent
-              });
-            }
-
-            // Return with special marker that can be identified later
-            return "\n<div data-special-block=\"".concat(blockId, "\" class=\"mermaid\">\n") + node.textContent + "\n</div>\n";
-          }
-        });
-
-        // Preserve SVG elements with special identifiers
-        this.turndownService.addRule('svg', {
-          filter: 'svg',
-          replacement: function replacement(content, node) {
-            // Generate a unique ID for this SVG block
-            var blockId = 'svg_' + Math.random().toString(36).substring(2, 10);
-
-            // Store the raw SVG for later use
-            var serializer = new XMLSerializer();
-            var svgString = serializer.serializeToString(node);
-            if (_this._specialBlocks) {
-              _this._specialBlocks.set(blockId, {
-                type: 'svg',
-                content: svgString
-              });
-            }
-
-            // Return with special marker
-            return "\n<div data-special-block=\"".concat(blockId, "\" class=\"svg-container\">\n") + svgString + "\n</div>\n";
-          }
-        });
-
-        // Preserve GeoJSON map blocks
-        this.turndownService.addRule('geojson', {
-          filter: function filter(node) {
-            return node.nodeName === 'DIV' && node.classList.contains('geojson-map');
-          },
-          replacement: function replacement(content, node) {
-            // Generate a unique ID for this GeoJSON block
-            var blockId = 'geojson_' + Math.random().toString(36).substring(2, 10);
-
-            // Try to extract the GeoJSON data from the script element
-            var geojsonContent = '';
-            try {
-              // The actual GeoJSON would be in a script tag or in a data attribute
-              // Here we'll use a placeholder since the actual data is hard to extract
-              geojsonContent = node.dataset.geojson || '{"type":"FeatureCollection","features":[]}';
-            } catch (e) {
-              console.error('Error extracting GeoJSON data:', e);
-            }
-            if (_this._specialBlocks) {
-              _this._specialBlocks.set(blockId, {
-                type: 'geojson',
-                content: geojsonContent
-              });
-            }
-            return "\n<div data-special-block=\"".concat(blockId, "\" class=\"geojson-container\">\n") + geojsonContent + "\n</div>\n";
-          }
-        });
-
-        // Preserve Math blocks
-        this.turndownService.addRule('math', {
-          filter: function filter(node) {
-            return node.nodeName === 'DIV' && node.classList.contains('math-display');
-          },
-          replacement: function replacement(content, node) {
-            // Generate a unique ID for this math block
-            var blockId = 'math_' + Math.random().toString(36).substring(2, 10);
-
-            // Get the raw math content (might be wrapped in $$...$$ in the original)
-            var mathContent = node.textContent;
-
-            // Remove $$ delimiters if present
-            mathContent = mathContent.replace(/^\$\$([\s\S]*)\$\$$/, '$1');
-            if (_this._specialBlocks) {
-              _this._specialBlocks.set(blockId, {
-                type: 'math',
-                content: mathContent
-              });
-            }
-            return "\n<div data-special-block=\"".concat(blockId, "\" class=\"math-container\">\n") + mathContent + "\n</div>\n";
-          }
-        });
-
-        // Special handling for code blocks
-        this.turndownService.addRule('codeBlock', {
-          filter: function filter(node) {
-            return node.nodeName === 'PRE' && node.firstChild && node.firstChild.nodeName === 'CODE';
-          },
-          replacement: function replacement(content, node) {
-            var code = node.firstChild.textContent;
-            var language = '';
-
-            // Try to detect language from class
-            if (node.firstChild.className) {
-              var match = node.firstChild.className.match(/language-(\w+)/);
-              if (match) {
-                language = match[1];
-              }
-            }
-            return '\n```' + language + '\n' + code.trim() + '\n```\n';
-          }
-        });
-
-        // Improve table handling
-        this.turndownService.addRule('tableCell', {
-          filter: ['th', 'td'],
-          replacement: function replacement(content, node) {
-            return ' ' + content.trim() + ' |';
-          }
-        });
-        this.turndownService.addRule('tableRow', {
-          filter: 'tr',
-          replacement: function replacement(content, node) {
-            var prefix = '|';
-
-            // Handle header rows
-            if (node.parentNode.nodeName === 'THEAD') {
-              var cells = node.querySelectorAll('th, td').length;
-              var separatorRow = '\n|' + ' --- |'.repeat(cells);
-              return prefix + content + separatorRow;
-            }
-            return prefix + content + '\n';
-          }
-        });
-        this.turndownService.addRule('table', {
-          filter: 'table',
-          replacement: function replacement(content, node) {
-            // If the table doesn't have a header row, we need to add the separator
-            if (!node.querySelector('thead') && node.querySelector('tr')) {
-              var firstRow = node.querySelector('tr');
-              var cells = firstRow.querySelectorAll('th, td').length;
-              var separator = '\n|' + ' --- |'.repeat(cells) + '\n';
-
-              // Insert separator after the first row
-              var rows = content.split('\n');
-              if (rows.length > 0) {
-                return rows[0] + separator + rows.slice(1).join('\n') + '\n\n';
-              }
-            }
-            return content + '\n\n';
-          }
-        });
-      }
-
-      /**
-       * Get a simplified hash code of a string for caching
-       * 
-       * @private
-       * @param {string} str - The string to hash
-       * @returns {string} A hash representation of the string
-       */
-    }, {
-      key: "_getStringHash",
-      value: function _getStringHash(str) {
-        // Simple and fast hash function for strings
-        // This is not a cryptographic hash, just for caching purposes
-        var hash = 0;
-        for (var i = 0; i < str.length; i++) {
-          var _char = str.charCodeAt(i);
-          hash = (hash << 5) - hash + _char;
-          hash = hash & hash; // Convert to 32bit integer
-        }
-        return hash.toString(36); // Convert to base36 for shorter string
-      }
-
-      /**
-       * Convert HTML to Markdown with caching for performance
-       * 
-       * @param {string} html - The HTML content to convert
-       * @param {Object} options - Additional options
-       * @param {string} options.originalSource - The original source if available
-       * @returns {string} The converted Markdown content
-       */
-    }, {
-      key: "convert",
-      value: function convert(html) {
-        var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-        // Clear special blocks map for this conversion
-        this._specialBlocks.clear();
-
-        // Use a hash of the HTML as the cache key
-        var cacheKey = this._getStringHash(html);
-
-        // Check if we have a cached version
-        if (this.cache.has(cacheKey)) {
-          return this.cache.get(cacheKey);
-        }
-
-        // Convert the HTML to Markdown
-        var markdown = this.turndownService.turndown(html);
-
-        // Post-process the markdown to restore special blocks
-        markdown = this._postProcessMarkdown(markdown, options.originalSource);
-
-        // Cache the result
-        this.cache.set(cacheKey, markdown);
-
-        // Keep the cache size under control
-        if (this.cache.size > this.cacheSize) {
-          // Remove the oldest entry
-          var firstKey = this.cache.keys().next().value;
-          this.cache["delete"](firstKey);
-        }
-        return markdown;
-      }
-
-      /**
-       * Post-process markdown to restore special blocks and apply additional formatting
-       * 
-       * @private
-       * @param {string} markdown - The converted markdown 
-       * @param {string} originalSource - The original markdown source if available
-       * @returns {string} - The processed markdown
-       */
-    }, {
-      key: "_postProcessMarkdown",
-      value: function _postProcessMarkdown(markdown, originalSource) {
-        // First pass: Convert the special blocks markers back to proper markdown
-
-        // Convert mermaid blocks
-        var mermaidBlockRegex = /<div data-special-block="mermaid_[^"]*" class="mermaid">\s*([\s\S]*?)\s*<\/div>/g;
-        markdown = markdown.replace(mermaidBlockRegex, function (match, content) {
-          return "\n```mermaid\n".concat(content.trim(), "\n```\n");
-        });
-
-        // Convert SVG blocks
-        var svgBlockRegex = /<div data-special-block="svg_[^"]*" class="svg-container">\s*([\s\S]*?)\s*<\/div>/g;
-        markdown = markdown.replace(svgBlockRegex, function (match, content) {
-          // Try to find a closing SVG tag
-          var svgMatch = content.match(/<svg[\s\S]*?<\/svg>/);
-          if (svgMatch) {
-            return "\n```svg\n".concat(svgMatch[0], "\n```\n");
-          }
-          return match;
-        });
-
-        // Convert GeoJSON blocks
-        var geojsonBlockRegex = /<div data-special-block="geojson_[^"]*" class="geojson-container">\s*([\s\S]*?)\s*<\/div>/g;
-        markdown = markdown.replace(geojsonBlockRegex, function (match, content) {
-          try {
-            // Ensure content is valid JSON before creating the code block
-            JSON.parse(content);
-            return "\n```geojson\n".concat(content.trim(), "\n```\n");
-          } catch (e) {
-            console.error('Invalid GeoJSON data:', e);
-            return "\n```geojson\n{\"type\":\"FeatureCollection\",\"features\":[]}\n```\n";
-          }
-        });
-
-        // Convert Math blocks
-        var mathBlockRegex = /<div data-special-block="math_[^"]*" class="math-container">\s*([\s\S]*?)\s*<\/div>/g;
-        markdown = markdown.replace(mathBlockRegex, function (match, content) {
-          return "\n```math\n".concat(content.trim(), "\n```\n");
-        });
-
-        // Second pass: Restore blocks from original source if possible
-        if (originalSource) {
-          // Extract code blocks from original source
-          var codeBlockRegex = /```(\w+)\s*([\s\S]*?)```/g;
-          var match;
-          var blockIndex = 0;
-          var originalBlocks = [];
-          while ((match = codeBlockRegex.exec(originalSource)) !== null) {
-            var type = match[1];
-            match[2];
-            if (type === 'mermaid' || type === 'svg' || type === 'geojson' || type === 'math') {
-              originalBlocks.push({
-                type: type,
-                content: match[0],
-                index: blockIndex++
-              });
-            }
-          }
-
-          // Try to match original blocks with current blocks
-          // This is a simplistic approach that assumes blocks are in the same order
-
-          var mermaidIndex = 0;
-          var svgIndex = 0;
-          var geojsonIndex = 0;
-          var mathIndex = 0;
-
-          // Replace mermaid blocks
-          markdown = markdown.replace(/```mermaid\s*([\s\S]*?)```/g, function (match, content) {
-            var mermaidBlocks = originalBlocks.filter(function (b) {
-              return b.type === 'mermaid';
-            });
-            if (mermaidIndex < mermaidBlocks.length) {
-              return mermaidBlocks[mermaidIndex++].content;
-            }
-            return match;
-          });
-
-          // Replace SVG blocks
-          markdown = markdown.replace(/```svg\s*([\s\S]*?)```/g, function (match, content) {
-            var svgBlocks = originalBlocks.filter(function (b) {
-              return b.type === 'svg';
-            });
-            if (svgIndex < svgBlocks.length) {
-              return svgBlocks[svgIndex++].content;
-            }
-            return match;
-          });
-
-          // Replace GeoJSON blocks
-          markdown = markdown.replace(/```geojson\s*([\s\S]*?)```/g, function (match, content) {
-            var geojsonBlocks = originalBlocks.filter(function (b) {
-              return b.type === 'geojson';
-            });
-            if (geojsonIndex < geojsonBlocks.length) {
-              return geojsonBlocks[geojsonIndex++].content;
-            }
-            return match;
-          });
-
-          // Replace Math blocks
-          markdown = markdown.replace(/```math\s*([\s\S]*?)```/g, function (match, content) {
-            var mathBlocks = originalBlocks.filter(function (b) {
-              return b.type === 'math';
-            });
-            if (mathIndex < mathBlocks.length) {
-              return mathBlocks[mathIndex++].content;
-            }
-            return match;
-          });
-        }
-        return markdown;
-      }
-    }]);
-  }();
-
-  var HtmlToMarkdown$2 = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    default: HtmlToMarkdown$1
   });
 
   return SquibView;

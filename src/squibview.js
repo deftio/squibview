@@ -13,6 +13,11 @@ import TinyEmitter from 'tiny-emitter';
 import DiffMatchPatch from 'diff-match-patch';
 import './squibview.css'; // Import the main CSS file
 import { VERSION, REPO_URL } from './version.js'; // Import version info
+import EventEmitter3 from 'eventemitter3';
+import MarkdownIt from 'markdown-it'; // Import markdown-it
+import Papa from 'papaparse';
+import HtmlToMarkdown from './HtmlToMarkdown.js';
+import { RevisionHistory } from './RevisionHistory.js';
 
 // Fix for development mode
 /*
@@ -27,172 +32,6 @@ try {
   console.warn('Import shim not available, continuing with direct imports', e);
 }
 */
-
-/**
- * RevisionManager class handles content revisions with memory-efficient diff storage
- */
-class RevisionManager {
-  /**
-   * Creates a new RevisionManager instance
-   */
-  constructor() {
-    this.initialContent = '';
-    this.contentType = '';
-    this.diffs = [];
-    this.currentIndex = -1;
-    this.diffEngine = new DiffMatchPatch();
-  }
-  
-  /**
-   * Initializes the revision manager with initial content
-   * 
-   * @param {string} content - The initial content
-   * @param {string} contentType - The content type
-   */
-  initialize(content, contentType) {
-    this.initialContent = content;
-    this.contentType = contentType;
-    this.diffs = [];
-    this.currentIndex = -1;
-  }
-  
-  /**
-   * Adds a new revision
-   * 
-   * @param {string} newContent - The new content to add as a revision
-   * @param {string} contentType - The content type of the revision
-   */
-  addRevision(newContent, contentType) {
-    // Calculate diff between current state and new state
-    const currentContent = this.getCurrentContent();
-    const diff = this.diffEngine.diff_main(currentContent, newContent);
-    this.diffEngine.diff_cleanupSemantic(diff);
-    const patchText = this.diffEngine.patch_toText(
-      this.diffEngine.patch_make(currentContent, diff)
-    );
-    
-    // Remove any forward history if we're branching
-    if (this.currentIndex < this.diffs.length - 1) {
-      this.diffs = this.diffs.slice(0, this.currentIndex + 1);
-    }
-    
-    // Add new diff and update content type if it changed
-    this.diffs.push({
-      diff: patchText,
-      contentType: contentType !== this.contentType ? contentType : undefined
-    });
-    
-    // Update the content type if it changed
-    if (contentType !== this.contentType) {
-      this.contentType = contentType;
-    }
-    
-    this.currentIndex = this.diffs.length - 1;
-  }
-  
-  /**
-   * Moves backward in the revision history
-   * 
-   * @returns {Object|null} The previous revision state or null if at the beginning
-   */
-  undo() {
-    if (this.currentIndex >= 0) {
-      this.currentIndex--;
-      return {
-        content: this.getCurrentContent(),
-        contentType: this.getCurrentContentType()
-      };
-    }
-    return null;
-  }
-  
-  /**
-   * Moves forward in the revision history
-   * 
-   * @returns {Object|null} The next revision state or null if at the end
-   */
-  redo() {
-    if (this.currentIndex < this.diffs.length - 1) {
-      this.currentIndex++;
-      return {
-        content: this.getCurrentContent(),
-        contentType: this.getCurrentContentType()
-      };
-    }
-    return null;
-  }
-  
-  /**
-   * Gets the content at the current revision point
-   * 
-   * @returns {string} The current content
-   */
-  getCurrentContent() {
-    if (this.currentIndex < 0) return this.initialContent;
-    
-    // Apply all diffs up to currentIndex
-    let content = this.initialContent;
-    for (let i = 0; i <= this.currentIndex; i++) {
-      const patches = this.diffEngine.patch_fromText(this.diffs[i].diff);
-      const [patchedText] = this.diffEngine.patch_apply(patches, content);
-      content = patchedText;
-    }
-    return content;
-  }
-  
-  /**
-   * Gets the content type at the current revision point
-   * 
-   * @returns {string} The current content type
-   */
-  getCurrentContentType() {
-    if (this.currentIndex < 0) return this.contentType;
-    
-    // Find the last content type change up to the current index
-    let currentType = this.contentType;
-    for (let i = 0; i <= this.currentIndex; i++) {
-      if (this.diffs[i].contentType !== undefined) {
-        currentType = this.diffs[i].contentType;
-      }
-    }
-    return currentType;
-  }
-  
-  /**
-   * Sets the revision to a specific index
-   * 
-   * @param {number} index - The revision index to set
-   * @returns {Object|null} The revision state at the index or null if invalid
-   */
-  setRevision(index) {
-    if (index >= -1 && index < this.diffs.length) {
-      this.currentIndex = index;
-      return {
-        content: this.getCurrentContent(),
-        contentType: this.getCurrentContentType()
-      };
-    }
-    return null;
-  }
-  
-  /**
-   * Returns the total number of revisions
-   * 
-   * @returns {number} The number of revisions
-   */
-  getRevisionCount() {
-    return this.diffs.length;
-  }
-  
-  /**
-   * Returns the current index in the revision history
-   * 
-   * @returns {number} The current revision index
-   */
-  getCurrentIndex() {
-    return this.currentIndex;
-  }
-}
 
 /**
  * SquibView is a lightweight editor that live-renders different content types
@@ -242,7 +81,7 @@ class SquibView {
     this.events = new TinyEmitter();
     
     // Initialize revision manager
-    this.revisionManager = new RevisionManager();
+    this.revisionManager = new RevisionHistory();
     
     // Track last selection data
     this.lastSelectionData = null;
@@ -339,7 +178,7 @@ class SquibView {
     mermaid.init(undefined, ".mermaid");
     
     // Initialize markdown-it with options and syntax highlighting
-    this.md = window.markdownit({
+    this.md = new MarkdownIt({
       html: true,
       linkify: true,
       typographer: true,
@@ -361,21 +200,29 @@ class SquibView {
       const token = tokens[idx];
       const info = token.info.trim().toLowerCase(); // Normalize to lowercase
       const content = token.content;
-      
+      const escapedContent = this.md.utils.escapeHtml(content);
+      const langAttr = token.info.trim() ? token.info.trim().toLowerCase().split(/\s+/)[0] : 'code';
+      const escapedLangAttr = this.md.utils.escapeHtml(langAttr);
+
       // Handle Mermaid diagrams
       if (info === 'mermaid') {
-        return '<div class="mermaid">' + content + '</div>';
+        return `<div class="mermaid" data-source-type="mermaid">${escapedContent}</div>`;
       }
-      
-      // Handle SVG directly
+
+      // Handle SVG directly (wrapped for data attribute)
       if (info === 'svg') {
-        return content; // Assuming content is valid SVG
+        // We assume the content is valid SVG. For security, it might be better to sanitize or escape if not trusted.
+        // However, markdown-it's default behavior for HTML blocks is to pass them through if html:true.
+        // For consistency with data-source-type, we wrap it.
+        return `<div data-source-type="svg">${content}</div>`;
       }
-      
+
       // Handle GeoJSON maps
       if (info === 'geojson') {
         const geojsonId = 'geojson-' + Math.random().toString(36).substring(2, 15);
-        return `<div id="${geojsonId}" class="geojson-map" style="width: 100%; height: 300px;"></div>
+        // Content for GeoJSON is expected to be JSON, so it should be directly embeddable in <script>
+        // No need for escaping here as it's part of a JS template literal for script content.
+        return `<div id="${geojsonId}" class="geojson-map" data-source-type="geojson" style="width: 100%; height: 300px;"></div>
                 <script>
                   (function() {
                     const initMap = function() {
@@ -398,7 +245,6 @@ class SquibView {
                           }
                         }
                       } else {
-                        // Leaflet not loaded yet, load it
                         const link = document.createElement('link');
                         link.rel = 'stylesheet';
                         link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
@@ -410,8 +256,6 @@ class SquibView {
                         document.head.appendChild(script);
                       }
                     };
-                    
-                    // Try to initialize immediately, or wait for document to load
                     if (document.readyState === 'complete') {
                       initMap();
                     } else {
@@ -420,24 +264,20 @@ class SquibView {
                   })();
                 </script>`;
       }
-      
+
       // Handle mathematical expressions
       if (info === 'math') {
-        // Create unique ID for this math block
         const mathId = 'math-' + Math.random().toString(36).substring(2, 15);
-        
-        return `<div id="${mathId}" class="math-display">$$${content}$$</div>
+        // Content for math is LaTeX, escape it for HTML display before MathJax processes it.
+        return `<div id="${mathId}" class="math-display" data-source-type="math">$$${escapedContent}$$</div>
                 <script>
                   (function() {
                     function initMathJax() {
                       if (typeof MathJax === 'undefined') {
-                        // Load MathJax script
                         var script = document.createElement('script');
                         script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
                         script.async = true;
-                        
                         script.onload = function() {
-                          // Configure MathJax
                           window.MathJax = {
                             tex: {
                               inlineMath: [['$', '$']],
@@ -445,18 +285,13 @@ class SquibView {
                             },
                             svg: { fontCache: 'global' }
                           };
-                          // Render math
                           MathJax.typeset();
                         };
-                        
                         document.head.appendChild(script);
                       } else {
-                        // MathJax already loaded
                         MathJax.typeset();
                       }
                     }
-                    
-                    // Initialize either now or when page loads
                     if (document.readyState === 'complete') {
                       initMathJax();
                     } else {
@@ -466,50 +301,34 @@ class SquibView {
                 </script>`;
       }
 
-      // Handle data tables (csv, tsv, psv)
-      const supportedTableFormats = { // Map language id to delimiter
-        'csv': ',',
-        'tsv': '	', // USE LITERAL TAB CHARACTER
-        'psv': '|'
-      };
-
+      const supportedTableFormats = { 'csv': ',', 'tsv': '\t', 'psv': '|' };
       if (supportedTableFormats.hasOwnProperty(info)) {
-        // const delimiter = supportedTableFormats[info]; // Keep for CSV and PSV, but TSV will auto-detect
         try {
-          // Ensure Papa is available (globally)
           if (typeof Papa === 'undefined' || typeof Papa.parse !== 'function') {
             console.error('PapaParse library is not available. Please include it on the page.');
-            return '<pre class="squibview-error">Error: PapaParse library not loaded.</pre>';
+            return `<pre class="squibview-error" data-source-type="${escapedLangAttr}">Error: PapaParse library not loaded.</pre>`;
           }
-          
-          let parseConfig = {
-            skipEmptyLines: true
-          };
-
-          if (info === 'tsv') {
-            // For TSV, let PapaParse auto-detect the delimiter
-            // No explicit delimiter set here, PapaParse will infer it.
-          } else {
-            // For CSV and PSV, use the defined delimiter
+          let parseConfig = { skipEmptyLines: true };
+          if (info !== 'tsv') { // TSV auto-detects delimiter
             parseConfig.delimiter = supportedTableFormats[info];
           }
-
           const parsedData = Papa.parse(content, parseConfig);
-
           if (parsedData.errors && parsedData.errors.length > 0) {
-            let errorMessages = parsedData.errors.map(err => `${err.type}: ${err.message} (Row: ${err.row})`).join('\\n');
+            let errorMessages = parsedData.errors.map(err => `${err.type}: ${err.message} (Row: ${err.row})`).join('\n');
             console.warn(`PapaParse errors for ${info}:`, parsedData.errors);
-            return `<pre class="squibview-error">Error parsing ${info} data:\\n${this.md.utils.escapeHtml(errorMessages)}</pre>`;
+            return `<pre class="squibview-error" data-source-type="${escapedLangAttr}">Error parsing ${info} data:\n${this.md.utils.escapeHtml(errorMessages)}</pre>`;
           }
-          return this._dataToHtmlTable(parsedData.data);
+          // Wrap the generated table with a div carrying the data-source-type
+          return `<div data-source-type="${escapedLangAttr}">${this._dataToHtmlTable(parsedData.data)}</div>`;
         } catch (e) {
           console.error(`Error rendering ${info} table:`, e);
-          return '<pre class="squibview-error">Could not render ' + this.md.utils.escapeHtml(info) + ' table.</pre>';
+          return `<pre class="squibview-error" data-source-type="${escapedLangAttr}">Could not render ${this.md.utils.escapeHtml(info)} table.</pre>`;
         }
       }
-      
-      // Default rendering for other code blocks
-      return defaultFence(tokens, idx, options, env, self);
+
+      // Default rendering for other code blocks, wrapped with data-source-type
+      const renderedByDefault = defaultFence(tokens, idx, options, env, self);
+      return `<div data-source-type="${escapedLangAttr}">${renderedByDefault}</div>`;
     };
   }
 
@@ -1798,6 +1617,7 @@ class SquibView {
    * @throws {Error} If handler is not a function or null
    */
   set onReplaceSelectedText(handler) {
+    console.log('[SquibView] onReplaceSelectedText setter called. Handler:', handler);
     if (handler !== null && typeof handler !== 'function') {
       throw new Error('onReplaceSelectedText handler must be a function or null');
     }
@@ -2425,6 +2245,5 @@ class SquibView {
 // The React component wrapper has been moved to a separate file
 // to avoid dependency issues when React is not available
 
-// Export the main class and RevisionManager
+// Export the main class
 export default SquibView;
-export { RevisionManager };

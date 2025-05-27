@@ -66,6 +66,7 @@ var HtmlToMarkdown = /*#__PURE__*/function () {
   function HtmlToMarkdown() {
     var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
     _classCallCheck(this, HtmlToMarkdown);
+    console.warn('[HtmlToMarkdown] CONSTRUCTOR CALLED');
     this.turndownService = new TurndownService(_objectSpread2({
       headingStyle: 'atx',
       // Use # style headings
@@ -92,6 +93,79 @@ var HtmlToMarkdown = /*#__PURE__*/function () {
     key: "configureTurndownRules",
     value: function configureTurndownRules() {
       var _this = this;
+      // Preserve HTML image tags by returning their outerHTML
+      this.turndownService.addRule('keepImageTags', {
+        filter: 'img',
+        replacement: function replacement(content, node) {
+          return node.outerHTML;
+        }
+      });
+
+      // Rule for our data-source-type wrapper divs - should be high priority
+      this.turndownService.addRule('squibviewFencedBlock', {
+        filter: function filter(node) {
+          var hasAttr = node.nodeName === 'DIV' && node.hasAttribute('data-source-type');
+          if (hasAttr) {
+            var lang = node.getAttribute('data-source-type') || 'code';
+            console.warn("[HtmlToMarkdown] squibviewFencedBlock filter: Matched div with data-source-type=\"".concat(lang, "\". Node outerHTML:"), node.outerHTML);
+          }
+          return hasAttr;
+        },
+        replacement: function replacement(content, node, options) {
+          var lang = node.getAttribute('data-source-type') || 'code';
+          var innerContent = '';
+          switch (lang) {
+            case 'mermaid':
+            case 'math':
+              var contentFromHtml = node.innerHTML;
+              // Convert <br> tags to newlines first
+              contentFromHtml = contentFromHtml.replace(/<br\s*\/?>/gi, '\n');
+              // Strip any other HTML tags (simple regex, not for complex/nested HTML)
+              contentFromHtml = contentFromHtml.replace(/<[^>]+>/g, '');
+              // Use a textarea to unescape HTML entities & normalize
+              var tempTextArea = document.createElement('textarea');
+              tempTextArea.innerHTML = contentFromHtml;
+              innerContent = tempTextArea.value.trim();
+              break;
+            case 'svg':
+              // This console.warn is inside the replacement. If not reached, filter or lang extraction is the issue.
+              console.warn('[HtmlToMarkdown] squibviewFencedBlock REPLACEMENT for SVG. Node outerHTML:', node.outerHTML, 'Node innerHTML:', node.innerHTML);
+              innerContent = node.innerHTML.trim();
+              break;
+            case 'csv':
+            case 'tsv':
+            case 'psv':
+              var tableElement = node.querySelector('table');
+              if (tableElement) {
+                innerContent = _this._htmlTableToDelimitedText(tableElement, lang);
+              } else {
+                innerContent = 'Error: Table not found for ' + lang;
+                console.warn('Could not find table inside div[data-source-type="' + lang + '"]');
+              }
+              break;
+            default:
+              // Handles 'javascript', 'python', 'code', etc.
+              var preElement = node.querySelector('pre');
+              if (preElement) {
+                var codeElement = preElement.querySelector('code');
+                // textContent of <code> or <pre> contains the code.
+                innerContent = (codeElement || preElement).textContent.trimEnd(); // trimEnd to preserve leading newlines if any, but remove trailing ones from block.
+              } else {
+                // Fallback if <pre> not found (e.g. if it was just a div with code)
+                innerContent = node.textContent.trimEnd();
+                console.warn('Could not find <pre> inside div[data-source-type="' + lang + '"]');
+              }
+              break;
+          }
+          var langTag = lang === 'code' ? '' : lang;
+          // Ensure there's a newline before the closing fence if content doesn't end with one.
+          if (innerContent && !innerContent.endsWith('\n')) {
+            innerContent += '\n';
+          }
+          return '\n```' + langTag + '\n' + innerContent + '```\n';
+        }
+      });
+
       // Preserve Mermaid diagram blocks with special identifiers
       this.turndownService.addRule('mermaid', {
         filter: function filter(node) {
@@ -116,7 +190,14 @@ var HtmlToMarkdown = /*#__PURE__*/function () {
 
       // Preserve SVG elements with special identifiers
       this.turndownService.addRule('svg', {
-        filter: 'svg',
+        filter: function filter(node) {
+          var isSvg = node.nodeName === 'SVG';
+          var isChildOfSquibViewSvgDiv = !!(node.parentElement && node.parentElement.nodeName === 'DIV' && node.parentElement.getAttribute('data-source-type') === 'svg');
+          if (isSvg) {
+            console.warn("[HtmlToMarkdown] standalone 'svg' rule filter: Matched <svg>. Is child of SquibView SVG div? ".concat(isChildOfSquibViewSvgDiv, ". Node outerHTML:"), node.outerHTML);
+          }
+          return isSvg && !isChildOfSquibViewSvgDiv;
+        },
         replacement: function replacement(content, node) {
           // Generate a unique ID for this SVG block
           var blockId = 'svg_' + Math.random().toString(36).substring(2, 10);
@@ -232,19 +313,63 @@ var HtmlToMarkdown = /*#__PURE__*/function () {
       this.turndownService.addRule('table', {
         filter: 'table',
         replacement: function replacement(content, node) {
-          // If the table doesn't have a header row, we need to add the separator
-          if (!node.querySelector('thead') && node.querySelector('tr')) {
-            var firstRow = node.querySelector('tr');
-            var cells = firstRow.querySelectorAll('th, td').length;
-            var separator = '\n|' + ' --- |'.repeat(cells) + '\n';
-
-            // Insert separator after the first row
-            var rows = content.split('\n');
-            if (rows.length > 0) {
-              return rows[0] + separator + rows.slice(1).join('\n') + '\n\n';
+          // If this table is inside our data-source-type div, it's already handled.
+          if (node.parentElement && node.parentElement.hasAttribute('data-source-type')) {
+            var type = node.parentElement.getAttribute('data-source-type');
+            if (type === 'csv' || type === 'tsv' || type === 'psv') {
+              return content; // Turndown will process children, but our main rule handles the fence.
             }
           }
-          return content + '\n\n';
+          // Default table processing otherwise
+          // (Existing complex table rule logic from Turndown or custom might be here)
+          // For simplicity, using a basic version of Turndown's own table handling as a placeholder
+          // if not already handled by a more specific rule like the one above for data-source-type.
+          var markdown = '';
+          var headerRow = node.querySelector('thead tr');
+          if (headerRow) {
+            markdown += '|';
+            headerRow.querySelectorAll('th').forEach(function (th) {
+              markdown += " ".concat(_this.turndownService.turndown(th.innerHTML).trim(), " |");
+            });
+            markdown += '\n|';
+            headerRow.querySelectorAll('th').forEach(function () {
+              markdown += ' --- |';
+            });
+            markdown += '\n';
+          }
+          var bodyRows = node.querySelectorAll('tbody tr');
+          bodyRows.forEach(function (row) {
+            markdown += '|';
+            row.querySelectorAll('td').forEach(function (td) {
+              markdown += " ".concat(_this.turndownService.turndown(td.innerHTML).trim(), " |");
+            });
+            markdown += '\n';
+          });
+          return '\n' + markdown + '\n';
+        }
+      });
+
+      // Ensure this class is aware of custom GFM task list items if not default in Turndown version
+      this.turndownService.keep(['li']); // Keep <li> to allow custom rule for task list items
+      this.turndownService.addRule('taskListItems', {
+        filter: function filter(node) {
+          return node.nodeName === 'LI' && node.firstChild && node.firstChild.nodeName === 'INPUT' && node.firstChild.type === 'checkbox';
+        },
+        replacement: function replacement(content, node) {
+          var checkbox = node.firstChild;
+          var checked = checkbox.checked;
+          // Need to remove the input from the content that turndown processes for the <li>
+          // The first child (input) is already handled, process the rest of the <li> content.
+          // Create a temporary div to hold the rest of the li children
+          var restOfLiContent = '';
+          var current = checkbox.nextSibling;
+          while (current) {
+            restOfLiContent += current.outerHTML || current.textContent;
+            current = current.nextSibling;
+          }
+          // Turndown the rest of the LI content
+          var markdownContent = this.turndownService.turndown(restOfLiContent).trim();
+          return (checked ? '[x] ' : '[ ] ') + markdownContent;
         }
       });
     }
@@ -282,6 +407,7 @@ var HtmlToMarkdown = /*#__PURE__*/function () {
     key: "convert",
     value: function convert(html) {
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+      console.warn('[HtmlToMarkdown] CONVERT METHOD CALLED. HTML input (first 100 chars):', html.substring(0, 100));
       // Clear special blocks map for this conversion
       this._specialBlocks.clear();
 
@@ -432,6 +558,54 @@ var HtmlToMarkdown = /*#__PURE__*/function () {
         });
       }
       return markdown;
+    }
+
+    /**
+     * Converts an HTML table element to a delimited string (CSV, TSV, etc.).
+     * @param {HTMLTableElement} tableElement The HTML table element.
+     * @param {string} type The type of delimited format ('csv', 'tsv', 'psv').
+     * @returns {string} The delimited text representation of the table.
+     * @private
+     */
+  }, {
+    key: "_htmlTableToDelimitedText",
+    value: function _htmlTableToDelimitedText(tableElement, type) {
+      var delimiter;
+      switch (type) {
+        case 'csv':
+          delimiter = ',';
+          break;
+        case 'tsv':
+          delimiter = '\t';
+          break;
+        case 'psv':
+          delimiter = '|';
+          break;
+        default:
+          delimiter = ',';
+        // Default to CSV
+      }
+      var data = [];
+      var rows = tableElement.querySelectorAll('tr');
+      rows.forEach(function (row) {
+        var rowData = [];
+        var cells = row.querySelectorAll('th, td');
+        cells.forEach(function (cell) {
+          // Basic text content extraction. For complex cell content, might need refinement.
+          // Replace newlines within a cell with a space, trim content.
+          var cellText = cell.textContent || '';
+          cellText = cellText.replace(/\r?\n|\r/g, ' ').trim();
+          // If delimiter is comma, and cellText contains comma, quote it.
+          if (delimiter === ',' && cellText.includes(',')) {
+            cellText = "\"".concat(cellText.replace(/"/g, '""'), "\"");
+          }
+          // If delimiter is tab, and cellText contains tab, it might be an issue depending on consumer.
+          // For PSV, if cellText contains pipe, it's an issue unless handled by quoting (not standard for PSV).
+          rowData.push(cellText);
+        });
+        data.push(rowData.join(delimiter));
+      });
+      return data.join('\n');
     }
   }]);
 }();
