@@ -687,18 +687,6 @@ class SquibView {
       });
     }
     
-    // Extract SVG blocks: ```svg ... ```
-    const svgRegex = /```svg\s*([\s\S]*?)```/g;
-    let svgMatch;
-    while ((svgMatch = svgRegex.exec(originalSource)) !== null) {
-      specialBlocks.push({
-        type: 'svg',
-        content: svgMatch[0],
-        startIndex: svgMatch.index,
-        endIndex: svgMatch.index + svgMatch[0].length
-      });
-    }
-    
     // Extract GeoJSON blocks: ```geojson ... ```
     const geojsonRegex = /```geojson\s*([\s\S]*?)```/g;
     let geojsonMatch;
@@ -731,7 +719,6 @@ class SquibView {
     
     // Look for elements in the newSource which likely represent our special blocks
     const mermaidDivRegex = /<div[^>]*class=['"]?mermaid['"]?[^>]*>([\s\S]*?)<\/div>/g;
-    const svgTagRegex = /<svg[^>]*>[\s\S]*?<\/svg>/g;
     const geojsonDivRegex = /<div[^>]*class=['"]?geojson-map['"]?[^>]*>[\s\S]*?<\/div>/g;
     const mathDivRegex = /<div[^>]*class=['"]?math-display['"]?[^>]*>[\s\S]*?<\/div>/g;
     
@@ -749,23 +736,6 @@ class SquibView {
           modifiedSource.substring(mermaidDivMatch.index + mermaidDivMatch[0].length);
         
         mermaidIndex++;
-      }
-    }
-    
-    // Replace SVG tags with original SVG code blocks
-    let svgTagMatch;
-    let svgIndex = 0;
-    while ((svgTagMatch = svgTagRegex.exec(modifiedSource)) !== null) {
-      // Find the next available SVG block
-      const svgBlocks = specialBlocks.filter(block => block.type === 'svg');
-      if (svgIndex < svgBlocks.length) {
-        // Replace the SVG tag with the original SVG code block
-        modifiedSource = 
-          modifiedSource.substring(0, svgTagMatch.index) + 
-          svgBlocks[svgIndex].content + 
-          modifiedSource.substring(svgTagMatch.index + svgTagMatch[0].length);
-        
-        svgIndex++;
       }
     }
     

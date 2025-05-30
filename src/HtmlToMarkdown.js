@@ -75,15 +75,11 @@ export default class HtmlToMarkdown {
             innerContent = innerContent.trim(); // Trim whitespace
             break;
           case 'svg':
-            const svgElement = node.querySelector('svg');
-            if (svgElement) {
-              // We want the raw outerHTML of the <svg> element itself.
-              innerContent = svgElement.outerHTML;
-            } else {
-              // Fallback if no <svg> element found, though unlikely for our structure.
-              innerContent = node.innerHTML; 
-              console.warn('[HtmlToMarkdown] squibviewFencedBlock SVG: No <svg> child found, using div.innerHTML.');
-            }
+            // The 'node' is the div with data-source-type="svg".
+            // Its innerHTML is expected to be the raw SVG markup.
+            innerContent = node.innerHTML;
+            // It's good to log what's captured for debugging during development if necessary.
+            // console.warn('[HtmlToMarkdown] squibviewFencedBlock SVG: Captured innerHTML:', innerContent.substring(0, 200));
             break;
           case 'csv':
           case 'tsv':

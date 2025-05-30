@@ -2005,5 +2005,42 @@ And a final paragraph.
     expect(normalize(roundTrippedMarkdown)).toEqual(normalize(originalMarkdown));
   });
 
+  test('should correctly round-trip Markdown with a fenced SVG block', () => {
+    const originalMarkdown = `
+# SVG Round-trip Test
+
+Some text before the SVG.
+
+\`\`\`svg
+<svg width="150" height="100" viewBox="0 0 3 2">
+  <rect width="1" height="2" x="0" fill="#008d46" />
+  <rect width="1" height="2" x="1" fill="#ffffff" />
+  <rect width="1" height="2" x="2" fill="#d2232c" />
+</svg>
+\`\`\`
+
+Some text after the SVG.
+    `.trim();
+
+    // Forward conversion: Markdown -> HTML
+    const generatedHtml = squibViewInstance.md.render(originalMarkdown);
+    // console.log('Generated HTML for SVG test:', generatedHtml);
+
+    // Reverse conversion: HTML -> Markdown
+    // Critically, pass the originalSource option
+    const roundTrippedMarkdown = squibViewInstance.htmlToMarkdown(generatedHtml, {
+      originalSource: originalMarkdown
+    }).trim();
+    // console.log('Round-tripped Markdown for SVG test:', roundTrippedMarkdown);
+
+    const normalize = (str) => str.replace(/\r\n/g, '\n').replace(/\s+$/gm, '').trim();
+    expect(normalize(roundTrippedMarkdown)).toEqual(normalize(originalMarkdown));
+
+    // More specific assertions for SVG content
+    expect(roundTrippedMarkdown).toContain('<svg width="150" height="100" viewBox="0 0 3 2">');
+    expect(roundTrippedMarkdown).toContain('<rect width="1" height="2" x="0" fill="#008d46" />');
+    expect(roundTrippedMarkdown).toContain('</svg>');
+  });
+
   // Add more test cases for different complex documents or edge cases
 });
