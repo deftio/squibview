@@ -21,6 +21,15 @@ Also supports Mermaid diagrams and SVG content within fenced code blocks.
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/default.min.css">
 
   <link rel="stylesheet" href="../dist/squibview.css">
+
+  <script type="importmap">
+  {
+    "imports": {
+      "markdown-it": "https://esm.sh/markdown-it@12.3.2"
+    }
+  }
+  </script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -54,7 +63,6 @@ Also supports Mermaid diagrams and SVG content within fenced code blocks.
 <body>
 
   <!-- Libraries -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
   <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
   
