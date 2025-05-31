@@ -49,10 +49,15 @@ export default class HtmlToMarkdown {
     // Rule for our data-source-type wrapper divs - should be high priority
     this.turndownService.addRule('squibviewFencedBlock', {
       filter: (node) => {
+        if (node.nodeName === 'DIV') {
+          console.warn(`[HtmlToMarkdown] squibviewFencedBlock filter DIAGNOSTIC: Encountered DIV. Attributes: data-source-type="${node.getAttribute('data-source-type')}", class="${node.className}", id="${node.id}". OuterHTML (first 150 chars):`, node.outerHTML.substring(0, 150));
+        }
+
         const hasAttr = node.nodeName === 'DIV' && node.hasAttribute('data-source-type');
         if (hasAttr) {
           const lang = node.getAttribute('data-source-type') || 'code';
-          console.warn(`[HtmlToMarkdown] squibviewFencedBlock filter: Matched div with data-source-type="${lang}". Node outerHTML:`, node.outerHTML);
+          // Keep the original specific log for actual matches
+          console.warn(`[HtmlToMarkdown] squibviewFencedBlock filter: Matched div with data-source-type="${lang}". Node outerHTML (first 150 chars):`, node.outerHTML.substring(0,150));
         }
         return hasAttr;
       },
