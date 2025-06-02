@@ -101,13 +101,26 @@ var HtmlToMarkdown = /*#__PURE__*/function () {
         }
       });
 
+      // Preserve standalone <svg> tags NOT inside a data-source-type div
+      this.turndownService.addRule('keepStandaloneSvgTags', {
+        filter: ['svg'],
+        replacement: function replacement(content, node) {
+          // console.warn('[HtmlToMarkdown] standalone SVG rule processing:', node.outerHTML);
+          return node.outerHTML;
+        }
+      });
+
       // Rule for our data-source-type wrapper divs - should be high priority
       this.turndownService.addRule('squibviewFencedBlock', {
         filter: function filter(node) {
+          if (node.nodeName === 'DIV') {
+            console.warn("[HtmlToMarkdown] squibviewFencedBlock filter DIAGNOSTIC: Encountered DIV. Attributes: data-source-type=\"".concat(node.getAttribute('data-source-type'), "\", class=\"").concat(node.className, "\", id=\"").concat(node.id, "\". OuterHTML (first 150 chars):"), node.outerHTML.substring(0, 150));
+          }
           var hasAttr = node.nodeName === 'DIV' && node.hasAttribute('data-source-type');
           if (hasAttr) {
             var lang = node.getAttribute('data-source-type') || 'code';
-            console.warn("[HtmlToMarkdown] squibviewFencedBlock filter: Matched div with data-source-type=\"".concat(lang, "\". Node outerHTML:"), node.outerHTML);
+            // Keep the original specific log for actual matches
+            console.warn("[HtmlToMarkdown] squibviewFencedBlock filter: Matched div with data-source-type=\"".concat(lang, "\". Node outerHTML (first 150 chars):"), node.outerHTML.substring(0, 150));
           }
           return hasAttr;
         },
@@ -120,17 +133,20 @@ var HtmlToMarkdown = /*#__PURE__*/function () {
               var contentFromHtml = node.innerHTML;
               // Convert <br> tags to newlines first
               contentFromHtml = contentFromHtml.replace(/<br\s*\/?>/gi, '\n');
-              // Strip any other HTML tags (simple regex, not for complex/nested HTML)
-              contentFromHtml = contentFromHtml.replace(/<[^>]+>/g, '');
-              // Use a textarea to unescape HTML entities & normalize
-              var tempTextArea = document.createElement('textarea');
-              tempTextArea.innerHTML = contentFromHtml;
-              innerContent = tempTextArea.value.trim();
+              // For Mermaid and Math, the content is expected to be text-like after <br> replacement.
+              // Avoid stripping other tags if they are part of the intended content (e.g. MathML in MathJax)
+              // Instead, rely on a robust way to get text content, then trim.
+              var tempDiv = document.createElement('div');
+              tempDiv.innerHTML = contentFromHtml; // Let browser parse it
+              innerContent = tempDiv.textContent || tempDiv.innerText || ''; // Get text content
+              innerContent = innerContent.trim(); // Trim whitespace
               break;
             case 'svg':
-              // This console.warn is inside the replacement. If not reached, filter or lang extraction is the issue.
-              console.warn('[HtmlToMarkdown] squibviewFencedBlock REPLACEMENT for SVG. Node outerHTML:', node.outerHTML, 'Node innerHTML:', node.innerHTML);
-              innerContent = node.innerHTML.trim();
+              // The 'node' is the div with data-source-type="svg".
+              // Its innerHTML is expected to be the raw SVG markup.
+              innerContent = node.innerHTML;
+              // It's good to log what's captured for debugging during development if necessary.
+              // console.warn('[HtmlToMarkdown] squibviewFencedBlock SVG: Captured innerHTML:', innerContent.substring(0, 200));
               break;
             case 'csv':
             case 'tsv':
@@ -159,10 +175,19 @@ var HtmlToMarkdown = /*#__PURE__*/function () {
           }
           var langTag = lang === 'code' ? '' : lang;
           // Ensure there's a newline before the closing fence if content doesn't end with one.
+          // And ensure content starts with a newline if it doesn't already, for consistency.
+          if (innerContent && !innerContent.startsWith('\n') && lang !== 'svg') {
+            // SVG content might be on one line
+            innerContent = '\n' + innerContent;
+          }
           if (innerContent && !innerContent.endsWith('\n')) {
             innerContent += '\n';
           }
-          return '\n```' + langTag + '\n' + innerContent + '```\n';
+          // For empty blocks, ensure a newline for valid fence structure
+          if (!innerContent.trim() && !innerContent.includes('\n')) {
+            innerContent = '\n';
+          }
+          return '\n```' + langTag + innerContent + '```\n';
         }
       });
 
@@ -188,34 +213,29 @@ var HtmlToMarkdown = /*#__PURE__*/function () {
         }
       });
 
+      /*
       // Preserve SVG elements with special identifiers
       this.turndownService.addRule('svg', {
-        filter: function filter(node) {
-          var isSvg = node.nodeName === 'SVG';
-          var isChildOfSquibViewSvgDiv = !!(node.parentElement && node.parentElement.nodeName === 'DIV' && node.parentElement.getAttribute('data-source-type') === 'svg');
-          if (isSvg) {
-            console.warn("[HtmlToMarkdown] standalone 'svg' rule filter: Matched <svg>. Is child of SquibView SVG div? ".concat(isChildOfSquibViewSvgDiv, ". Node outerHTML:"), node.outerHTML);
+        filter: node => {
+          // Only apply this rule if the SVG is NOT inside one of our data-source-type divs
+          // and has one of our specific identifiers (e.g., an id starting with "squib-svg-")
+          // or if it does not have a data-source-type attribute itself.
+          const isInsideSquibDiv = node.closest('div[data-source-type]');
+          const hasSquibIdentifier = node.id && node.id.startsWith('squib-svg-'); // Example identifier
+          const isSpecialSquibSvg = node.hasAttribute('data-source-type') && node.getAttribute('data-source-type') === 'svg';
+           if (isInsideSquibDiv || isSpecialSquibSvg) {
+            // console.warn('[HtmlToMarkdown] SVG rule: Skipping SVG inside data-source-type div or special SVG.');
+            return false; // Don't process if it's already handled or should be handled by squibviewFencedBlock
           }
-          return isSvg && !isChildOfSquibViewSvgDiv;
+          // console.warn('[HtmlToMarkdown] SVG rule: Processing standalone SVG:', node.outerHTML.substring(0,100));
+          return node.nodeName === 'SVG' && hasSquibIdentifier; // Or other conditions for standalone SVGs
         },
-        replacement: function replacement(content, node) {
-          // Generate a unique ID for this SVG block
-          var blockId = 'svg_' + Math.random().toString(36).substring(2, 10);
-
-          // Store the raw SVG for later use
-          var serializer = new XMLSerializer();
-          var svgString = serializer.serializeToString(node);
-          if (_this._specialBlocks) {
-            _this._specialBlocks.set(blockId, {
-              type: 'svg',
-              content: svgString
-            });
-          }
-
-          // Return with special marker
-          return "\n<div data-special-block=\"".concat(blockId, "\" class=\"svg-container\">\n") + svgString + "\n</div>\n";
+        replacement: function (content, node) {
+          // console.warn('[HtmlToMarkdown] SVG rule: Replacing with outerHTML for node:', node.outerHTML.substring(0,100));
+          return node.outerHTML; // Preserve the whole SVG tag
         }
       });
+      */
 
       // Preserve GeoJSON map blocks
       this.turndownService.addRule('geojson', {

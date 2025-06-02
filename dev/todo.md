@@ -6,21 +6,28 @@
 - ✅ Add support for undo/redo in source editor with revision history
 - ✅ Live sync from source to rendered view
 - ✅ Add test suite (started)
-- ✅ Add markdown-specific buttons (headings up/down, remove HR)
+- done 0.0.29 ✅ Add markdown-specific buttons (headings up/down, remove HR)
+- fix math rendering
+- fix geojson / map
+- fix svg roundtrip
+- rename to squip from squibview
+- LLM example (separate repo)
 
 ### Selection API
-- ✅ Add callback function for text selection in both source and rendered panels
-- ✅ Implement text replacement API for selected text
+- done 0.0.37 ✅ Add callback function for text selection in both source and rendered panels
+- done 0.0.37 ✅ Implement text replacement API for selected text
 - ✅ Add ability to mark text as non-editable (locked)
 - ✅ Add visual indicators for locked content
 - ✅ Add getter/setter for text selection handlers
 
 ### Development Environment
-- ✅ Add import maps to development HTML files for module resolution
-- ✅ Create modern development environment with Vite-based server
-- ✅ Add HMR support for faster development
+- ? ✅ Add import maps to development HTML files for module resolution
+- ? ✅ Create modern development environment with Vite-based server
+- maybe ✅ Add HMR support for faster development
 - ✅ Create comprehensive development documentation
-- ✅ Add example pages with CDN-based imports
+- ✅ Add example pages with CDN-based imports (both UMD and ESM)
+- ✅ Add example pages for REACT (ESM)
+
 
 ## Pending Tasks
 
