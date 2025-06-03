@@ -77,7 +77,7 @@ The table below lists some features and their statuses:
 Below is an inline SVG graphic rendered directly from Markdown:
 
 ```svg
-<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+<svg width="400" height="100" xmlns="http://www.w3.org/2000/svg">
     <circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" />
     <rect x="150" y="10"  width="80" height="80" stroke="orange" stroke-width="4" fill="blue" /> 
 </svg>

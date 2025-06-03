@@ -211,10 +211,18 @@ class SquibView {
 
       // Handle SVG directly (wrapped for data attribute)
       if (info === 'svg') {
-        // We assume the content is valid SVG. For security, it might be better to sanitize or escape if not trusted.
-        // However, markdown-it's default behavior for HTML blocks is to pass them through if html:true.
-        // For consistency with data-source-type, we wrap it.
-        return `<div data-source-type="svg">${content}</div>`;
+        // Escape the original SVG content for safe storage in HTML attribute
+        const escapeForAttribute = (str) => {
+          return str.replace(/&/g, '&amp;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#x27;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+        };
+        
+        const escapedSource = escapeForAttribute(content);
+        // Store original source for round-trip conversion and render the SVG
+        return `<div class="svg-container" data-source-type="svg" data-original-source="${escapedSource}">${content}</div>`;
       }
 
       // Handle GeoJSON maps

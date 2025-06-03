@@ -6,7 +6,6 @@ import TurndownService from 'turndown';
  */
 export default class HtmlToMarkdown {
   constructor(options = {}) {
-    console.warn('[HtmlToMarkdown] CONSTRUCTOR CALLED');
     this.turndownService = new TurndownService({
       headingStyle: 'atx',       // Use # style headings
       codeBlockStyle: 'fenced',  // Use ``` style code blocks
@@ -29,37 +28,11 @@ export default class HtmlToMarkdown {
    * Configure custom Turndown rules
    */
   configureTurndownRules() {
-    // Preserve HTML image tags by returning their outerHTML
-    this.turndownService.addRule('keepImageTags', {
-      filter: 'img',
-      replacement: function (content, node) {
-        return node.outerHTML;
-      }
-    });
-
-    // Preserve standalone <svg> tags NOT inside a data-source-type div
-    this.turndownService.addRule('keepStandaloneSvgTags', {
-      filter: ['svg'],
-      replacement: function (content, node) {
-        // console.warn('[HtmlToMarkdown] standalone SVG rule processing:', node.outerHTML);
-        return node.outerHTML;
-      }
-    });
-
-    // Rule for our data-source-type wrapper divs - should be high priority
+    // Since we're using pre-processing for data-source-type containers,
+    // we can simplify this and keep it as a fallback for any missed cases
     this.turndownService.addRule('squibviewFencedBlock', {
       filter: (node) => {
-        if (node.nodeName === 'DIV') {
-          console.warn(`[HtmlToMarkdown] squibviewFencedBlock filter DIAGNOSTIC: Encountered DIV. Attributes: data-source-type="${node.getAttribute('data-source-type')}", class="${node.className}", id="${node.id}". OuterHTML (first 150 chars):`, node.outerHTML.substring(0, 150));
-        }
-
-        const hasAttr = node.nodeName === 'DIV' && node.hasAttribute('data-source-type');
-        if (hasAttr) {
-          const lang = node.getAttribute('data-source-type') || 'code';
-          // Keep the original specific log for actual matches
-          console.warn(`[HtmlToMarkdown] squibviewFencedBlock filter: Matched div with data-source-type="${lang}". Node outerHTML (first 150 chars):`, node.outerHTML.substring(0,150));
-        }
-        return hasAttr;
+        return node.nodeName === 'DIV' && node.hasAttribute('data-source-type');
       },
       replacement: (content, node, options) => {
         const lang = node.getAttribute('data-source-type') || 'code';
@@ -74,17 +47,21 @@ export default class HtmlToMarkdown {
             // For Mermaid and Math, the content is expected to be text-like after <br> replacement.
             // Avoid stripping other tags if they are part of the intended content (e.g. MathML in MathJax)
             // Instead, rely on a robust way to get text content, then trim.
-            const tempDiv = document.createElement('div');
+            const tempDiv = node.ownerDocument.createElement('div');
             tempDiv.innerHTML = contentFromHtml; // Let browser parse it
             innerContent = tempDiv.textContent || tempDiv.innerText || ''; // Get text content
-            innerContent = innerContent.trim(); // Trim whitespace
             break;
           case 'svg':
             // The 'node' is the div with data-source-type="svg".
-            // Its innerHTML is expected to be the raw SVG markup.
-            innerContent = node.innerHTML;
-            // It's good to log what's captured for debugging during development if necessary.
-            // console.warn('[HtmlToMarkdown] squibviewFencedBlock SVG: Captured innerHTML:', innerContent.substring(0, 200));
+            // For proper round-trip fidelity, use the original source from the data attribute if available
+            if (node.hasAttribute('data-original-source')) {
+              // The attribute value is HTML-escaped, browser will decode it when getting the attribute
+              innerContent = node.getAttribute('data-original-source');
+            } else {
+              // Fallback to innerHTML if no original source stored
+              innerContent = node.innerHTML;
+            }
+            // console.warn('[HtmlToMarkdown] squibviewFencedBlock SVG: Captured content:', innerContent.substring(0, 200));
             break;
           case 'csv':
           case 'tsv':
@@ -102,32 +79,58 @@ export default class HtmlToMarkdown {
             if (preElement) {
               const codeElement = preElement.querySelector('code');
               // textContent of <code> or <pre> contains the code.
-              innerContent = (codeElement || preElement).textContent.trimEnd(); // trimEnd to preserve leading newlines if any, but remove trailing ones from block.
+              innerContent = (codeElement || preElement).textContent; // trimEnd removed, will be handled by trim() later
             } else {
               // Fallback if <pre> not found (e.g. if it was just a div with code)
-              innerContent = node.textContent.trimEnd();
+              innerContent = node.textContent; // trimEnd removed
                console.warn('Could not find <pre> inside div[data-source-type="' + lang + '"]');
             }
             break;
         }
 
         const langTag = (lang === 'code') ? '' : lang;
-        // Ensure there's a newline before the closing fence if content doesn't end with one.
-        // And ensure content starts with a newline if it doesn't already, for consistency.
-        if (innerContent && !innerContent.startsWith('\n') && lang !== 'svg') { // SVG content might be on one line
-            innerContent = '\n' + innerContent;
-        }
-        if (innerContent && !innerContent.endsWith('\n')) {
-          innerContent += '\n';
-        }
-        // For empty blocks, ensure a newline for valid fence structure
-        if (!innerContent.trim() && !innerContent.includes('\n')) {
-            innerContent = '\n';
+        let finalInnerContent = innerContent.trim(); // Trim whitespace consistently here
+
+        if (finalInnerContent) { // If there's content after trimming
+          finalInnerContent = '\n' + finalInnerContent + '\n';
+        } else { // If content was empty or just whitespace
+          finalInnerContent = '\n'; // Ensure a blank line for empty fenced blocks
         }
 
-        return '\n```' + langTag + innerContent + '```\n';
+        return '\n```' + langTag + finalInnerContent + '```\n';
       }
     });
+
+    // Preserve HTML image tags by returning their outerHTML
+    this.turndownService.addRule('keepImageTags', {
+      filter: 'img',
+      replacement: function (content, node) {
+        return node.outerHTML;
+      }
+    });
+
+    // TEMPORARILY DISABLED: Preserve standalone <svg> tags NOT inside a data-source-type div
+    /*
+    this.turndownService.addRule('keepStandaloneSvgTags', {
+      filter: function(node) {
+        if (node.nodeName !== 'SVG') return false;
+        
+        // Don't process SVG elements that are inside a data-source-type div
+        const parentDiv = node.closest('div[data-source-type]');
+        if (parentDiv) {
+          console.warn('[HtmlToMarkdown] Skipping SVG inside data-source-type div');
+          return false;
+        }
+        
+        console.warn('[HtmlToMarkdown] Processing standalone SVG');
+        return true;
+      },
+      replacement: function (content, node) {
+        // console.warn('[HtmlToMarkdown] standalone SVG rule processing:', node.outerHTML);
+        return node.outerHTML;
+      }
+    });
+    */
     
     // Preserve Mermaid diagram blocks with special identifiers
     this.turndownService.addRule('mermaid', {
@@ -381,9 +384,9 @@ export default class HtmlToMarkdown {
    * @returns {string} The converted Markdown content
    */
   convert(html, options = {}) {
-    console.warn('[HtmlToMarkdown] CONVERT METHOD CALLED. HTML input (first 100 chars):', html.substring(0, 100));
     // Clear special blocks map for this conversion
     this._specialBlocks.clear();
+    this._placeholders = [];
     
     // Use a hash of the HTML as the cache key
     const cacheKey = this._getStringHash(html);
@@ -393,8 +396,11 @@ export default class HtmlToMarkdown {
       return this.cache.get(cacheKey);
     }
     
+    // Pre-process HTML to extract and preserve data-source-type containers
+    let processedHtml = this._preProcessSpecialContainers(html);
+    
     // Convert the HTML to Markdown
-    let markdown = this.turndownService.turndown(html);
+    let markdown = this.turndownService.turndown(processedHtml);
     
     // Post-process the markdown to restore special blocks
     markdown = this._postProcessMarkdown(markdown, options.originalSource);
@@ -413,6 +419,87 @@ export default class HtmlToMarkdown {
   }
   
   /**
+   * Pre-process HTML to extract data-source-type containers and replace them with placeholders
+   * 
+   * @private
+   * @param {string} html - The HTML to process
+   * @returns {string} - The processed HTML with placeholders
+   */
+  _preProcessSpecialContainers(html) {
+    // Handle both browser and test environments safely
+    if (typeof document === 'undefined' || !document.createElement) {
+      // If no document is available, skip pre-processing and use the original HTML
+      console.warn('Document not available, skipping pre-processing');
+      this._placeholders = [];
+      return html;
+    }
+    
+    let tempDiv;
+    try {
+      tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      // Test if querySelector is available - if not, we'll use a fallback approach
+      if (typeof tempDiv.querySelector !== 'function') {
+        throw new Error('querySelector not available');
+      }
+    } catch (e) {
+      // Fallback: if DOM methods aren't available, use simple regex-based processing
+      console.warn('DOM methods not available, using regex fallback for pre-processing');
+      return this._regexFallbackPreProcess(html);
+    }
+    
+    // Find all divs with data-source-type attribute
+    const specialDivs = tempDiv.querySelectorAll('div[data-source-type]');
+    const placeholders = [];
+    
+    specialDivs.forEach((div, index) => {
+      const sourceType = div.getAttribute('data-source-type');
+      const placeholder = `__SPECIAL_CONTAINER_${index}__`;
+      
+      // Store the information for later processing
+      let content;
+      if (sourceType === 'svg' && div.hasAttribute('data-original-source')) {
+        // Use the original source for perfect fidelity
+        content = div.getAttribute('data-original-source');
+      } else if (sourceType === 'csv' || sourceType === 'tsv' || sourceType === 'psv') {
+        // For delimited data, extract from the table and convert back to delimited format
+        const tableElement = div.querySelector('table');
+        if (tableElement) {
+          content = this._htmlTableToDelimitedText(tableElement, sourceType);
+        } else {
+          content = 'Error: Table not found for ' + sourceType;
+        }
+      } else {
+        // For other types (code, mermaid, etc.), extract text content from pre/code elements
+        const preElement = div.querySelector('pre');
+        if (preElement) {
+          const codeElement = preElement.querySelector('code');
+          content = (codeElement || preElement).textContent.trim();
+        } else {
+          // Fallback to text content
+          content = div.textContent.trim();
+        }
+      }
+      
+      placeholders.push({
+        placeholder,
+        type: sourceType,
+        content: content
+      });
+      
+      // Replace the div with a simple paragraph containing the placeholder
+      const placeholderElement = tempDiv.ownerDocument.createElement('p');
+      placeholderElement.textContent = placeholder;
+      div.parentNode.replaceChild(placeholderElement, div);
+    });
+    
+    // Store placeholders for post-processing
+    this._placeholders = placeholders;
+    
+    return tempDiv.innerHTML;
+  }
+
+  /**
    * Post-process markdown to restore special blocks and apply additional formatting
    * 
    * @private
@@ -421,7 +508,21 @@ export default class HtmlToMarkdown {
    * @returns {string} - The processed markdown
    */
   _postProcessMarkdown(markdown, originalSource) {
-    // First pass: Convert the special blocks markers back to proper markdown
+    // First pass: Replace placeholders with proper fenced code blocks
+    if (this._placeholders && this._placeholders.length > 0) {
+      this._placeholders.forEach(({ placeholder, type, content }) => {
+        const fencedBlock = `\n\`\`\`${type}\n${content}\n\`\`\`\n`;
+        // The placeholder might be escaped by Markdown, so try both versions
+        const escapedPlaceholder = placeholder.replace(/_/g, '\\_');
+        
+        // For regex, need to escape the backslashes in the escaped placeholder
+        const regexSafeEscaped = escapedPlaceholder.replace(/\\/g, '\\\\');
+        markdown = markdown.replace(new RegExp(regexSafeEscaped, 'g'), fencedBlock);
+        markdown = markdown.replace(new RegExp(placeholder, 'g'), fencedBlock);
+      });
+    }
+    
+    // Second pass: Convert any remaining special blocks markers back to proper markdown
     
     // Convert mermaid blocks
     const mermaidBlockRegex = /<div data-special-block="mermaid_[^"]*" class="mermaid">\s*([\s\S]*?)\s*<\/div>/g;
@@ -567,5 +668,76 @@ export default class HtmlToMarkdown {
     });
 
     return data.join('\n');
+  }
+
+  /**
+   * Regex-based fallback for pre-processing when DOM methods aren't available
+   * 
+   * @private
+   * @param {string} html - The HTML to process
+   * @returns {string} - The processed HTML with placeholders
+   */
+  _regexFallbackPreProcess(html) {
+    // Simple regex-based approach when DOM isn't available
+    // This matches div elements with data-source-type attributes
+    const divRegex = /<div[^>]*data-source-type="([^"]*)"[^>]*>([\s\S]*?)<\/div>/g;
+    const placeholders = [];
+    let index = 0;
+    
+    const processedHtml = html.replace(divRegex, (match, sourceType, content) => {
+      const placeholder = `__SPECIAL_CONTAINER_${index}__`;
+      
+      // Extract content based on type
+      let extractedContent;
+      if (sourceType === 'svg') {
+        // For SVG, look for data-original-source attribute first
+        const originalSourceMatch = match.match(/data-original-source="([^"]*)"/);
+        if (originalSourceMatch) {
+          // Decode HTML entities in the attribute value
+          extractedContent = originalSourceMatch[1]
+            .replace(/&quot;/g, '"')
+            .replace(/&#x27;/g, "'")
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&amp;/g, '&');
+        } else {
+          // Fallback to inner SVG content
+          const svgMatch = content.match(/<svg[\s\S]*?<\/svg>/);
+          extractedContent = svgMatch ? svgMatch[0] : content;
+        }
+      } else if (sourceType === 'csv' || sourceType === 'tsv' || sourceType === 'psv') {
+        // For delimited data, we need to extract from table - this is complex with regex
+        // For now, just return the content as-is and let the main Turndown rules handle it
+        extractedContent = 'TABLE_PLACEHOLDER';
+      } else {
+        // For code blocks, extract from pre/code elements
+        const preMatch = content.match(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/);
+        if (preMatch) {
+          extractedContent = preMatch[1]
+            .replace(/<span[^>]*>/g, '')
+            .replace(/<\/span>/g, '')
+            .replace(/&quot;/g, '"')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&amp;/g, '&');
+        } else {
+          extractedContent = content;
+        }
+      }
+      
+      placeholders.push({
+        placeholder,
+        type: sourceType,
+        content: extractedContent
+      });
+      
+      index++;
+      return `<p>${placeholder}</p>`;
+    });
+    
+    // Store placeholders for post-processing
+    this._placeholders = placeholders;
+    
+    return processedHtml;
   }
 }
