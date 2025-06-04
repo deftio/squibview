@@ -125,7 +125,8 @@ const esmRegularConfig = {
   ],
   plugins: [
     // json(), // if needed
-    resolve({ extensions }),
+    polyfillNode(),
+    resolve({ extensions, browser: true }),
     commonjs(),
     postcss({
       extract: 'squibview.css',

@@ -29,3 +29,6 @@ node_modules/
 coverage/
 
 *laude.md 
+
+# tests/log.out
+log.out
