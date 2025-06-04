@@ -1595,7 +1595,6 @@ class SquibView {
    * @throws {Error} If handler is not a function or null
    */
   set onReplaceSelectedText(handler) {
-    console.log('[SquibView] onReplaceSelectedText setter called. Handler:', handler);
     if (handler !== null && typeof handler !== 'function') {
       throw new Error('onReplaceSelectedText handler must be a function or null');
     }

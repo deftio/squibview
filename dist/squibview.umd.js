@@ -5616,7 +5616,8 @@
             var placeholder = _ref.placeholder,
               type = _ref.type,
               content = _ref.content;
-            var fencedBlock = "\n```".concat(type, "\n").concat(content, "\n```\n");
+            var langTag = type === 'code' ? '' : type;
+            var fencedBlock = "```".concat(langTag, "\n").concat(content.trim(), "\n```");
             // The placeholder might be escaped by Markdown, so try both versions
             var escapedPlaceholder = placeholder.replace(/_/g, '\\_');
 
@@ -5765,7 +5766,19 @@
           // Default to CSV
         }
         var data = [];
+
+        // Check if we have proper DOM methods available
+        if (!tableElement || typeof tableElement.querySelectorAll !== 'function') {
+          console.warn('DOM methods not available for table extraction, using regex fallback');
+          return this._extractTableDataFromHtml(tableElement ? tableElement.outerHTML || tableElement.innerHTML || String(tableElement) : '', type);
+        }
         var rows = tableElement.querySelectorAll('tr');
+
+        // Additional safety check for the rows result
+        if (!rows || typeof rows.forEach !== 'function') {
+          console.warn('querySelectorAll did not return proper NodeList, falling back to regex');
+          return this._extractTableDataFromHtml(tableElement.outerHTML || tableElement.innerHTML || String(tableElement), type);
+        }
         rows.forEach(function (row) {
           var rowData = [];
           var cells = row.querySelectorAll('th, td');
@@ -5788,6 +5801,69 @@
       }
 
       /**
+       * Extract table data from HTML content using regex when DOM methods aren't available
+       * 
+       * @private
+       * @param {string} htmlContent - The HTML content containing the table
+       * @param {string} type - The type of delimited format ('csv', 'tsv', 'psv')
+       * @returns {string} - The extracted delimited text
+       */
+    }, {
+      key: "_extractTableDataFromHtml",
+      value: function _extractTableDataFromHtml(htmlContent, type) {
+        var delimiter;
+        switch (type) {
+          case 'csv':
+            delimiter = ',';
+            break;
+          case 'tsv':
+            delimiter = '\t';
+            break;
+          case 'psv':
+            delimiter = '|';
+            break;
+          default:
+            delimiter = ',';
+          // Default to CSV
+        }
+        try {
+          // Extract all table rows using regex
+          var rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+          var rows = [];
+          var match;
+          while ((match = rowRegex.exec(htmlContent)) !== null) {
+            var rowContent = match[1];
+
+            // Extract all cells (th or td) from this row
+            var cellRegex = /<(?:th|td)[^>]*>([\s\S]*?)<\/(?:th|td)>/gi;
+            var cells = [];
+            var cellMatch = void 0;
+            while ((cellMatch = cellRegex.exec(rowContent)) !== null) {
+              var cellText = cellMatch[1];
+
+              // Remove HTML tags and decode entities
+              cellText = cellText.replace(/<[^>]*>/g, '') // Remove all HTML tags
+              .replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/\r?\n|\r/g, ' ') // Replace newlines with spaces
+              .trim();
+
+              // Handle CSV quoting if cell contains delimiter
+              if (delimiter === ',' && cellText.includes(',')) {
+                cellText = "\"".concat(cellText.replace(/"/g, '""'), "\"");
+              }
+              cells.push(cellText);
+            }
+            if (cells.length > 0) {
+              rows.push(cells.join(delimiter));
+            }
+          }
+          return rows.join('\n');
+        } catch (e) {
+          console.error('Error extracting table data from HTML:', e);
+          return 'Error: Could not extract table data';
+        }
+      }
+
+      /**
        * Regex-based fallback for pre-processing when DOM methods aren't available
        * 
        * @private
@@ -5797,6 +5873,7 @@
     }, {
       key: "_regexFallbackPreProcess",
       value: function _regexFallbackPreProcess(html) {
+        var _this3 = this;
         // Simple regex-based approach when DOM isn't available
         // This matches div elements with data-source-type attributes
         var divRegex = /<div[^>]*data-source-type="([^"]*)"[^>]*>([\s\S]*?)<\/div>/g;
@@ -5819,16 +5896,17 @@
               extractedContent = svgMatch ? svgMatch[0] : content;
             }
           } else if (sourceType === 'csv' || sourceType === 'tsv' || sourceType === 'psv') {
-            // For delimited data, we need to extract from table - this is complex with regex
-            // For now, just return the content as-is and let the main Turndown rules handle it
-            extractedContent = 'TABLE_PLACEHOLDER';
+            // For delimited data, we need to extract from table using regex
+            extractedContent = _this3._extractTableDataFromHtml(content, sourceType);
           } else {
             // For code blocks, extract from pre/code elements
             var preMatch = content.match(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/);
             if (preMatch) {
               extractedContent = preMatch[1].replace(/<span[^>]*>/g, '').replace(/<\/span>/g, '').replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
             } else {
-              extractedContent = content;
+              // For other content types (mermaid, math, etc.), use raw content but decode HTML entities
+              extractedContent = content.replace(/<[^>]*>/g, '') // Remove any HTML tags
+              .replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&'); // &amp; should be last to avoid double-decoding
             }
           }
           placeholders.push({
@@ -7755,7 +7833,6 @@
        */,
       set: function set(handler) {
         var _this10 = this;
-        console.log('[SquibView] onReplaceSelectedText setter called. Handler:', handler);
         if (handler !== null && typeof handler !== 'function') {
           throw new Error('onReplaceSelectedText handler must be a function or null');
         }

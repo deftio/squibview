@@ -151,6 +151,9 @@ describe('SquibView Tests', () => {
         onReplaceSelectedText: mockHandler
       };
       
+      // Store the original property descriptor before mocking
+      const originalDescriptor = Object.getOwnPropertyDescriptor(SquibView.prototype, 'onReplaceSelectedText');
+      
       // Mock the onReplaceSelectedText setter
       const mockSetter = jest.fn();
       Object.defineProperty(SquibView.prototype, 'onReplaceSelectedText', {
@@ -170,7 +173,11 @@ describe('SquibView Tests', () => {
       expect(mockSetter).toHaveBeenCalledWith(mockHandler);
       
       // Restore original property descriptor
-      delete SquibView.prototype.onReplaceSelectedText;
+      if (originalDescriptor) {
+        Object.defineProperty(SquibView.prototype, 'onReplaceSelectedText', originalDescriptor);
+      } else {
+        delete SquibView.prototype.onReplaceSelectedText;
+      }
     });
 
     test('should throw error when container not found', () => {
@@ -1508,9 +1515,9 @@ describe('SquibView Tests', () => {
     test('should handle onReplaceSelectedText setter and getter', () => {
       const mockHandler = jest.fn();
 
-      // Spy on the event emitter's methods
-      const onSpy = jest.spyOn(squibView.events, 'on');
-      const offSpy = jest.spyOn(squibView.events, 'off');
+      // Clear any previous calls from beforeEach setup
+      onSpy.mockClear();
+      offSpy.mockClear();
 
       // Test setter with a handler
       squibView.onReplaceSelectedText = mockHandler;
@@ -1538,10 +1545,6 @@ describe('SquibView Tests', () => {
       squibView.onReplaceSelectedText = null;
       expect(offSpy).toHaveBeenCalledWith('text:selected', expect.any(Function));
       expect(squibView.onReplaceSelectedText).toBeNull();
-
-      // Restore spies
-      onSpy.mockRestore();
-      offSpy.mockRestore();
     });
   });
 
@@ -1985,8 +1988,7 @@ Year,Make,Model
 2000,Mercury,Cougar
 \`\`\`
 
-An image:
-![Test Image](http://example.com/test.png)
+An image: <img src="http://example.com/test.png" alt="Test Image">
 
 And a final paragraph.
     `.trim();

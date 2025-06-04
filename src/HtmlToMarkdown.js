@@ -511,7 +511,8 @@ export default class HtmlToMarkdown {
     // First pass: Replace placeholders with proper fenced code blocks
     if (this._placeholders && this._placeholders.length > 0) {
       this._placeholders.forEach(({ placeholder, type, content }) => {
-        const fencedBlock = `\n\`\`\`${type}\n${content}\n\`\`\`\n`;
+        const langTag = (type === 'code') ? '' : type;
+        const fencedBlock = `\`\`\`${langTag}\n${content.trim()}\n\`\`\``;
         // The placeholder might be escaped by Markdown, so try both versions
         const escapedPlaceholder = placeholder.replace(/_/g, '\\_');
         
@@ -646,7 +647,20 @@ export default class HtmlToMarkdown {
     }
 
     const data = [];
+    
+    // Check if we have proper DOM methods available
+    if (!tableElement || typeof tableElement.querySelectorAll !== 'function') {
+      console.warn('DOM methods not available for table extraction, using regex fallback');
+      return this._extractTableDataFromHtml(tableElement ? tableElement.outerHTML || tableElement.innerHTML || String(tableElement) : '', type);
+    }
+    
     const rows = tableElement.querySelectorAll('tr');
+    
+    // Additional safety check for the rows result
+    if (!rows || typeof rows.forEach !== 'function') {
+      console.warn('querySelectorAll did not return proper NodeList, falling back to regex');
+      return this._extractTableDataFromHtml(tableElement.outerHTML || tableElement.innerHTML || String(tableElement), type);
+    }
 
     rows.forEach(row => {
       const rowData = [];
@@ -668,6 +682,71 @@ export default class HtmlToMarkdown {
     });
 
     return data.join('\n');
+  }
+
+  /**
+   * Extract table data from HTML content using regex when DOM methods aren't available
+   * 
+   * @private
+   * @param {string} htmlContent - The HTML content containing the table
+   * @param {string} type - The type of delimited format ('csv', 'tsv', 'psv')
+   * @returns {string} - The extracted delimited text
+   */
+  _extractTableDataFromHtml(htmlContent, type) {
+    let delimiter;
+    switch (type) {
+      case 'csv': delimiter = ','; break;
+      case 'tsv': delimiter = '\t'; break;
+      case 'psv': delimiter = '|'; break;
+      default:    delimiter = ','; // Default to CSV
+    }
+
+    try {
+      // Extract all table rows using regex
+      const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+      const rows = [];
+      let match;
+
+      while ((match = rowRegex.exec(htmlContent)) !== null) {
+        const rowContent = match[1];
+        
+        // Extract all cells (th or td) from this row
+        const cellRegex = /<(?:th|td)[^>]*>([\s\S]*?)<\/(?:th|td)>/gi;
+        const cells = [];
+        let cellMatch;
+
+        while ((cellMatch = cellRegex.exec(rowContent)) !== null) {
+          let cellText = cellMatch[1];
+          
+          // Remove HTML tags and decode entities
+          cellText = cellText
+            .replace(/<[^>]*>/g, '') // Remove all HTML tags
+            .replace(/&quot;/g, '"')
+            .replace(/&#x27;/g, "'")
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&amp;/g, '&')
+            .replace(/\r?\n|\r/g, ' ') // Replace newlines with spaces
+            .trim();
+
+          // Handle CSV quoting if cell contains delimiter
+          if (delimiter === ',' && cellText.includes(',')) {
+            cellText = `"${cellText.replace(/"/g, '""')}"`;
+          }
+
+          cells.push(cellText);
+        }
+
+        if (cells.length > 0) {
+          rows.push(cells.join(delimiter));
+        }
+      }
+
+      return rows.join('\n');
+    } catch (e) {
+      console.error('Error extracting table data from HTML:', e);
+      return 'Error: Could not extract table data';
+    }
   }
 
   /**
@@ -706,9 +785,8 @@ export default class HtmlToMarkdown {
           extractedContent = svgMatch ? svgMatch[0] : content;
         }
       } else if (sourceType === 'csv' || sourceType === 'tsv' || sourceType === 'psv') {
-        // For delimited data, we need to extract from table - this is complex with regex
-        // For now, just return the content as-is and let the main Turndown rules handle it
-        extractedContent = 'TABLE_PLACEHOLDER';
+        // For delimited data, we need to extract from table using regex
+        extractedContent = this._extractTableDataFromHtml(content, sourceType);
       } else {
         // For code blocks, extract from pre/code elements
         const preMatch = content.match(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/);
@@ -721,7 +799,14 @@ export default class HtmlToMarkdown {
             .replace(/&gt;/g, '>')
             .replace(/&amp;/g, '&');
         } else {
-          extractedContent = content;
+          // For other content types (mermaid, math, etc.), use raw content but decode HTML entities
+          extractedContent = content
+            .replace(/<[^>]*>/g, '') // Remove any HTML tags
+            .replace(/&quot;/g, '"')
+            .replace(/&#x27;/g, "'")
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&amp;/g, '&'); // &amp; should be last to avoid double-decoding
         }
       }
       
