@@ -14,7 +14,7 @@ Replace `<VERSION>` with the actual version number (e.g., `1.0.1`).
 
 This step uses the `dev-bump-build-test.sh` script. It will:
     1.  Update `package.json` to `<VERSION>`.
-    2.  Update `package-lock.json`.
+    2.  Update `package-lock.json`. (npm install --package-lock-only)
     3.  Run `tools/updateVersion.js` to generate `src/version.js`.
     4.  Run `npm run build:esm-only` (as per the script).
     5.  Run `npm test -- tests/SquibView.test.js` (as per the script).
