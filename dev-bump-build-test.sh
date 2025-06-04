@@ -16,26 +16,36 @@ set -e
 
 echo "Starting dev-bump-build-test workflow..."
 
-# 1. Bump the version in package.json using npm version with a pre-release identifier.
-# This updates package.json but does NOT create a git commit or tag.
-echo "Bumping version in package.json for development (e.g., X.Y.Z-dev.0)..."
-# If current version is X.Y.Z, this makes it X.Y.(Z+1)-dev.0
-# If current version is X.Y.Z-dev.N, this makes it X.Y.Z-dev.(N+1)
-if grep -q "\-dev\." package.json; then
-  npm version prerelease --preid dev --no-git-tag-version
-elif grep -q "\-alpha\." package.json; then
-  npm version prerelease --preid dev --no-git-tag-version
-elif grep -q "\-beta\." package.json; then
-  npm version prerelease --preid dev --no-git-tag-version
-elif grep -q "\-rc\." package.json; then
-  npm version prerelease --preid dev --no-git-tag-version
+NEW_VERSION=$1 # Get the first argument
+
+if [ -n "$NEW_VERSION" ]; then
+  # If a version argument is provided, use it directly
+  echo "Setting version in package.json to specific version: $NEW_VERSION..."
+  npm version "$NEW_VERSION" --no-git-tag-version --allow-same-version
 else
-  # If it's a stable version (e.g., X.Y.Z or X.Y.Z.A), first increment the patch,
-  # then add the -dev.0 prerelease identifier.
-  echo "Current version is stable-like. Incrementing patch and adding -dev.0 prerelease..."
-  npm version patch --no-git-tag-version
-  npm version prerelease --preid dev --no-git-tag-version
+  # If no version argument, perform the automatic dev bump logic
+  echo "No specific version provided. Bumping version in package.json for development (e.g., X.Y.Z-dev.0)..."
+  # If current version is X.Y.Z, this makes it X.Y.(Z+1)-dev.0
+  # If current version is X.Y.Z-dev.N, this makes it X.Y.Z-dev.(N+1)
+  if grep -q "\\-dev\\." package.json; then
+    npm version prerelease --preid dev --no-git-tag-version
+  elif grep -q "\\-alpha\\." package.json; then
+    npm version prerelease --preid dev --no-git-tag-version
+  elif grep -q "\\-beta\\." package.json; then
+    npm version prerelease --preid dev --no-git-tag-version
+  elif grep -q "\\-rc\\." package.json; then
+    npm version prerelease --preid dev --no-git-tag-version
+  else
+    # If it's a stable version (e.g., X.Y.Z or X.Y.Z.A), first increment the patch,
+    # then add the -dev.0 prerelease identifier.
+    echo "Current version is stable-like. Incrementing patch and adding -dev.0 prerelease..."
+    npm version patch --no-git-tag-version
+    npm version prerelease --preid dev --no-git-tag-version
+  fi
 fi
+
+echo "Updating package-lock.json to reflect version changes..."
+npm install --package-lock-only # This ensures package-lock.json is in sync
 
 # 2. Sync the new version from package.json to src/version.js
 echo "Syncing version from package.json to src/version.js..."
