@@ -503,14 +503,12 @@ var HtmlToMarkdown = /*#__PURE__*/function () {
       specialDivs.forEach(function (div, index) {
         var sourceType = div.getAttribute('data-source-type');
         var placeholder = "__SPECIAL_CONTAINER_".concat(index, "__");
-
-        // Store the information for later processing
         var content;
         if (sourceType === 'svg' && div.hasAttribute('data-original-source')) {
-          // Use the original source for perfect fidelity
+          content = div.getAttribute('data-original-source');
+        } else if (['mermaid', 'math', 'geojson'].includes(sourceType) && div.hasAttribute('data-original-source')) {
           content = div.getAttribute('data-original-source');
         } else if (sourceType === 'csv' || sourceType === 'tsv' || sourceType === 'psv') {
-          // For delimited data, extract from the table and convert back to delimited format
           var tableElement = div.querySelector('table');
           if (tableElement) {
             content = _this2._htmlTableToDelimitedText(tableElement, sourceType);
@@ -518,14 +516,12 @@ var HtmlToMarkdown = /*#__PURE__*/function () {
             content = 'Error: Table not found for ' + sourceType;
           }
         } else {
-          // For other types (code, mermaid, etc.), extract text content from pre/code elements
           var preElement = div.querySelector('pre');
           if (preElement) {
             var codeElement = preElement.querySelector('code');
-            content = (codeElement || preElement).textContent.trim();
+            content = (codeElement || preElement).textContent.replace(/^[\r\n]+|[\r\n]+$/g, '');
           } else {
-            // Fallback to text content
-            content = div.textContent.trim();
+            content = div.textContent.replace(/^[\r\n]+|[\r\n]+$/g, '');
           }
         }
         placeholders.push({
@@ -533,11 +529,10 @@ var HtmlToMarkdown = /*#__PURE__*/function () {
           type: sourceType,
           content: content
         });
-
-        // Replace the div with a simple paragraph containing the placeholder
-        var placeholderElement = tempDiv.ownerDocument.createElement('p');
-        placeholderElement.textContent = placeholder;
-        div.parentNode.replaceChild(placeholderElement, div);
+        var placeholderText = document.createTextNode(placeholder);
+        if (div.parentNode) {
+          div.parentNode.replaceChild(placeholderText, div);
+        }
       });
 
       // Store placeholders for post-processing
@@ -563,14 +558,19 @@ var HtmlToMarkdown = /*#__PURE__*/function () {
             type = _ref.type,
             content = _ref.content;
           var langTag = type === 'code' ? '' : type;
-          var fencedBlock = "```".concat(langTag, "\n").concat(content.trim(), "\n```");
-          // The placeholder might be escaped by Markdown, so try both versions
-          var escapedPlaceholder = placeholder.replace(/_/g, '\\_');
+          var blockContent = content.replace(/^[\r\n]+|[\r\n]+$/g, '');
+          var fencedBlock = "```".concat(langTag, "\n").concat(blockContent, "\n```");
 
-          // For regex, need to escape the backslashes in the escaped placeholder
-          var regexSafeEscaped = escapedPlaceholder.replace(/\\/g, '\\\\');
-          markdown = markdown.replace(new RegExp(regexSafeEscaped, 'g'), fencedBlock);
-          markdown = markdown.replace(new RegExp(placeholder, 'g'), fencedBlock);
+          // Handle both DOM-based placeholders (text nodes) and regex-based placeholders
+          var textPlaceholder = placeholder; // This is __SPECIAL_CONTAINER_${idx}__
+          var escapedPlaceholder = textPlaceholder.replace(/_/g, '\\_'); // Turndown escapes underscores
+
+          // Replace the placeholder with the fenced block (try both forms)
+          if (markdown.includes(textPlaceholder)) {
+            markdown = markdown.replace(textPlaceholder, fencedBlock);
+          } else if (markdown.includes(escapedPlaceholder)) {
+            markdown = markdown.replace(escapedPlaceholder, fencedBlock);
+          }
         });
       }
 

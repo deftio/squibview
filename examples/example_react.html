@@ -11,6 +11,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
 
+  <script type="importmap">
+  {
+    "imports": {
+      "markdown-it": "https://esm.sh/markdown-it@12.3.2"
+    }
+  }
+  </script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -76,7 +84,7 @@
       const [content, setContent] = React.useState('');
       const [view, setView] = React.useState('split');
       const [showControls, setShowControls] = React.useState(false);
-      const [titleShow, setTitleShow] = React.useState(true);
+      const [titleShow, setTitleShow] = React.useState(false);
       const [editor, setEditor] = React.useState(null);
 
       // Load default content from the same file as other demos
@@ -146,6 +154,7 @@
       };
 
       return React.createElement('div', null, [
+        React.createElement('h2', { key: 'title' }, `SquibView React Example (v${VERSION})`),
         React.createElement('div', { className: 'controls', key: 'controls' }, [
           React.createElement('button', { 
             onClick: () => setView('split'),
@@ -166,7 +175,7 @@
           React.createElement('button', { 
             onClick: () => setTitleShow(!titleShow),
             key: 'title'
-          }, titleShow ? 'Hide Title' : 'Show Title'),
+          }, titleShow ? 'Hide Built-in Title' : 'Show Built-in Title'),
           React.createElement('button', { 
             onClick: handleUndo,
             key: 'undo'

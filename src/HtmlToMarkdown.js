@@ -455,14 +455,12 @@ export default class HtmlToMarkdown {
     specialDivs.forEach((div, index) => {
       const sourceType = div.getAttribute('data-source-type');
       const placeholder = `__SPECIAL_CONTAINER_${index}__`;
-      
-      // Store the information for later processing
       let content;
       if (sourceType === 'svg' && div.hasAttribute('data-original-source')) {
-        // Use the original source for perfect fidelity
+        content = div.getAttribute('data-original-source');
+      } else if (['mermaid', 'math', 'geojson'].includes(sourceType) && div.hasAttribute('data-original-source')) {
         content = div.getAttribute('data-original-source');
       } else if (sourceType === 'csv' || sourceType === 'tsv' || sourceType === 'psv') {
-        // For delimited data, extract from the table and convert back to delimited format
         const tableElement = div.querySelector('table');
         if (tableElement) {
           content = this._htmlTableToDelimitedText(tableElement, sourceType);
@@ -470,27 +468,23 @@ export default class HtmlToMarkdown {
           content = 'Error: Table not found for ' + sourceType;
         }
       } else {
-        // For other types (code, mermaid, etc.), extract text content from pre/code elements
         const preElement = div.querySelector('pre');
         if (preElement) {
           const codeElement = preElement.querySelector('code');
-          content = (codeElement || preElement).textContent.trim();
+          content = (codeElement || preElement).textContent.replace(/^[\r\n]+|[\r\n]+$/g, '');
         } else {
-          // Fallback to text content
-          content = div.textContent.trim();
+          content = div.textContent.replace(/^[\r\n]+|[\r\n]+$/g, '');
         }
       }
-      
       placeholders.push({
         placeholder,
         type: sourceType,
         content: content
       });
-      
-      // Replace the div with a simple paragraph containing the placeholder
-      const placeholderElement = tempDiv.ownerDocument.createElement('p');
-      placeholderElement.textContent = placeholder;
-      div.parentNode.replaceChild(placeholderElement, div);
+      const placeholderText = document.createTextNode(placeholder);
+      if (div.parentNode) {
+        div.parentNode.replaceChild(placeholderText, div);
+      }
     });
     
     // Store placeholders for post-processing
@@ -512,14 +506,19 @@ export default class HtmlToMarkdown {
     if (this._placeholders && this._placeholders.length > 0) {
       this._placeholders.forEach(({ placeholder, type, content }) => {
         const langTag = (type === 'code') ? '' : type;
-        const fencedBlock = `\`\`\`${langTag}\n${content.trim()}\n\`\`\``;
-        // The placeholder might be escaped by Markdown, so try both versions
-        const escapedPlaceholder = placeholder.replace(/_/g, '\\_');
+        const blockContent = content.replace(/^[\r\n]+|[\r\n]+$/g, '');
+        const fencedBlock = `\`\`\`${langTag}\n${blockContent}\n\`\`\``;
         
-        // For regex, need to escape the backslashes in the escaped placeholder
-        const regexSafeEscaped = escapedPlaceholder.replace(/\\/g, '\\\\');
-        markdown = markdown.replace(new RegExp(regexSafeEscaped, 'g'), fencedBlock);
-        markdown = markdown.replace(new RegExp(placeholder, 'g'), fencedBlock);
+        // Handle both DOM-based placeholders (text nodes) and regex-based placeholders
+        const textPlaceholder = placeholder; // This is __SPECIAL_CONTAINER_${idx}__
+        const escapedPlaceholder = textPlaceholder.replace(/_/g, '\\_'); // Turndown escapes underscores
+        
+        // Replace the placeholder with the fenced block (try both forms)
+        if (markdown.includes(textPlaceholder)) {
+          markdown = markdown.replace(textPlaceholder, fencedBlock);
+        } else if (markdown.includes(escapedPlaceholder)) {
+          markdown = markdown.replace(escapedPlaceholder, fencedBlock);
+        }
       });
     }
     

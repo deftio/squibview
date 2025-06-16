@@ -131,3 +131,33 @@ With regular image (md):
 Image with embedded html:
 
 <img src="sample.webp" alt="drawing" width="200"/>
+
+## Fenced Math Block Example
+
+This demonstrates a fenced math block using MathJax:
+
+```math
+e^{i\pi} + 1 = 0
+```
+
+A more complex one:
+
+```math
+\begin{pmatrix}
+a & b \\
+c & d
+\end{pmatrix} = \mathbf{X}
+```
+
+And an integral example:
+
+```math
+\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
+```
+
+And a summation example:
+
+```math
+\sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}
+```
+

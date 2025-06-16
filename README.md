@@ -1,283 +1,345 @@
-# SquibView
+# SquibView - Live Bidirectional Markdown Editor
 
 [![NPM Version](https://img.shields.io/npm/v/squibview.svg)](https://www.npmjs.com/package/squibview)
 [![License](https://img.shields.io/badge/License-BSD_2--Clause-orange.svg)](LICENSE)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/deftio/squibview/ci.yml?branch=main&style=flat&logo=github&label=Build&color=blue)](https://github.com/deftio/squibview/actions/workflows/ci.yml)
+[![Downloads](https://img.shields.io/npm/dm/squibview.svg)](https://www.npmjs.com/package/squibview)
 
-[Live Demo (github)](https://deftio.github.io/squibview/examples/example_ESM.html)
+> Live markdown editor with true bidirectional editing, rich content support, and headless architecture.
 
-[Live Demo (local)](./examples/example_ESM.html)
+## Try It Now
 
+| **Live Demo** | **Local Demo** | **Quick Start** |
+|---------------|----------------|-----------------|
+| [GitHub Pages](https://deftio.github.io/squibview/examples/example_ESM.html) | [Local Files](./examples/example_ESM.html) | [30-Second Setup](#quick-start) |
 
-SquibView is a headless JavaScript embeddable editor/viewer that renders GitHub-Flavored Markdown (or full HTML pages) on the fly.
+<img src="./squibview-example.png" alt="SquibView Live Bidirectional Editor" width="100%">
 
-For Markdown inputs, it supports rendering Mermaid diagrams, syntax-highlighted code blocks, tables, and inline SVG graphics. This provides a powerful and interactive way to view and export Markdown content as HTML.
+## Key Features
 
-For HTML inputs, it embeds the content within an iframe for viewing.
+**Live Bidirectional Editing**  
+Edit in source OR rendered view - changes sync instantly in both directions.
 
-SquibView supports full cut-and-paste functionality and allows edits made in the rendered view to be reflected back in the source.
+**Perfect for AI/LLM Content**  
+Process complex output from ChatGPT, Claude, or any LLM with rich formatting, diagrams, and data tables.
 
-<img src="./squibview-example.png" alt="SquibView Example" width="100%">
+**Headless & Embeddable**  
+Use as a standalone component or embed anywhere. Framework-agnostic with React wrapper available.
 
-## Documentation
+**Rich Content Support**
+- **Mermaid Diagrams** - Flowcharts, sequence diagrams, gitgraphs
+- **Math Rendering** - LaTeX math via MathJax
+- **SVG Graphics** - Inline vector graphics
+- **Data Tables** - CSV/TSV with live editing
+- **Code Highlighting** - 190+ languages via Highlight.js
 
-- [Programmer's Guide](./docs/programmers-guide.md) - Comprehensive documentation for developers
-- [Examples](./examples) - Example implementations and usage patterns
+**Developer Friendly**
+- Multiple build formats: ESM, UMD, Standalone
+- Plugin system for custom renderers
+- Zero dependencies option available
 
-## Web Viewer
+## Use Cases
 
-SquibView can be used as a standalone tool for processing complex Markdown output (e.g., from LLMs like OpenAI, Claude, Mistral, or Deepseek) or as a simple live preview Markdown editor.
+| **Content Creators** | **Developers** | **Data Scientists** |
+|---------------------|----------------|-------------------|
+| Live markdown editing | Documentation sites | Jupyter-style notebooks |
+| Blog post previews | Component libraries | Data visualization |
+| Technical writing | API documentation | Report generation |
 
-## As a Component
+| **Teams** | **AI/LLM Users** | **Educators** |
+|-----------|------------------|---------------|
+| Collaborative docs | Process AI output | Interactive lessons |
+| Knowledge bases | Markdown formatting | Math/science content |
+| Meeting notes | Rich content editing | Code examples |
 
-As an embeddable component, SquibView allows your application to render complex Markdown or other content on the fly. It can dynamically switch between a split-screen view (source and output) or an output-only view, serving effectively as a renderer.
+## Quick Start
 
-## Installation and Usage
-
-### Using Build Files
-
-SquibView offers multiple build formats for different use cases:
-
-#### ESM (ES Modules)
-
-```html
-<!-- Required dependencies -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
-<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-
-<!-- SquibView CSS -->
-<link rel="stylesheet" href="../dist/squibview.css">
-
-<!-- ESM Import -->
-<script type="module">
-  import SquibView from '../dist/squibview.esm.min.js';
-  
-  const editor = new SquibView('#editorContainer', {
-    titleShow: true,
-    titleContent: "SquibView Editor"
-  });
-  
-  // Set content
-  editor.setContent('# Hello SquibView\n\nThis is a test.', 'md');
-</script>
-```
-
-#### UMD (Universal Module Definition)
+Get running in 30 seconds with the standalone build:
 
 ```html
-<!-- Required dependencies -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
-<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-<script src="https://unpkg.com/tiny-emitter@2.1.0/dist/tinyemitter.min.js"></script>
-<script src="https://unpkg.com/diff-match-patch@1.0.5/index.js"></script>
-<script src="https://unpkg.com/turndown@7.1.2/dist/turndown.js"></script>
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/squibview/dist/squibview.css">
+</head>
+<body>
+    <div id="editor"></div>
+    
+    <script src="https://unpkg.com/squibview/dist/squibview.standalone.min.js"></script>
+    <script>
+        const editor = new SquibView('#editor', {
+            initialContent: `# Welcome to SquibView!
 
-<!-- SquibView CSS -->
-<link rel="stylesheet" href="../dist/squibview.css">
+Edit me in **source** or **rendered** view → changes sync both ways!
 
-<!-- UMD Import -->
-<script src="../dist/squibview.umd.min.js"></script>
-<script>
-  const editor = new SquibView('#editorContainer', {
-    titleShow: true,
-    titleContent: "SquibView Editor"
-  });
-  
-  // Set content
-  editor.setContent('# Hello SquibView\n\nThis is a test.', 'md');
-</script>
+\`\`\`mermaid
+graph TD
+    A[Markdown] --> B[Live Preview]
+    B --> C[Bidirectional Editing]
+    C --> A
+\`\`\`
+
+| Feature | Status |
+|---------|--------|
+| Live Preview | ✅ |
+| Bidirectional | ✅ |
+| Rich Content | ✅ |
+`,
+            titleShow: true,
+            titleContent: "SquibView Demo"
+        });
+    </script>
+</body>
+</html>
 ```
 
-#### Standalone (All Dependencies Bundled)
+**That's it!** Open in your browser and start editing.
+
+## Installation Options
+
+### Standalone (Recommended for Quick Start)
+Everything bundled - no external dependencies required.
 
 ```html
-<!-- SquibView CSS -->
-<link rel="stylesheet" href="../dist/squibview.css">
-
-<!-- Standalone Import (includes all dependencies) -->
-<script src="../dist/squibview.standalone.min.js"></script>
-<script>
-  const editor = new SquibView('#editorContainer', {
-    titleShow: true,
-    titleContent: "SquibView Editor"
-  });
-  
-  // Set content
-  editor.setContent('# Hello SquibView\n\nThis is a test.', 'md');
-</script>
+<link rel="stylesheet" href="https://unpkg.com/squibview/dist/squibview.css">
+<script src="https://unpkg.com/squibview/dist/squibview.standalone.min.js"></script>
 ```
 
-### Build Formats Comparison
+### ESM (Modern Applications)
+For bundlers like Webpack, Vite, or Rollup.
 
-| Format | File Size | Dependencies | Use Case |
-|--------|-----------|--------------|----------|
-| ESM | Smaller | Required externally | Modern applications with bundlers |
-| UMD | Medium | Required externally | Traditional script tags, CommonJS |
-| Standalone | Larger | Included | Quick prototypes, no external dependencies |
-
-### Using via CDN
-
-SquibView is available via CDN (unpkg) and as an npm package.
-
-## Examples
-
-See the [examples folder](./examples)
-
-## Features
-
-- **Live Preview**: See the rendered HTML output in real-time as you edit your Markdown.
-- **Multiple Views**: Switch between Markdown editor, HTML preview, or split view using simple buttons.
-- **Graphical Support**: Render Mermaid diagrams, inline SVG graphics, and other visual formats directly from Markdown.
-- **Syntax Highlighting**: Code blocks are automatically highlighted using Highlight.js.
-- **Table Styling**: Tables are rendered cleanly with improved readability.
-- **Easy Export**: Export or copy the generated HTML for use in other projects or documentation.
-- **Text Selection API**: Detect and manipulate selected text in both source and rendered panels.
-- **Bidirectional Editing**: Make changes in either the source or rendered view and see them reflected in both panels.
-- **Revision History**: Track changes with undo/redo functionality.
-- **Plugin System**: Extend functionality with custom plugins and renderers.
-- **Image Handling**: Control how images are displayed in source view and when copying content.
-- **Standard Markdown Line Breaks**: SquibView follows standard Markdown behavior for line breaks.
-    - A single newline in your source Markdown is treated as a soft break and will typically render as a space, not a new line, if it's within the same paragraph.
-    - To force a hard line break (inserting a `<br>` tag), end a line with two or more spaces.
-    - To start a new paragraph (wrapping content in `<p>` tags), leave a blank line between blocks of text.
-    - Example:
-      ```markdown
-      # Title
-      This is line one.··
-      This is line two (after two spaces, so it's a hard break).
-
-      This is a new paragraph.
-      This line is part of the new paragraph.
-      ```
-      (In the example, `··` represents two spaces.)
-
-## Configuration Options
-
-SquibView can be configured with various options when initializing:
+```bash
+npm install squibview
+```
 
 ```javascript
-const editor = new SquibView('#editorContainer', {
-  // Basic options
-  initialContent: '',           // Initial content to load
-  inputContentType: 'md',       // Type of content ('md', 'html', 'reveal', 'csv', 'tsv')
-  showControls: true,          // Whether to show control buttons
-  titleShow: false,            // Whether to show the title section
-  titleContent: '',            // Content for the title section
-  initialView: 'split',        // Initial view mode ('src', 'html', 'split')
-  baseClass: 'squibview',      // Base CSS class for styling
-  
-  // Image handling
-  preserveImageTags: true,     // Default: true. Whether to keep original image URLs in source view.
-                               // When true: images remain as <img> tags with original URLs in the source view.
-                               // When false: images are converted to data URLs in the source view.
-                               // Note: For clipboard operations (copy), images are always converted to data URLs
-                               // to ensure portability, regardless of this setting.
-  
-  // Text replacement
-  onReplaceSelectedText: null  // Callback for text replacement on selection
+import SquibView from 'squibview';
+import 'squibview/dist/squibview.css';
+
+const editor = new SquibView('#editor');
+```
+
+### UMD (Traditional Scripts)
+For legacy applications or direct script inclusion.
+
+```html
+<!-- Dependencies -->
+<script src="https://unpkg.com/markdown-it@14/dist/markdown-it.min.js"></script>
+<script src="https://unpkg.com/highlight.js@11/lib/highlight.min.js"></script>
+<script src="https://unpkg.com/mermaid@11/dist/mermaid.min.js"></script>
+
+<!-- SquibView -->
+<link rel="stylesheet" href="https://unpkg.com/squibview/dist/squibview.css">
+<script src="https://unpkg.com/squibview/dist/squibview.umd.min.js"></script>
+```
+
+### Build Size Comparison
+
+| Format | Minified | Dependencies | Best For |
+|--------|----------|--------------|----------|
+| **Standalone** | ~2.7MB | Included | Quick prototypes, demos |
+| **ESM** | ~115KB | External | Modern apps with bundlers |
+| **UMD** | ~118KB | External | Legacy apps, CDN usage |
+
+## Configuration
+
+```javascript
+const editor = new SquibView('#container', {
+    // Content settings
+    initialContent: '# Hello World',
+    inputContentType: 'md',           // 'md', 'html', 'csv', 'tsv'
+    
+    // UI settings
+    initialView: 'split',             // 'src', 'html', 'split'
+    showControls: true,
+    titleShow: true,
+    titleContent: 'My Editor',
+    
+    // Advanced settings
+    preserveImageTags: true,          // Keep original URLs vs data URLs
+    onReplaceSelectedText: callback,  // Custom text replacement
+    baseClass: 'my-editor'           // Custom CSS class
 });
 ```
 
-**Detailed Example: Image Handling with `preserveImageTags`**
-
-The `preserveImageTags` option provides fine-grained control over how image `src` attributes are handled within the source view and during copy-to-clipboard actions. By default (`true`), SquibView keeps external image links as they are in your source Markdown, which is often preferred for readability and maintainability of the source. When set to `false`, images are converted to inline data URLs directly in the source view upon rendering. Regardless of this setting, when content is copied to the clipboard, images are always converted to data URLs to ensure maximum portability and that the images are embedded within the copied content.
+### API Methods
 
 ```javascript
-// Create editor with default image handling (preserves original URLs in source view)
-const editor1 = new SquibView('#editor1'); // preserveImageTags defaults to true
+// Content management
+editor.setContent(markdown, 'md');
+editor.getContent();
+editor.setView('split'); // 'src', 'html', 'split'
 
-// Create editor that converts images to data URLs in source view
-const editor2 = new SquibView('#editor2', {
-  preserveImageTags: false
-});
+// Revision history
+editor.revisionUndo();
+editor.revisionRedo();
 
-// Set content with images
-const markdown = `
-# Image Example
+// Copy operations
+editor.copySource();     // Copy markdown
+editor.copyHTML();       // Copy formatted HTML
 
-![Local Image](./images/example.png)
-![Remote Image](https://example.com/image.jpg)
-`;
-
-editor1.setContent(markdown, 'md');
-// In editor1's source view, images will keep their original URLs (e.g., './images/example.png').
-// If content from editor1 is copied, the images in the clipboard HTML will use data URLs.
-
-editor2.setContent(markdown, 'md');
-// In editor2's source view, images will be converted to data URLs (e.g., 'data:image/png;base64,...').
-// If content from editor2 is copied, the images will also use data URLs.
+// Advanced features
+editor.toggleLinefeedView();
+editor.markdownAdjustHeadings(1); // Increase heading levels
 ```
 
-## Getting Started
+## Framework Integration
 
-**Clone the Repository:**
+### React
+```jsx
+import SquibView from 'squibview/dist/squibview-react';
+
+function MyComponent() {
+    return <SquibView 
+        initialContent="# React + SquibView"
+        titleShow={true}
+    />;
+}
+```
+
+### Vue (Experimental)
+```vue
+<template>
+    <SquibView 
+        :initialContent="content"
+        :titleShow="true"
+    />
+</template>
+
+<script>
+import SquibView from 'squibview/dist/squibview-vue';
+export default { components: { SquibView } };
+</script>
+```
+*Note: Vue wrapper is experimental. Please report issues.*
+
+## Examples & Demos
+
+### Live Examples
+- [**Basic Editor**](https://deftio.github.io/squibview/examples/example_ESM.html) - Simple markdown editing
+- [**Advanced Features**](https://deftio.github.io/squibview/examples/plugin_system.html) - Diagrams, math, tables
+- [**React Integration**](https://deftio.github.io/squibview/examples/example_react.html) - React component usage
+- [**Selection API**](https://deftio.github.io/squibview/examples/selection_api_complete.html) - Text manipulation
+
+### Local Development
 ```bash
 git clone https://github.com/deftio/squibview.git
 cd squibview
+npm install
+npm run dev           # Development server
+npm run build         # Build all formats
+npm run serve         # Serve examples locally
 ```
 
-**Running the Examples:**
-The `examples/` directory contains various HTML files demonstrating different SquibView features and build types.
-To run them:
-1. Navigate to the `examples/` directory.
-2. Open any of the `*.html` files (e.g., `example_ESM.html`) in your web browser.
+Open [http://localhost:8080](http://localhost:8080) to browse examples and documentation.
 
-You can typically do this by double-clicking the file or using "Open with" from your file explorer.
-Once an example is open:
-- You can switch view modes (source, rendered, split) using the control buttons.
-- For Markdown examples, enter your GitHub-Flavored Markdown into the editor on the left (in split or source view).
-- The right side (in split or rendered view) will update live, showcasing diagrams, code highlighting, and other features.
+## Documentation
+
+| Resource | Description |
+|----------|-------------|
+| [**Programmer's Guide**](./docs/programmers-guide.md) | Complete API reference and advanced usage |
+| [**Plugin System**](./docs/programmers-guide.md#plugin-system) | Creating custom content renderers |
+| [**Selection API**](./docs/selection-api.md) | Text selection and manipulation |
+| [**Examples**](./examples/) | Working code examples for all features |
+
+## Advanced Features
+
+### Plugin System
+Create custom renderers for any content type:
+
+```javascript
+editor.registerRenderer('custom', {
+    render: (source) => `<div class="custom">${source}</div>`,
+    sourceToOutput: (source) => processCustomContent(source),
+    outputToSource: (html) => extractCustomContent(html),
+    buttons: [
+        { label: 'Transform', action: 'customTransform' }
+    ]
+});
+```
+
+### Text Selection API
+Programmatically manipulate selected text:
+
+```javascript
+editor.onTextSelected((selectionData) => {
+    if (selectionData.text.startsWith('TODO:')) {
+        return selectionData.text.replace('TODO:', '✅ DONE:');
+    }
+});
+```
+
+### Bidirectional CSV/TSV Editing
+Edit data tables in both source and visual modes:
+
+```markdown
+```csv
+Name,Role,Status
+Alice,Developer,Active
+Bob,Designer,Active
+```
+```
 
 ## Testing
 
-SquibView uses Jest for unit/integration tests and Puppeteer for End-to-End (E2E) tests.
+SquibView has comprehensive test coverage with both unit and E2E tests:
 
-*   **Unit/Integration Tests:**
-    *   These tests check individual modules and their interactions. They provide code coverage reports.
-    *   Run with: `npm run test`
-    *   Coverage reports are generated in the `coverage/` directory. Open `coverage/lcov-report/index.html` to view detailed coverage.
+```bash
+npm test              # Unit tests with coverage
+npm run test:e2e      # End-to-end browser tests
+npm run test:all      # Run all tests
+```
 
-*   **End-to-End (E2E) Tests:**
-    *   These tests run against a live instance of the application, simulating user interaction in a browser (using Puppeteer).
-    *   They verify that the built application works as expected.
-    *   Run with: `npm run test:e2e`
-    *   **Note:** This script starts its own `http-server` on port 8000. Ensure this port is free before running.
-
-*   **Run All Tests (Recommended before releases):**
-    *   To ensure all checks pass, run both test suites sequentially.
-    *   Command: `npm run test:all` 
+Coverage reports are generated in `coverage/lcov-report/index.html`.
 
 ## Contributing
 
-Contributions are welcome! Whether you're adding new features, fixing bugs, or improving documentation, please follow these guidelines:
+We welcome contributions! Here's how to get started:
 
-Fork the Repository: Click the "Fork" button on GitHub to create your own copy.
+1. **Fork & Clone**
+   ```bash
+   git clone https://github.com/your-username/squibview.git
+   cd squibview
+   npm install
+   ```
 
-**Create a Branch:**
-```bash
-git checkout -b feature/your-feature-name
-```
+2. **Create Feature Branch**
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
 
-**Commit Your Changes:** Make your changes and commit them with a clear message.
+3. **Develop & Test**
+   ```bash
+   npm run dev          # Start development server
+   npm test             # Run tests
+   npm run build        # Test build process
+   ```
 
-```bash
-git commit -m "Add description of changes"
-```
-
-**Push to Your Fork:**
-
-```bash
-git push origin feature/your-feature-name
-```
-
-**Open a Pull Request:** Go to the original repository on GitHub and open a pull request from your fork's branch. Provide a clear description of your changes and why they're useful.
-
-Please make sure your contributions follow the project's coding style and that tests pass, if applicable.
+4. **Submit PR**
+   - Ensure tests pass
+   - Follow existing code style
+   - Update documentation if needed
 
 ## License
 
-This project is licensed under the BSD-2 License. See the LICENSE file for details.
+**BSD-2-Clause License** - See [LICENSE](LICENSE) file for details.
 
+## Why SquibView?
 
+| **Other Editors** | **SquibView** |
+|-------------------|---------------|
+| One-way preview | **True bidirectional editing** |
+| Basic markdown only | **Rich content: diagrams, math, data** |
+| Monolithic apps | **Headless & embeddable** |
+| Limited extensibility | **Plugin system** |
+| Framework-specific | **Framework-agnostic** |
+
+**Ready to try it?** [View the demo](https://deftio.github.io/squibview/examples/example_ESM.html) or [get started](#quick-start) in 30 seconds!
+
+<div align="center">
+
+**Made with ❤️ by [deftio](https://github.com/deftio)**
+
+[⭐ Star on GitHub](https://github.com/deftio/squibview) • [📦 npm Package](https://www.npmjs.com/package/squibview) • [🐛 Report Issues](https://github.com/deftio/squibview/issues)
+
+</div>

@@ -1549,10 +1549,10 @@ describe('SquibView Tests', () => {
   });
 
   describe('Image handling', () => {
+    let origCreateElement;
     beforeEach(() => {
       document.body.innerHTML = '<div id="test"></div>';
       squibView = new SquibView('#test');
-      
       // Mock Image constructor to simulate image loading
       global.Image = jest.fn().mockImplementation(() => {
         const img = {
@@ -1593,11 +1593,16 @@ describe('SquibView Tests', () => {
         height: 100
       };
       
-      // Mock document.createElement for canvas
-      document.createElement = jest.fn().mockImplementation((tagName) => {
+      // Only mock document.createElement for 'canvas'
+      origCreateElement = document.createElement;
+      document.createElement = function(tagName) {
         if (tagName === 'canvas') return mockCanvas;
-        return {};
-      });
+        return origCreateElement.call(document, tagName);
+      };
+    });
+
+    afterEach(() => {
+      document.createElement = origCreateElement;
     });
 
     test('should preserve image tags when preserveImageTags is true', async () => {
@@ -2052,4 +2057,134 @@ Some text after the SVG.
   });
 
   // Add more test cases for different complex documents or edge cases
+});
+
+// Test Fenced Math Rendering
+describe('Fenced Math Rendering', () => {
+  let appendChildSpy;
+  let mathJaxReadyEventDispatched;
+  let container;
+  let origCreateElement;
+  let squibView;
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="editor-container"></div>';
+    container = document.getElementById('editor-container');
+    global.MathJax = undefined;
+    mathJaxReadyEventDispatched = false;
+    origCreateElement = document.createElement;
+    // Removed custom document.createElement mock for 'button'.
+    appendChildSpy = jest.spyOn(document.head, 'appendChild').mockImplementation((script) => {
+      if (script.src && script.src.includes('mathjax')) {
+        global.MathJax = {
+          tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+          svg: { fontCache: 'global' },
+          startup: {
+            ready: jest.fn(() => {
+              if (!mathJaxReadyEventDispatched) {
+                document.dispatchEvent(new Event('mathjax-global-ready'));
+                mathJaxReadyEventDispatched = true;
+              }
+            }),
+            promise: Promise.resolve(),
+            defaultReady: jest.fn(),
+          }
+        };
+        if (typeof script.onload === 'function') {
+          setTimeout(() => {
+            global.MathJax.typesetPromise = jest.fn().mockResolvedValue(undefined);
+            script.onload();
+            if (global.MathJax.startup && global.MathJax.startup.ready) {
+              global.MathJax.startup.ready();
+            }
+          }, 0);
+        }
+      }
+      return script;
+    });
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    // Removed custom document.createElement restore.
+    delete global.MathJax;
+    if (appendChildSpy) {
+      appendChildSpy.mockRestore();
+    }
+    jest.clearAllTimers();
+    jest.useRealTimers();
+  });
+
+  test('should correctly render a fenced math block into a MathJax-compatible div', async () => {
+    const mathContent = 'E = mc^2';
+    const markdownInput = `\`\`\`math\n${mathContent}\n\`\`\``;
+    squibView = new SquibView(container, { initialContent: markdownInput, inputContentType: 'md' });
+
+    // Allow microtasks to process, like the MathJax init script's Promise.resolve().then(initMathJax)
+    await Promise.resolve(); 
+    jest.runAllTimers(); // Process any timers used by MathJax loading/initialization
+
+    const outputDiv = squibView.output.querySelector('div[data-source-type="math"]');
+    expect(outputDiv).not.toBeNull();
+    expect(outputDiv.classList.contains('math-display')).toBe(true);
+    
+    expect(outputDiv.textContent.trim()).toBe(`$$${mathContent}$$`);
+
+    expect(appendChildSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        src: expect.stringContaining('mathjax@3/es5/tex-mml-chtml.js')
+      })
+    );
+    
+    if (global.MathJax && global.MathJax.typesetPromise) {
+      expect(global.MathJax.typesetPromise).toHaveBeenCalled();
+      expect(global.MathJax.typesetPromise).toHaveBeenCalledWith([outputDiv]);
+    }
+  });
+
+  test('should handle LaTeX with special HTML characters correctly', async () => {
+    const mathContent = 'a < b > c & d'; // Characters that would be escaped by escapeHtml
+    const markdownInput = `\`\`\`math\n${mathContent}\n\`\`\``;
+    squibView = new SquibView(container, { initialContent: markdownInput, inputContentType: 'md' });
+    
+    await Promise.resolve();
+    jest.runAllTimers();
+
+    const outputDiv = squibView.output.querySelector('div[data-source-type="math"]');
+    expect(outputDiv).not.toBeNull();
+    expect(outputDiv.textContent.trim()).toBe(`$$${mathContent}$$`); 
+  });
+
+  test('should render multiple math blocks correctly', async () => {
+    const mathContent1 = 'x^2 + y^2 = z^2';
+    const mathContent2 = '\\\\sum_{i=1}^{n} i = \\\\frac{n(n+1)}{2}';
+    const markdownInput = `
+\`\`\`math
+${mathContent1}
+\`\`\`
+Some text in between.
+\`\`\`math
+${mathContent2}
+\`\`\`
+    `;
+    squibView = new SquibView(container, { initialContent: markdownInput, inputContentType: 'md' });
+
+    await Promise.resolve();
+    jest.runAllTimers();
+
+    const mathDivs = squibView.output.querySelectorAll('div[data-source-type="math"]');
+    expect(mathDivs.length).toBe(2);
+    expect(mathDivs[0].textContent.trim()).toBe(`$$${mathContent1}$$`);
+    expect(mathDivs[1].textContent.trim()).toBe(`$$${mathContent2}$$`);
+
+    if (global.MathJax && global.MathJax.typesetPromise) {
+      // MathJax is called with all math blocks at once for efficiency
+      expect(global.MathJax.typesetPromise).toHaveBeenCalledWith(Array.from(mathDivs));
+    }
+  });
+});
+
+// Test Content Rendering
+describe('Content Rendering', () => {
+  // Add more tests for content rendering scenarios
 });

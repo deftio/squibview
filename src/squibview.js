@@ -5,6 +5,7 @@
  supports copying of svg as png
  supports copying of tables as formatted tables
  supports copying of code blocks as formatted tables
+ supports copying of math blocks as formatted math
  by deftio (c) 2024
 */
 
@@ -199,19 +200,16 @@ class SquibView {
     this.md.renderer.rules.fence = (tokens, idx, options, env, self) => {
       const token = tokens[idx];
       const info = token.info.trim().toLowerCase(); // Normalize to lowercase
-      const content = token.content;
-      const escapedContent = this.md.utils.escapeHtml(content);
-      const langAttr = token.info.trim() ? token.info.trim().toLowerCase().split(/\s+/)[0] : 'code';
-      const escapedLangAttr = this.md.utils.escapeHtml(langAttr);
+      const content = token.content; // Raw content from the fenced block
 
       // Handle Mermaid diagrams
       if (info === 'mermaid') {
+        const escapedContent = this.md.utils.escapeHtml(content);
         return `<div class="mermaid" data-source-type="mermaid">${escapedContent}</div>`;
       }
 
-      // Handle SVG directly (wrapped for data attribute)
+      // Handle SVG directly
       if (info === 'svg') {
-        // Escape the original SVG content for safe storage in HTML attribute
         const escapeForAttribute = (str) => {
           return str.replace(/&/g, '&amp;')
                     .replace(/"/g, '&quot;')
@@ -219,17 +217,13 @@ class SquibView {
                     .replace(/</g, '&lt;')
                     .replace(/>/g, '&gt;');
         };
-        
         const escapedSource = escapeForAttribute(content);
-        // Store original source for round-trip conversion and render the SVG
         return `<div class="svg-container" data-source-type="svg" data-original-source="${escapedSource}">${content}</div>`;
       }
 
       // Handle GeoJSON maps
       if (info === 'geojson') {
         const geojsonId = 'geojson-' + Math.random().toString(36).substring(2, 15);
-        // Content for GeoJSON is expected to be JSON, so it should be directly embeddable in <script>
-        // No need for escaping here as it's part of a JS template literal for script content.
         return `<div id="${geojsonId}" class="geojson-map" data-source-type="geojson" style="width: 100%; height: 300px;"></div>
                 <script>
                   (function() {
@@ -241,33 +235,25 @@ class SquibView {
                           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                           }).addTo(map);
-                          
                           try {
-                            const geojsonData = ${content};
+                            const geojsonData = JSON.parse(content); // Parse the raw content
                             const geojsonLayer = L.geoJSON(geojsonData).addTo(map);
                             map.fitBounds(geojsonLayer.getBounds(), { padding: [20, 20] });
                             mapContainer.dataset.initialized = 'true';
                           } catch (e) {
-                            console.error('Error parsing GeoJSON:', e);
-                            mapContainer.innerHTML = '<div class="error">Error parsing GeoJSON: ' + e.message + '</div>';
+                            console.error('Error rendering GeoJSON:', e, 'Original content:', content);
+                            mapContainer.innerHTML = '<p style="color: red; text-align: center;">Error rendering GeoJSON map.</p>';
+                            mapContainer.dataset.initialized = 'error';
                           }
                         }
                       } else {
-                        const link = document.createElement('link');
-                        link.rel = 'stylesheet';
-                        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-                        document.head.appendChild(link);
-                        
-                        const script = document.createElement('script');
-                        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-                        script.onload = initMap;
-                        document.head.appendChild(script);
+                        console.warn('Leaflet not loaded when trying to initialize GeoJSON map:', '${geojsonId}');
                       }
                     };
-                    if (document.readyState === 'complete') {
-                      initMap();
+                    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                        initMap();
                     } else {
-                      window.addEventListener('load', initMap);
+                        window.addEventListener('load', initMap);
                     }
                   })();
                 </script>`;
@@ -276,67 +262,46 @@ class SquibView {
       // Handle mathematical expressions
       if (info === 'math') {
         const mathId = 'math-' + Math.random().toString(36).substring(2, 15);
-        // Content for math is LaTeX, escape it for HTML display before MathJax processes it.
-        return `<div id="${mathId}" class="math-display" data-source-type="math">$$${escapedContent}$$</div>
-                <script>
-                  (function() {
-                    function initMathJax() {
-                      if (typeof MathJax === 'undefined') {
-                        var script = document.createElement('script');
-                        script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
-                        script.async = true;
-                        script.onload = function() {
-                          window.MathJax = {
-                            tex: {
-                              inlineMath: [['$', '$']],
-                              displayMath: [['$$', '$$']]
-                            },
-                            svg: { fontCache: 'global' }
-                          };
-                          MathJax.typeset();
-                        };
-                        document.head.appendChild(script);
-                      } else {
-                        MathJax.typeset();
-                      }
-                    }
-                    if (document.readyState === 'complete') {
-                      initMathJax();
-                    } else {
-                      window.addEventListener('load', initMathJax);
-                    }
-                  })();
-                </script>`;
+        // Pass raw 'content' to MathJax, wrapped in $$ ... $$ on a single line
+        const singleLineContent = content.replace(/\r?\n/g, ' ').replace(/\s+/g, ' ').trim();
+        return `<div id="${mathId}" class="math-display" data-source-type="math">$${'$'}${singleLineContent}$${'$'}</div>`;
       }
 
-      const supportedTableFormats = { 'csv': ',', 'tsv': '\t', 'psv': '|' };
-      if (supportedTableFormats.hasOwnProperty(info)) {
+      // Default fence renderer (for code blocks)
+      const langName = token.info.trim().split(/\s+/)[0] || '';
+      const escapedLangName = this.md.utils.escapeHtml(langName);
+      const tableLangs = ['csv', 'tsv', 'psv'];
+      if (tableLangs.includes(langName)) {
         try {
           if (typeof Papa === 'undefined' || typeof Papa.parse !== 'function') {
-            console.error('PapaParse library is not available. Please include it on the page.');
-            return `<pre class="squibview-error" data-source-type="${escapedLangAttr}">Error: PapaParse library not loaded.</pre>`;
+            return `<pre class="squibview-error" data-source-type="${escapedLangName}">Error: PapaParse library not loaded.</pre>`;
           }
           let parseConfig = { skipEmptyLines: true };
-          if (info !== 'tsv') { // TSV auto-detects delimiter
-            parseConfig.delimiter = supportedTableFormats[info];
-          }
+          if (langName !== 'tsv') parseConfig.delimiter = langName === 'csv' ? ',' : '|';
           const parsedData = Papa.parse(content, parseConfig);
           if (parsedData.errors && parsedData.errors.length > 0) {
             let errorMessages = parsedData.errors.map(err => `${err.type}: ${err.message} (Row: ${err.row})`).join('\n');
-            console.warn(`PapaParse errors for ${info}:`, parsedData.errors);
-            return `<pre class="squibview-error" data-source-type="${escapedLangAttr}">Error parsing ${info} data:\n${this.md.utils.escapeHtml(errorMessages)}</pre>`;
+            return `<pre class="squibview-error" data-source-type="${escapedLangName}">Error parsing ${langName} data:\n${this.md.utils.escapeHtml(errorMessages)}</pre>`;
           }
-          // Wrap the generated table with a div carrying the data-source-type
-          return `<div data-source-type="${escapedLangAttr}">${this._dataToHtmlTable(parsedData.data)}</div>`;
+          return `<div data-source-type="${escapedLangName}">${this._dataToHtmlTable(parsedData.data)}</div>`;
         } catch (e) {
-          console.error(`Error rendering ${info} table:`, e);
-          return `<pre class="squibview-error" data-source-type="${escapedLangAttr}">Could not render ${this.md.utils.escapeHtml(info)} table.</pre>`;
+          return `<pre class="squibview-error" data-source-type="${escapedLangName}">Could not render ${this.md.utils.escapeHtml(langName)} table.</pre>`;
         }
       }
-
-      // Default rendering for other code blocks, wrapped with data-source-type
-      const renderedByDefault = defaultFence(tokens, idx, options, env, self);
-      return `<div data-source-type="${escapedLangAttr}">${renderedByDefault}</div>`;
+      let codeHtml;
+      if (hljs.getLanguage(langName)) {
+        try {
+          const highlightedContent = hljs.highlight(content, { language: langName, ignoreIllegals: true }).value;
+          codeHtml = `<pre><code class="hljs language-${escapedLangName}" data-source-type="code" data-lang="${escapedLangName}">${highlightedContent}</code></pre>`;
+        } catch (__) {
+          // Fallback to non-highlighted if error occurs
+        }
+      }
+      if (!codeHtml) {
+        const escapedContent = this.md.utils.escapeHtml(content);
+        codeHtml = `<pre><code class="hljs language-${escapedLangName}" data-source-type="code" data-lang="${escapedLangName}">${escapedContent}</code></pre>`;
+      }
+      return `<div data-source-type="${escapedLangName || 'code'}">${codeHtml}</div>`;
     };
   }
 
@@ -1036,8 +1001,45 @@ class SquibView {
     // Initialize mermaid diagrams after all images are processed
     mermaid.init(undefined, this.output.querySelectorAll('.mermaid'));
     
+    // Ensure MathJax is loaded and typeset all math blocks
+    await this.ensureMathJaxAndTypeset();
+
     // Emit markdown:rendered event
     this.events.emit('markdown:rendered', markdown, html);
+  }
+
+  /**
+   * Ensures MathJax is loaded and typesets all math blocks in the output.
+   * @private
+   */
+  async ensureMathJaxAndTypeset() {
+    const mathBlocks = this.output.querySelectorAll('div.math-display');
+    if (!mathBlocks.length) return;
+    function typesetAll() {
+      if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+        return MathJax.typesetPromise(Array.from(mathBlocks));
+      }
+    }
+    if (typeof MathJax === 'undefined') {
+      if (window.mathJaxLoading) return;
+      window.mathJaxLoading = true;
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+        script.async = true;
+        script.onload = () => {
+          window.mathJaxLoading = false;
+          typesetAll()?.then(resolve).catch(reject);
+        };
+        script.onerror = () => {
+          window.mathJaxLoading = false;
+          reject(new Error('Failed to load MathJax'));
+        };
+        document.head.appendChild(script);
+      });
+    } else {
+      return typesetAll();
+    }
   }
 
   /**
