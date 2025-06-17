@@ -137,25 +137,32 @@ log_info "Using version $VERSION from package.json"
 
 # Verify that version.js is in sync (should be done by prerelease)
 if [ -f "src/version.js" ]; then
-    VERSION_JS_VERSION=$(node -p "require('./src/version.js').version" 2>/dev/null || echo "unknown")
+    VERSION_JS_VERSION=$(node -p "require('./src/version.js').VERSION" 2>/dev/null || echo "unknown")
     if [ "$VERSION_JS_VERSION" != "$VERSION" ]; then
         log_warning "src/version.js ($VERSION_JS_VERSION) doesn't match package.json ($VERSION)"
         log_warning "Run 'npm run prerelease' to rebuild with correct version"
+    else
+        log_success "src/version.js matches package.json ($VERSION)"
     fi
 fi
 
 log_success "Ready to release version $VERSION"
 
 # Commit release files
-log_info "Committing release files..."
+log_info "Checking for changes to commit..."
 git add package.json package-lock.json src/version.js dist/ cli/
-git commit -m "Release v$VERSION
+
+if git diff --cached --quiet; then
+    log_info "No changes to commit - files already committed"
+else
+    log_info "Committing release files..."
+    git commit -m "Release v$VERSION
 
 🤖 Generated with [Claude Code](https://claude.ai/code)
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
-
-log_success "Changes committed"
+    log_success "Changes committed"
+fi
 
 # Create and push tag
 log_info "Creating git tag $TAG_NAME..."
