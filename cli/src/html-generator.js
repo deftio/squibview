@@ -73,7 +73,10 @@ ${generateMermaidInitScript()}
  * @returns {string} - CDN script tags
  */
 function generateCDNScripts() {
-  return `  <!-- MathJax for math rendering -->
+  return `  <!-- Highlight.js for syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <!-- MathJax for math rendering -->
   <script>
     window.MathJax = {
       tex: {
@@ -107,13 +110,19 @@ function generateOfflineScripts() {
     // Read local library files
     const mathJaxPath = join(__dirname, '../node_modules/mathjax/es5/tex-svg.js');
     const mermaidPath = join(__dirname, '../node_modules/mermaid/dist/mermaid.min.js');
-    const highlightPath = join(__dirname, '../node_modules/highlight.js/lib/core.js');
+    const highlightPath = join(__dirname, '../node_modules/highlight.js/lib/highlight.js');
+    const highlightCSSPath = join(__dirname, '../node_modules/highlight.js/styles/default.css');
     
     const mathJaxCode = readFileSync(mathJaxPath, 'utf8');
     const mermaidCode = readFileSync(mermaidPath, 'utf8');
     const highlightCode = readFileSync(highlightPath, 'utf8');
+    const highlightCSS = readFileSync(highlightCSSPath, 'utf8');
     
     return `  <!-- Bundled libraries for offline use -->
+  <style>
+    /* Highlight.js CSS bundled */
+${highlightCSS}
+  </style>
   <script>
     // MathJax configuration
     window.MathJax = {
@@ -133,12 +142,12 @@ function generateOfflineScripts() {
     };
   </script>
   <script type="text/javascript">
-    // MathJax bundled
-${mathJaxCode}
-  </script>
-  <script type="text/javascript">
     // Highlight.js bundled
 ${highlightCode}
+  </script>
+  <script type="text/javascript">
+    // MathJax bundled
+${mathJaxCode}
   </script>
   <script type="text/javascript">
     // Mermaid bundled

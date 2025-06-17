@@ -20,6 +20,22 @@ import Papa from 'papaparse';
 import HtmlToMarkdown from './HtmlToMarkdown.js';
 import { RevisionHistory } from './RevisionHistory.js';
 
+// Import highlight.js for syntax highlighting
+// Use dynamic lookup to maintain compatibility with different build targets
+function getHljs() {
+  try {
+    if (typeof window !== 'undefined' && window.hljs) {
+      return window.hljs;
+    }
+    if (typeof global !== 'undefined' && global.hljs) {
+      return global.hljs;
+    }
+  } catch (e) {
+    // Ignore errors
+  }
+  return null;
+}
+
 // Fix for development mode
 /*
 try {
@@ -184,10 +200,13 @@ class SquibView {
       linkify: true,
       typographer: true,
       highlight: (str, lang) => {
-        if (lang && hljs.getLanguage(lang)) {
+        const hljs = getHljs();
+        if (lang && hljs && hljs.getLanguage && hljs.getLanguage(lang)) {
           try {
             return hljs.highlight(str, { language: lang }).value;
-          } catch (__) { }
+          } catch (e) {
+            // Fallback to no highlighting on error
+          }
         }
         return '';
       }
@@ -289,11 +308,12 @@ class SquibView {
         }
       }
       let codeHtml;
-      if (hljs.getLanguage(langName)) {
+      const hljs = getHljs();
+      if (hljs && hljs.getLanguage && hljs.getLanguage(langName)) {
         try {
           const highlightedContent = hljs.highlight(content, { language: langName, ignoreIllegals: true }).value;
           codeHtml = `<pre><code class="hljs language-${escapedLangName}" data-source-type="code" data-lang="${escapedLangName}">${highlightedContent}</code></pre>`;
-        } catch (__) {
+        } catch (e) {
           // Fallback to non-highlighted if error occurs
         }
       }
