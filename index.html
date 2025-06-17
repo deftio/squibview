@@ -113,6 +113,7 @@ Any manual edits may be lost.
 <h2 id="documentation">Documentation</h2>
 <ul>
 <li><a href="./docs/programmers-guide.md">Programmer&#39;s Guide</a> - Comprehensive documentation for developers</li>
+<li><a href="./docs/squibv.md">CLI Documentation</a> - Complete command-line interface guide</li>
 <li><a href="./examples">Examples</a> - Example implementations and usage patterns</li>
 </ul>
 <h1 id="features">Features</h1>
@@ -149,6 +150,22 @@ This line is part of the new paragraph.
 <p>SquibView can be used as a standalone tool for processing complex Markdown output (e.g., from LLMs like OpenAI, Claude, Mistral, or Deepseek) or as a simple live preview Markdown editor.</p>
 <h2 id="as-a-component">As a Component</h2>
 <p>As an embeddable component, SquibView allows your application to render complex Markdown or other content on the fly. It can dynamically switch between a split-screen view (source and output) or an output-only view, serving effectively as a renderer.</p>
+<h2 id="command-line-interface">Command Line Interface</h2>
+<p>SquibView includes a powerful CLI tool for converting Markdown files to high-quality HTML documents with all the advanced features (math, diagrams, code highlighting, tables).</p>
+<pre><code class="language-bash"># Quick start with npx
+npx squibv document.md
+
+# Advanced usage
+npx squibv document.md --bundle-offline -o report.html
+</code></pre>
+<p><strong>Key Features:</strong></p>
+<ul>
+<li>🚀 <strong>Rich Content</strong>: Math equations, Mermaid diagrams, CSV tables, SVG graphics</li>
+<li>📦 <strong>Offline Ready</strong>: Bundle all dependencies for air-gapped environments  </li>
+<li>🎨 <strong>Professional</strong>: Clean default styling with custom CSS support</li>
+<li>⚡ <strong>Fast</strong>: Quick conversion with watch mode for development</li>
+</ul>
+<p>➡️ <strong><a href="./docs/squibv.md">Complete CLI Documentation</a></strong></p>
 <h2 id="installation-and-usage">Installation and Usage</h2>
 <h3 id="using-build-files">Using Build Files</h3>
 <p>SquibView offers multiple build formats for different use cases:</p>

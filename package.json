@@ -1,6 +1,6 @@
 {
   "name": "squibview",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "SquibView is a light weight editor which live-renders mardown (including code, diagrams, etc) or HTML to a browser",
   "keywords": [
     "markdown",
@@ -24,8 +24,12 @@
   "module": "dist/squibview.min.js",
   "unpkg": "dist/squibview.umd.min.js",
   "browser": "dist/squibview.umd.min.js",
+  "bin": {
+    "squibv": "./cli/bin/squibv.js"
+  },
   "files": [
-    "dist"
+    "dist",
+    "cli"
   ],
   "type": "module",
   "directories": {
@@ -79,10 +83,13 @@
     "wait-on": "^8.0.2"
   },
   "dependencies": {
+    "commander": "^14.0.0",
     "diff-match-patch": "^1.0.5",
     "highlight.js": "^11.11.1",
+    "jsdom": "^26.1.0",
     "markdown-it": "^14.1.0",
-    "mermaid": "^11.4.1",
+    "mathjax": "^3.2.2",
+    "mermaid": "^11.6.0",
     "papaparse": "^5.4.1",
     "tiny-emitter": "^2.1.0",
     "turndown": "^7.2.0"

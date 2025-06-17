@@ -22,6 +22,7 @@ SquibView supports full cut-and-paste functionality and allows edits made in the
 ## Documentation
 
 - [Programmer's Guide](./docs/programmers-guide.md) - Comprehensive documentation for developers
+- [CLI Documentation](./docs/squibv.md) - Complete command-line interface guide
 - [Examples](./examples) - Example implementations and usage patterns
 
 # Features
@@ -61,6 +62,26 @@ SquibView can be used as a standalone tool for processing complex Markdown outpu
 ## As a Component
 
 As an embeddable component, SquibView allows your application to render complex Markdown or other content on the fly. It can dynamically switch between a split-screen view (source and output) or an output-only view, serving effectively as a renderer.
+
+## Command Line Interface
+
+SquibView includes a powerful CLI tool for converting Markdown files to high-quality HTML documents with all the advanced features (math, diagrams, code highlighting, tables).
+
+```bash
+# Quick start with npx
+npx squibv document.md
+
+# Advanced usage
+npx squibv document.md --bundle-offline -o report.html
+```
+
+**Key Features:**
+- 🚀 **Rich Content**: Math equations, Mermaid diagrams, CSV tables, SVG graphics
+- 📦 **Offline Ready**: Bundle all dependencies for air-gapped environments  
+- 🎨 **Professional**: Clean default styling with custom CSS support
+- ⚡ **Fast**: Quick conversion with watch mode for development
+
+➡️ **[Complete CLI Documentation](./docs/squibv.md)**
 
 ## Installation and Usage
 

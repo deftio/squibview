@@ -1,0 +1,12 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Test files and generated output
+*.html
+*.md.tmp
+test-*.md
+
+# Development files
+.DS_Store
+*.log
