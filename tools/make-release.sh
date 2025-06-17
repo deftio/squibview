@@ -163,17 +163,13 @@ log_info "Running version bump and build process..."
 if [ -f "dev-bump-build-test.sh" ]; then
     # For auto-increment, we already updated package.json, so just run the rest
     if [[ "$VERSION_INPUT" =~ ^(patch|minor|major)$ ]]; then
-        log_info "Package.json already updated to $VERSION, running build and test..."
-        # Update version.js
-        if [ -f "tools/updateVersion.js" ]; then
-            node tools/updateVersion.js
-        fi
-        # Build and test
-        npm run build
-        npm run test:all
+        log_info "Package.json already updated to $VERSION, running prerelease validation..."
+        npm run prerelease
     else
-        # For explicit versions, use the full script
+        # For explicit versions, use the full script but then run prerelease
         sh dev-bump-build-test.sh "$VERSION"
+        log_info "Running full prerelease validation..."
+        npm run prerelease
     fi
 else
     log_warning "dev-bump-build-test.sh not found, running manual steps..."
@@ -188,11 +184,8 @@ else
         node tools/updateVersion.js
     fi
     
-    # Build
-    npm run build
-    
-    # Test
-    npm run test:all
+    # Run prerelease validation (build:all + test:all)
+    npm run prerelease
 fi
 
 log_success "Build and tests completed"
@@ -254,6 +247,14 @@ echo "📦 Next steps:"
 echo "   1. Review the GitHub release page"
 echo "   2. Test the package locally: npm pack"
 echo "   3. Publish to npm: npm publish"
+echo ""
+echo "💡 Development workflow:"
+echo "   npm test               # Fast unit tests"
+echo "   npm run build:fast     # Quick ESM build"
+echo "   npm run test:cli       # Fast CLI test"
+echo ""
+echo "💡 Pre-release workflow:"
+echo "   npm run prerelease     # Full build + comprehensive tests"
 echo ""
 echo "💡 Manual npm publish commands:"
 echo "   npm publish --dry-run  # Review what will be published"
