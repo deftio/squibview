@@ -36,67 +36,42 @@ log_error() {
 
 # Function to show usage
 show_usage() {
-    echo "Usage: $0 <version> [release-notes]"
+    echo "Usage: $0 [release-notes]"
+    echo ""
+    echo "This script creates a git tag and GitHub release using the current package.json version."
+    echo "Update package.json version BEFORE running this script, then run 'npm run prerelease'."
     echo ""
     echo "Arguments:"
-    echo "  version        Version number or increment type"
-    echo "                 • Explicit: 1.0.5, v1.0.5"
-    echo "                 • Auto-increment: patch, minor, major"
     echo "  release-notes  Optional custom release notes (otherwise auto-generated)"
     echo ""
     echo "Examples:"
-    echo "  $0 v1.0.5"
-    echo "  $0 1.1.0 \"Major update with new CLI features\""
-    echo "  $0 patch \"Bug fixes and improvements\""
-    echo "  $0 minor \"New CLI features added\""
-    echo "  $0 major \"Breaking API changes\""
+    echo "  $0"
+    echo "  $0 \"Major update with new CLI features\""
+    echo ""
+    echo "Recommended workflow:"
+    echo "  1. Update package.json version manually"
+    echo "  2. npm run prerelease  # Build and test with new version"
+    echo "  3. $0 \"release notes\" # Create git tag and GitHub release"
+    echo "  4. npm publish         # Publish to npm"
     echo ""
     echo "Note: You must run 'npm publish' manually after this script completes."
 }
 
 # Validate arguments
-if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+if [ $# -gt 1 ]; then
     log_error "Invalid number of arguments"
     show_usage
     exit 1
 fi
 
-VERSION_INPUT="$1"
-CUSTOM_NOTES="$2"
+CUSTOM_NOTES="$1"
 
 # Get current version from package.json
-CURRENT_VERSION=$(node -p "require('./package.json').version")
-
-# Handle different version input types
-case "$VERSION_INPUT" in
-    "patch"|"minor"|"major")
-        log_info "Auto-incrementing $VERSION_INPUT version from $CURRENT_VERSION"
-        VERSION=$(npm version "$VERSION_INPUT" --no-git-tag-version)
-        VERSION=${VERSION#v}  # Remove 'v' prefix if npm adds it
-        ;;
-    v*)
-        # Remove 'v' prefix for processing
-        VERSION=${VERSION_INPUT#v}
-        # Validate version format
-        if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
-            log_error "Invalid version format. Expected format: vX.Y.Z or vX.Y.Z-suffix"
-            exit 1
-        fi
-        ;;
-    *)
-        # Assume it's a version number without 'v' prefix
-        VERSION="$VERSION_INPUT"
-        # Validate version format
-        if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
-            log_error "Invalid version format. Expected format: X.Y.Z, vX.Y.Z, or X.Y.Z-suffix"
-            exit 1
-        fi
-        ;;
-esac
-
+VERSION=$(node -p "require('./package.json').version")
 TAG_NAME="v$VERSION"
 
 log_info "Starting release process for version $VERSION"
+log_warning "Make sure you've run 'npm run prerelease' first to build and test everything!"
 
 # Check if we're in the right directory
 if [ ! -f "package.json" ]; then
@@ -158,50 +133,22 @@ fi
 
 log_info "Pre-flight checks passed"
 
-# Update version and build
-log_info "Running version bump and build process..."
-if [ -f "dev-bump-build-test.sh" ]; then
-    # For auto-increment, we already updated package.json, so just run the rest
-    if [[ "$VERSION_INPUT" =~ ^(patch|minor|major)$ ]]; then
-        log_info "Package.json already updated to $VERSION, running prerelease validation..."
-        npm run prerelease
-    else
-        # For explicit versions, use the full script but then run prerelease
-        sh dev-bump-build-test.sh "$VERSION"
-        log_info "Running full prerelease validation..."
-        npm run prerelease
+log_info "Using version $VERSION from package.json"
+
+# Verify that version.js is in sync (should be done by prerelease)
+if [ -f "src/version.js" ]; then
+    VERSION_JS_VERSION=$(node -p "require('./src/version.js').version" 2>/dev/null || echo "unknown")
+    if [ "$VERSION_JS_VERSION" != "$VERSION" ]; then
+        log_warning "src/version.js ($VERSION_JS_VERSION) doesn't match package.json ($VERSION)"
+        log_warning "Run 'npm run prerelease' to rebuild with correct version"
     fi
-else
-    log_warning "dev-bump-build-test.sh not found, running manual steps..."
-    
-    # Update package.json version (skip if already done for auto-increment)
-    if [[ ! "$VERSION_INPUT" =~ ^(patch|minor|major)$ ]]; then
-        npm version "$VERSION" --no-git-tag-version
-    fi
-    
-    # Update version.js
-    if [ -f "tools/updateVersion.js" ]; then
-        node tools/updateVersion.js
-    fi
-    
-    # Run prerelease validation (build:all + test:all)
-    npm run prerelease
 fi
 
-log_success "Build and tests completed"
+log_success "Ready to release version $VERSION"
 
-# Check if package.json version matches
-PACKAGE_VERSION=$(node -p "require('./package.json').version")
-if [ "$PACKAGE_VERSION" != "$VERSION" ]; then
-    log_error "Package.json version ($PACKAGE_VERSION) doesn't match target version ($VERSION)"
-    exit 1
-fi
-
-log_success "Version verification passed"
-
-# Commit version changes
-log_info "Committing version changes..."
-git add package.json package-lock.json src/version.js dist/
+# Commit release files
+log_info "Committing release files..."
+git add package.json package-lock.json src/version.js dist/ cli/
 git commit -m "Release v$VERSION
 
 🤖 Generated with [Claude Code](https://claude.ai/code)
@@ -248,13 +195,16 @@ echo "   1. Review the GitHub release page"
 echo "   2. Test the package locally: npm pack"
 echo "   3. Publish to npm: npm publish"
 echo ""
+echo "💡 Complete release workflow:"
+echo "   1. Edit package.json version manually"
+echo "   2. npm run prerelease     # Build + test with new version"
+echo "   3. ./tools/make-release.sh \"release notes\"  # Create git tag and GitHub release"
+echo "   4. npm publish            # Publish to npm"
+echo ""
 echo "💡 Development workflow:"
 echo "   npm test               # Fast unit tests"
 echo "   npm run build:fast     # Quick ESM build"
 echo "   npm run test:cli       # Fast CLI test"
-echo ""
-echo "💡 Pre-release workflow:"
-echo "   npm run prerelease     # Full build + comprehensive tests"
 echo ""
 echo "💡 Manual npm publish commands:"
 echo "   npm publish --dry-run  # Review what will be published"
