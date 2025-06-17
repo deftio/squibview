@@ -38,7 +38,8 @@
   "scripts": {
     "test": "jest --config jest.config.cjs --coverage",
     "test:e2e": "npx concurrently -k --success first --names \"HTTP,E2E\" -c \"bgBlue.bold,bgMagenta.bold\" \"npx http-server -p 8000\" \"wait-on -t 300000 -i 2000 http://127.0.0.1:8000 && jest -c e2e-tests/jest.config.cjs --ci\"",
-    "test:all": "npm run test && npm run test:e2e",
+    "test:cli": "npm run build && node cli/bin/squibv.js dev/sample-content.md -o /tmp/squibv-test.html && echo '✓ CLI test passed'",
+    "test:all": "npm run test && npm run test:e2e && npm run test:cli",
     "build": "npm run updateVersion && npm run makeIndexHTML && rollup -c && npm run minifyCSS",
     "build:umd": "npm run updateVersion && rollup -c --environment BUILD:umd && npm run minifyCSS",
     "build:esm": "npm run updateVersion && rollup -c --environment BUILD:esm && npm run minifyCSS",
