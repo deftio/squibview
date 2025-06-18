@@ -1,17 +1,10 @@
 # Squibview Graphical Markdown Editor 
 
-Welcome to the **Squibview** live markdown editor. This document showcases various features such as live preview, Mermaid diagrams, syntax-highlighted code blocks, tables, and inline SVG graphics.
-
-This is a test
-of the line feed faeature
-lets see how it renders.
-
+Welcome to the **Squibview** live markdown editor. This document shows various features such as live preview, Mermaid diagrams, syntax-highlighted code blocks, tables, and inline SVG graphics.
 
 [Code is Here on GitHub](www.github.com/deftio/graphics-md-viewer)
 
-Squibview allows live view of source (mixed markdown), rendered (html), or split-view for debugging.  It can be used as a lightweight editor or as a headless component which can be deployed in apps.
-
-The user can edit (live) either the source or rendered content and it will live-update the reciprocal page.  See docs for limitations. Squibview supports running headless (no controls) and can be styled or themed with CSS.
+Squibview allows live view of source (mixed markdown), rendered (html), or split-view for debugging.  It can be used as a lightweight editor or as a headless component which can be deployed in apps. quibview supports running headless (no controls) and can be styled or themed with CSS.
 
 ## Diagram Example
 
