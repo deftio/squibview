@@ -1744,12 +1744,58 @@ class SquibView {
 
           const img = document.createElement('img');
           img.src = dataUrl;
-          img.width = svg.clientWidth || svg.viewBox.baseVal.width || 100;
-          img.height = svg.clientHeight || svg.viewBox.baseVal.height || 100;
+          
+          // Use the exact same dimension calculation logic as svgToPng
+          const isMermaidSvg = svg.closest('.mermaid') || svg.classList.contains('mermaid');
+          const hasExplicitDimensions = svg.getAttribute('width') && svg.getAttribute('height');
+          
+          let imgWidth, imgHeight;
+          
+          if (isMermaidSvg || !hasExplicitDimensions) {
+            // For Mermaid or other generated SVGs, prioritize computed dimensions
+            imgWidth = svg.clientWidth || 
+                       (svg.viewBox && svg.viewBox.baseVal.width) || 
+                       parseFloat(svg.getAttribute('width')) || 400;
+            imgHeight = svg.clientHeight || 
+                        (svg.viewBox && svg.viewBox.baseVal.height) || 
+                        parseFloat(svg.getAttribute('height')) || 300;
+          } else {
+            // For explicit SVGs (like fenced SVG blocks), prioritize explicit attributes
+            imgWidth = parseFloat(svg.getAttribute('width')) || 
+                       (svg.viewBox && svg.viewBox.baseVal.width) || 
+                       svg.clientWidth || 400;
+            imgHeight = parseFloat(svg.getAttribute('height')) || 
+                        (svg.viewBox && svg.viewBox.baseVal.height) || 
+                        svg.clientHeight || 300;
+          }
+          
+          // Set both HTML attributes and CSS properties for maximum compatibility
+          img.width = imgWidth;
+          img.height = imgHeight;
+          img.setAttribute('width', imgWidth.toString());
+          img.setAttribute('height', imgHeight.toString());
+          img.style.width = imgWidth + 'px';
+          img.style.height = imgHeight + 'px';
+          img.style.maxWidth = 'none';  // Prevent CSS from constraining the image
+          img.style.maxHeight = 'none';
           img.setAttribute('v:shapes', 'image' + Math.random().toString(36).substr(2, 9));
-          img.style.width = img.width + 'px';
-          img.style.height = img.height + 'px';
           img.alt = "Converted diagram";
+          
+          console.log('Image replacement debug:', {
+            isMermaidSvg: isMermaidSvg,
+            hasExplicitDimensions: hasExplicitDimensions,
+            svgOriginalWidth: svg.getAttribute('width'),
+            svgOriginalHeight: svg.getAttribute('height'),
+            svgClientWidth: svg.clientWidth,
+            svgClientHeight: svg.clientHeight,
+            calculatedWidth: imgWidth,
+            calculatedHeight: imgHeight,
+            imgWidth: img.width,
+            imgHeight: img.height,
+            imgStyleWidth: img.style.width,
+            imgStyleHeight: img.style.height
+          });
+          
           svg.parentNode.replaceChild(img, svg);
         } catch (error) {
           console.error('Failed to convert SVG:', error);
@@ -1862,8 +1908,60 @@ class SquibView {
       const img = new Image();
 
       const scale = 2;
-      const svgWidth = svgElement.clientWidth || svgElement.viewBox.baseVal.width || 100;
-      const svgHeight = svgElement.clientHeight || svgElement.viewBox.baseVal.height || 100;
+      
+      // Check if this is a Mermaid-generated SVG (they don't have explicit width/height attributes)
+      const isMermaidSvg = svgElement.closest('.mermaid') || svgElement.classList.contains('mermaid');
+      const hasExplicitDimensions = svgElement.getAttribute('width') && svgElement.getAttribute('height');
+      
+      let svgWidth, svgHeight;
+      
+      if (isMermaidSvg || !hasExplicitDimensions) {
+        // For Mermaid or other generated SVGs, prioritize computed dimensions
+        svgWidth = svgElement.clientWidth || 
+                   (svgElement.viewBox && svgElement.viewBox.baseVal.width) || 
+                   parseFloat(svgElement.getAttribute('width')) || 400;
+        svgHeight = svgElement.clientHeight || 
+                    (svgElement.viewBox && svgElement.viewBox.baseVal.height) || 
+                    parseFloat(svgElement.getAttribute('height')) || 300;
+      } else {
+        // For explicit SVGs (like fenced SVG blocks), prioritize explicit attributes
+        svgWidth = parseFloat(svgElement.getAttribute('width')) || 
+                   (svgElement.viewBox && svgElement.viewBox.baseVal.width) || 
+                   svgElement.clientWidth || 400;
+        svgHeight = parseFloat(svgElement.getAttribute('height')) || 
+                    (svgElement.viewBox && svgElement.viewBox.baseVal.height) || 
+                    svgElement.clientHeight || 300;
+      }
+
+      // Debug logging
+      console.log('SVG Debug Info:', {
+        isMermaidSvg: isMermaidSvg,
+        hasExplicitDimensions: hasExplicitDimensions,
+        width: svgElement.getAttribute('width'),
+        height: svgElement.getAttribute('height'),
+        clientWidth: svgElement.clientWidth,
+        clientHeight: svgElement.clientHeight,
+        viewBox: svgElement.viewBox ? svgElement.viewBox.baseVal : null,
+        calculatedWidth: svgWidth,
+        calculatedHeight: svgHeight,
+        svgString: svgString.substring(0, 200) + '...'
+      });
+
+      // Ensure the SVG string has explicit dimensions by modifying it if necessary
+      let modifiedSvgString = svgString;
+      if (svgWidth && svgHeight) {
+        // Create a temporary SVG element to modify the serialized string
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = svgString;
+        const tempSvg = tempDiv.querySelector('svg');
+        if (tempSvg) {
+          tempSvg.setAttribute('width', svgWidth.toString());
+          tempSvg.setAttribute('height', svgHeight.toString());
+          modifiedSvgString = new XMLSerializer().serializeToString(tempSvg);
+        }
+      }
+
+      console.log('Modified SVG string:', modifiedSvgString.substring(0, 200) + '...');
 
       canvas.width = svgWidth * scale;
       canvas.height = svgHeight * scale;
@@ -1882,7 +1980,7 @@ class SquibView {
       };
 
       img.onerror = reject;
-      const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
+      const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(modifiedSvgString)}`;
       img.src = svgDataUrl;
     });
   }

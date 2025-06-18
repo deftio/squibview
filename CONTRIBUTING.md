@@ -20,40 +20,92 @@ We welcome contributions to SquibView! Here's how you can help.
 
 ## Building and Versioning
 
-SquibView uses a combination of `npm version` and custom shell scripts to manage versioning, builds, and testing in an integrated way.
+SquibView uses a combination of `npm version` and custom shell scripts to manage versioning, builds, and testing in an integrated way. **IMPORTANT**: SquibView supports multiple build targets (ESM, UMD, Standalone, React, Vue, CLI) - it's critical not to break any of these during development.
 
 ### Source of Truth for Version
 
-The canonical version number is stored in `package.json`. The `src/version.js` file, which makes the version available at runtime, is *generated* from `package.json`.
+The canonical version number is stored in `package.json`. The `src/version.js` file, which makes the version available at runtime via `SquibView.version`, is *automatically generated* from `package.json` by the build process.
 
-### Scripts
+### Development Scripts
 
-*   **`tools/updateVersion.js`**: This Node.js script reads the version from `package.json` and writes it into `src/version.js`. It's typically not run directly but is called by other scripts.
-
-*   **`build-and-test.sh`**: This script is designed for more formal builds or when you want to test a specific version that you've manually set in `package.json`.
-    *   **How to use it:**
-        1.  Manually update the `version` in `package.json` (e.g., `npm version patch`, `npm version minor`, or edit directly).
-        2.  Commit the `package.json` (and `package-lock.json`) changes.
-        3.  Run `./build-and-test.sh`.
-    *   **What it does:**
-        1.  Runs `node tools/updateVersion.js` to update `src/version.js`.
-        2.  Runs `npm run build` (full build).
-        3.  Runs `npm test`.
-    *   **Why use it:** Ensures `src/version.js` is synchronized with `package.json` before a build and that tests pass with the new version.
-
-*   **`dev-bump-build-test.sh`**: This script is tailored for rapid development iterations. It automates bumping to a development version, building, and testing.
+*   **`dev-bump-build-test.sh`**: **Recommended for development iterations**. This script automates bumping to a development version, building, and testing.
     *   **How to use it:** Simply run `./dev-bump-build-test.sh` from the project root.
     *   **What it does:**
         1.  Determines the current version from `package.json`.
-        2.  If the current version is a pre-release (e.g., `0.0.39-dev.0`), it increments the pre-release part (e.g., to `0.0.39-dev.1`).
-        3.  If the current version is a stable release (e.g., `0.0.39`), it first bumps the patch version (e.g., to `0.0.40`) and then creates an initial pre-release (e.g., `0.0.40-dev.0`). This is done using `npm version patch --no-git-tag-version` followed by `npm version prerelease --preid dev --no-git-tag-version`.
+        2.  If the current version is a pre-release (e.g., `1.0.5-dev.0`), it increments the pre-release part (e.g., to `1.0.5-dev.1`).
+        3.  If the current version is a stable release (e.g., `1.0.5`), it adds `-dev.0` to create the first development version (e.g., `1.0.5-dev.0`).
         4.  Runs `node tools/updateVersion.js` to update `src/version.js`.
-        5.  Runs `npm run build` (full build).
-        6.  Runs `npm test`.
-    *   **Why use it:** Streamlines the process of creating new development versions. The `--no-git-tag-version` flag is used with `npm version` to prevent creating git tags automatically during these development bumps, keeping the commit history cleaner. Tags should be created manually for official releases.
+        5.  Runs `npm run build:esm` (fast build for development).
+        6.  Runs `npm test -- tests/SquibView.test.js` (core tests only).
+    *   **Why use it:** Streamlines development by creating traceable dev versions and ensuring core functionality works.
 
-*   **Full Build (ESM, UMD, Standalone):** `npm run build` - This is the standard build command defined in `package.json`, usually invoking Rollup.
-*   **Lite Build (ESM & UMD only, faster for local development):** `npm run build:main && npm run build:esm`. You might need to create a specific `build:lite` script in `package.json` (e.g., `"build:lite": "rollup -c --environment BUILD:main && rollup -c --environment BUILD:esm"`) if one doesn't exist, as suggested in the development plan documents. This can speed up build times during active development by skipping the standalone bundle.
+*   **`build-and-test.sh`**: For formal builds when you want to test a specific version.
+    *   **How to use it:**
+        1.  Manually update the `version` in `package.json` (e.g., `npm version patch`, `npm version minor`, or edit directly).
+        2.  Run `./build-and-test.sh`.
+    *   **What it does:**
+        1.  Runs `node tools/updateVersion.js` to update `src/version.js`.
+        2.  Runs `npm run build` (full build of all targets).
+        3.  Runs `npm test` (all tests).
+
+### Build Targets and Commands
+
+⚠️ **WARNING**: Full builds take significant time (several minutes), especially standalone builds. Use targeted builds during development.
+
+#### Individual Build Commands
+
+*   **`npm run build:esm`** - ES Module build (fastest, ~2 seconds)
+    *   Outputs: `dist/squibview.esm.js`, `dist/squibview.esm.min.js`
+    *   Use: Modern bundlers (Webpack, Vite, etc.)
+
+*   **`npm run build:umd`** - Universal Module Definition build (~3 seconds)
+    *   Outputs: `dist/squibview.umd.js`, `dist/squibview.umd.min.js`
+    *   Use: Browser script tags, RequireJS, CommonJS
+
+*   **`npm run build:standalone`** - Self-contained build with all dependencies (⚠️ ~30+ seconds)
+    *   Outputs: `dist/squibview.standalone.min.js`, `dist/squibview.standalone.esm.js`
+    *   Use: CDN deployment, no external dependencies needed
+
+*   **`npm run build:react`** - React component wrapper
+    *   Outputs: `dist/squibview-react.js`, `dist/squibview-react.min.js`
+
+*   **`npm run build:cli`** - Command-line interface
+    *   Outputs: `cli/` directory with CLI tools
+
+#### Comprehensive Build Commands
+
+*   **`npm run build`** - Builds all library targets (ESM, UMD, Standalone, React, Vue)
+*   **`npm run build:all`** - Builds library + CLI (complete build)
+*   **`npm run build:fast`** - ESM build only (for development)
+
+#### Supporting Build Tools
+
+*   **`npm run updateVersion`** - Updates `src/version.js` from `package.json`
+*   **`npm run minifyCSS`** - Processes and minifies CSS files
+*   **`npm run makeIndexHTML`** - Generates documentation HTML
+
+### Build Architecture Details
+
+1. **Version Management**: `tools/updateVersion.js` reads `package.json` and generates `src/version.js`
+2. **Bundling**: Rollup.js with different configurations for each target
+3. **CSS Processing**: Custom minification via `tools/minifyCSS.cjs`
+4. **Distribution**: All builds output to `dist/` directory
+
+### Version Runtime Access
+
+SquibView reports its version at runtime via:
+```javascript
+console.log(SquibView.version); // e.g., "1.0.5-dev.2"
+console.log(SquibView.version.version); // Version string
+console.log(SquibView.version.url); // Repository URL
+```
+
+### Build Troubleshooting
+
+- **Standalone builds fail**: Often due to dependency compatibility issues
+- **UMD builds not working in browser**: Check `docs/umd-build-configuration.md`
+- **Version mismatch**: Run `npm run updateVersion` manually
+- **CSS issues**: Ensure `npm run minifyCSS` runs after code changes
 
 ## Testing and Debugging
 
