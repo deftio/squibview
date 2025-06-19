@@ -1709,18 +1709,46 @@ class SquibView {
 
           await new Promise((resolve, reject) => {
             tempImg.onload = () => {
-              // Set canvas size to match image
-              canvas.width = tempImg.naturalWidth;
-              canvas.height = tempImg.naturalHeight;
+              // Get intended display dimensions from HTML attributes or CSS
+              const hasWidthAttr = img.getAttribute('width');
+              const hasHeightAttr = img.getAttribute('height');
+              
+              let displayWidth, displayHeight;
+              
+              if (hasWidthAttr && hasHeightAttr) {
+                // Both dimensions specified
+                displayWidth = parseInt(hasWidthAttr);
+                displayHeight = parseInt(hasHeightAttr);
+              } else if (hasWidthAttr && !hasHeightAttr) {
+                // Only width specified - maintain aspect ratio
+                displayWidth = parseInt(hasWidthAttr);
+                displayHeight = Math.round((displayWidth / tempImg.naturalWidth) * tempImg.naturalHeight);
+              } else if (!hasWidthAttr && hasHeightAttr) {
+                // Only height specified - maintain aspect ratio
+                displayHeight = parseInt(hasHeightAttr);
+                displayWidth = Math.round((displayHeight / tempImg.naturalHeight) * tempImg.naturalWidth);
+              } else {
+                // No dimensions specified - use natural size
+                displayWidth = tempImg.naturalWidth;
+                displayHeight = tempImg.naturalHeight;
+              }
+              
+              // Set canvas size to intended display size (not natural size)
+              canvas.width = displayWidth;
+              canvas.height = displayHeight;
 
-              // Draw image to canvas
-              ctx.drawImage(tempImg, 0, 0);
+              // Draw image scaled to intended size
+              ctx.drawImage(tempImg, 0, 0, displayWidth, displayHeight);
 
               // Convert to data URL
               const dataUrl = canvas.toDataURL('image/png', 1.0);
 
-              // Update original image
+              // Update original image with proper sizing
               img.src = dataUrl;
+              img.setAttribute('width', displayWidth.toString());
+              img.setAttribute('height', displayHeight.toString());
+              img.style.width = displayWidth + 'px';
+              img.style.height = displayHeight + 'px';
               resolve();
             };
             tempImg.onerror = reject;
@@ -1799,6 +1827,27 @@ class SquibView {
           svg.parentNode.replaceChild(img, svg);
         } catch (error) {
           console.error('Failed to convert SVG:', error);
+        }
+      }
+
+      // Convert Math elements to PNG (minimal addition)
+      const mathElements = clone.querySelectorAll('.math-display, .mjx-container, mjx-container, [class*="mjx"], [class*="math"]');
+      for (const mathEl of mathElements) {
+        try {
+          const pngBlob = await this.mathToPng(mathEl);
+          const dataUrl = await new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(pngBlob);
+          });
+
+          const img = document.createElement('img');
+          img.src = dataUrl;
+          img.alt = "Math equation";
+          
+          mathEl.parentNode.replaceChild(img, mathEl);
+        } catch (error) {
+          console.error('Failed to convert Math:', error);
         }
       }
 
@@ -2102,6 +2151,240 @@ class SquibView {
       }
     }
     return true;
+  }
+
+  /**
+   * Dynamically loads html2canvas from CDN if not already available.
+   * 
+   * @returns {Promise<void>} A promise that resolves when html2canvas is loaded
+   * @private
+   */
+  async loadHtml2Canvas() {
+    // Return cached promise if already loading
+    if (this._html2canvasLoading) {
+      return this._html2canvasLoading;
+    }
+    
+    // Check if already loaded
+    if (typeof window !== 'undefined' && window.html2canvas) {
+      return Promise.resolve();
+    }
+    
+    // Create loading promise
+    this._html2canvasLoading = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+      script.async = true;
+      
+      // Set timeout
+      const timeout = setTimeout(() => {
+        reject(new Error('html2canvas loading timeout'));
+      }, 10000);
+      
+      script.onload = () => {
+        clearTimeout(timeout);
+        this._html2canvasLoading = null; // Clear cache
+        resolve();
+      };
+      
+      script.onerror = () => {
+        clearTimeout(timeout);
+        this._html2canvasLoading = null; // Clear cache
+        reject(new Error('Failed to load html2canvas'));
+      };
+      
+      document.head.appendChild(script);
+    });
+    
+    return this._html2canvasLoading;
+  }
+
+  /**
+   * Converts a math element to a PNG blob using html2canvas for high-quality capture.
+   * 
+   * @param {HTMLElement} mathElement - The math element to convert
+   * @returns {Promise<Blob>} A promise that resolves with the PNG blob
+   * @private
+   */
+  async mathToPngWithHtml2Canvas(mathElement) {
+    try {
+      // Find the MathJax container within the math element
+      const mjxContainer = mathElement.querySelector('mjx-container') || 
+                          mathElement.querySelector('.mjx-container') ||
+                          mathElement.querySelector('[class*="mjx"]');
+      
+      const targetElement = mjxContainer || mathElement;
+      
+      // Configure html2canvas to avoid permission dialogs and capture properly
+      const canvas = await window.html2canvas(targetElement, {
+        backgroundColor: 'white',
+        scale: 3, // Higher scale for better quality
+        useCORS: false, // Disable CORS to avoid permission dialogs
+        allowTaint: false, // Disable taint to avoid permission dialogs
+        foreignObjectRendering: false, // Disable foreign object rendering
+        removeContainer: true, // Remove the container after capture
+        logging: false, // Disable logging
+        width: targetElement.offsetWidth + 10,
+        height: targetElement.offsetHeight + 10,
+        windowWidth: targetElement.offsetWidth + 10,
+        windowHeight: targetElement.offsetHeight + 10,
+        scrollX: 0,
+        scrollY: 0,
+        x: 0,
+        y: 0
+      });
+      
+      // Convert canvas to blob
+      return new Promise((resolve) => {
+        canvas.toBlob(resolve, 'image/png', 1.0);
+      });
+      
+    } catch (error) {
+      console.error('html2canvas math conversion failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Fallback math to PNG conversion using simple canvas text rendering.
+   * 
+   * @param {HTMLElement} mathElement - The math element to convert
+   * @returns {Promise<Blob>} A promise that resolves with the PNG blob
+   * @private
+   */
+  async mathToPngFallback(mathElement) {
+    return new Promise((resolve, reject) => {
+      try {
+        // Find the MathJax container within the math element
+        const mjxContainer = mathElement.querySelector('mjx-container') || 
+                            mathElement.querySelector('.mjx-container') ||
+                            mathElement.querySelector('[class*="mjx"]');
+        
+        let targetElement = mjxContainer || mathElement;
+        
+        // Get the bounding rectangle of the target element
+        const rect = targetElement.getBoundingClientRect();
+        const scale = 2;
+        const padding = 8;
+        
+        // Use actual dimensions with padding
+        const width = Math.max(rect.width + padding * 2, 100);
+        const height = Math.max(rect.height + padding * 2, 40);
+        
+        // Create canvas
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = width * scale;
+        canvas.height = height * scale;
+        ctx.scale(scale, scale);
+        
+        // Set white background
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, width, height);
+        
+        // Simple approach: render LaTeX source if available, otherwise fall back to text
+        let mathContent = '';
+        
+        // Try to get original LaTeX from the math-display div
+        if (mathElement.classList.contains('math-display')) {
+          const textContent = mathElement.textContent || '';
+          // Extract content between $$ markers
+          const match = textContent.match(/\$\$(.*?)\$\$/);
+          if (match) {
+            mathContent = match[1].trim();
+          }
+        }
+        
+        // If no LaTeX found, use the visible text
+        if (!mathContent) {
+          mathContent = targetElement.textContent || mathElement.textContent || '[Math]';
+          mathContent = mathContent.replace(/\s+/g, ' ').trim();
+        }
+        
+        // Render the math content as text (preserving as much as possible)
+        ctx.fillStyle = 'black';
+        ctx.font = '18px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Handle multi-line content
+        const lines = mathContent.split(/[\n\r]/).filter(line => line.trim());
+        if (lines.length === 0) lines.push(mathContent);
+        
+        const lineHeight = 24;
+        const startY = height / 2 - ((lines.length - 1) * lineHeight) / 2;
+        
+        lines.forEach((line, index) => {
+          ctx.fillText(line.trim(), width / 2, startY + index * lineHeight);
+        });
+        
+        // Convert canvas to blob immediately (no async operations)
+        canvas.toBlob(resolve, 'image/png', 1.0);
+        
+      } catch (error) {
+        console.error('Math to PNG fallback conversion error:', error);
+        
+        // Final fallback - no async operations
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          canvas.width = 200;
+          canvas.height = 50;
+          
+          ctx.fillStyle = 'white';
+          ctx.fillRect(0, 0, 200, 50);
+          
+          ctx.fillStyle = 'black';
+          ctx.font = '16px serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('[Math Expression]', 100, 25);
+          
+          canvas.toBlob(resolve, 'image/png', 1.0);
+        } catch (fallbackError) {
+          reject(fallbackError);
+        }
+      }
+    });
+  }
+
+  /**
+   * Converts a math element to a PNG blob using the best available method.
+   * Currently uses text fallback to avoid browser permission dialogs.
+   * 
+   * @param {HTMLElement} mathElement - The math element to convert
+   * @returns {Promise<Blob>} A promise that resolves with the PNG blob
+   */
+  async mathToPng(mathElement) {
+    try {
+      // For now, skip html2canvas due to permission dialogs and poor MathJax capture
+      // TODO: Implement better visual capture method in future version
+      console.log('Using text-based math rendering to avoid browser permission dialogs');
+      return await this.mathToPngFallback(mathElement);
+      
+      /* Disabled html2canvas approach due to issues:
+      // 1. Check if html2canvas is already available
+      if (typeof window !== 'undefined' && window.html2canvas) {
+        return await this.mathToPngWithHtml2Canvas(mathElement);
+      }
+      
+      // 2. Try to load html2canvas dynamically
+      try {
+        await this.loadHtml2Canvas();
+        return await this.mathToPngWithHtml2Canvas(mathElement);
+      } catch (loadError) {
+        console.log('html2canvas not available, using fallback for math rendering');
+        // 3. Fall back to current text approach
+        return await this.mathToPngFallback(mathElement);
+      }
+      */
+      
+    } catch (error) {
+      console.error('Math to PNG conversion failed, using final fallback:', error);
+      return await this.mathToPngFallback(mathElement);
+    }
   }
 
   /**
