@@ -33,10 +33,8 @@
         // This is the key fix for the copy-paste bug.
         fontCache: 'none'
       }
-      // We are now using the default startup behavior, so no `startup` object is needed.
     };
   </script>
-  <!-- Your original script tag. It works. We will not touch it. -->
   <script id="mjx-core" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 </head>
 <body>
@@ -49,36 +47,36 @@
     <div class="math-example">
       <div style="width:100%">
         <h3>Example 1: Euler’s Identity</h3>
-        <div class="source" contenteditable="true">e^{i\pi} + 1 = 0</div>
+        <!-- The source text is now stored in a data attribute -->
+        <div class="source" contenteditable="true" data-tex="e^{i\pi} + 1 = 0"></div>
       </div>
-      <!-- The TeX code is placed directly in the output div for automatic rendering -->
-      <div class="output">$$e^{i\pi} + 1 = 0$$</div>
+      <div class="output"></div>
     </div>
     <div class="math-example">
       <div style="width:100%">
         <h3>Example 2: Matrix</h3>
-        <div class="source" contenteditable="true">\begin{pmatrix} a & b \\ c & d \end{pmatrix} = \mathbf{X}</div>
+        <div class="source" contenteditable="true" data-tex="\begin{pmatrix} a & b \\ c & d \end{pmatrix} = \mathbf{X}"></div>
       </div>
-      <div class="output">$$\begin{pmatrix} a & b \\ c & d \end{pmatrix} = \mathbf{X}$$</div>
+      <div class="output"></div>
     </div>
     <div class="math-example">
       <div style="width:100%">
         <h3>Example 3: Gaussian Integral</h3>
-        <div class="source" contenteditable="true">\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}</div>
+        <div class="source" contenteditable="true" data-tex="\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}"></div>
       </div>
-      <div class="output">$$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$</div>
+      <div class="output"></div>
     </div>
     <div class="math-example">
       <div style="width:100%">
         <h3>Example 4: Basel Problem</h3>
-        <div class="source" contenteditable="true">\sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}</div>
+        <div class="source" contenteditable="true" data-tex="\sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}"></div>
       </div>
-      <div class="output">$$\sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}$$</div>
+      <div class="output"></div>
     </div>
     <div id="debuglog"></div>
   </main>
   <script>
-    const APP_VERSION = "v18.0.0 (Correct & Final)";
+    const APP_VERSION = "v19.0.0 (Polished)";
 
     function logDebug(msg) {
       const debugDiv = document.getElementById('debuglog');
@@ -88,38 +86,42 @@
       console.log("[MJX DEBUG]", msg);
     }
 
-    // This function efficiently re-renders a single equation after an edit.
-    function rerenderSingle(sourceDiv) {
-        const outputDiv = sourceDiv.closest('.math-example').querySelector('.output');
-        const newTex = sourceDiv.textContent;
-        
+    // This function efficiently re-renders a single equation.
+    function rerenderSingle(outputDiv, tex) {
         // Put the new TeX code into the output div for MathJax to find.
-        outputDiv.innerHTML = `$$${newTex}$$`;
-        
+        outputDiv.innerHTML = `$$${tex}$$`;
         // Tell MathJax to typeset just this one div.
-        MathJax.typesetPromise([outputDiv]).catch(err => logDebug('Typeset error: ' + err));
+        return MathJax.typesetPromise([outputDiv]);
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      // Wait for MathJax to be ready to get the version number.
       MathJax.startup.promise.then(() => {
         document.querySelector('.version').textContent = `${APP_VERSION} / MathJax v${MathJax.version}`;
-        logDebug("MathJax has automatically rendered the page.");
-      });
+        logDebug("MathJax is ready. Initializing content and rendering...");
 
-      // Add event listeners for live editing.
-      document.querySelectorAll('.source').forEach(sourceDiv => {
-          sourceDiv.addEventListener('input', () => {
-              rerenderSingle(sourceDiv);
-          });
+        // Initialize all source and output blocks
+        document.querySelectorAll('.math-example').forEach(example => {
+            const sourceDiv = example.querySelector('.source');
+            const outputDiv = example.querySelector('.output');
+            const initialTex = sourceDiv.getAttribute('data-tex');
+
+            // Set the source div's text content explicitly.
+            sourceDiv.textContent = initialTex;
+            
+            // Do the initial render for this equation.
+            rerenderSingle(outputDiv, initialTex);
+
+            // Add the live-editing listener.
+            sourceDiv.addEventListener('input', () => {
+                rerenderSingle(outputDiv, sourceDiv.textContent);
+            });
+        });
+        
+        logDebug("Page initialized.");
       });
     });
 
     // --- UNCHANGED COPY-PASTE FUNCTIONS ---
-    document.getElementById('copy-math-btn').addEventListener('click', async function () { /* ... */ });
-    document.getElementById('copy-img-btn').addEventListener('click', async function () { /* ... */ });
-
-    // Full helper functions for completeness
     document.getElementById('copy-math-btn').addEventListener('click', async function () {
       const mathDivs = Array.from(document.querySelectorAll('.output'));
       const htmlParts = mathDivs.map(div => div.innerHTML);

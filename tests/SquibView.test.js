@@ -2135,7 +2135,7 @@ describe('Fenced Math Rendering', () => {
 
     expect(appendChildSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        src: expect.stringContaining('mathjax@3/es5/tex-mml-svg.js')
+        src: expect.stringContaining('mathjax@3/es5/tex-svg.js')
       })
     );
     
