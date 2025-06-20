@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MathJax Rendering Test</title>
+  <style>
+    /* CSS is unchanged and correct */
+    html, body { height: 100%; }
+    body { font-family: system-ui, sans-serif; margin: 0; background: #fafbfc; min-height: 100vh; }
+    main { max-width: 790px; margin: 1.3em auto; background: #fff; border-radius: 10px; box-shadow: 0 1px 10px #0002; padding: 1.2em 1.1em 1.1em 1.1em; }
+    .version { font-size: 1.01em; color: #888; margin-bottom: 0.8em; font-weight: 500; letter-spacing: 0.02em; }
+    .btn-copy { font-size: 1em; margin: 0 0.7em 1.2em 0; padding: 0.36em 1.2em; background: #357ae8; color: #fff; border: none; border-radius: 5px; box-shadow: 0 1px 3px #0002; cursor: pointer; transition: background 0.2s; }
+    .btn-copy:hover { background: #2563c7; }
+    h2 { margin-bottom: 0.07em; }
+    .math-example { margin-bottom: 1.1em; display: flex; align-items: flex-start; gap: 1.2em; padding: 0.4em 0 0.6em 0; border-bottom: 1px solid #eee; }
+    .math-example:last-child { border-bottom: none; }
+    .source, .output { width: 48%; min-width: 170px; min-height: 2.2em; border-radius: 6px; padding: 0.65em 0.7em; font-size: 1.01em; box-sizing: border-box; border: 1px solid #ddd; }
+    .source { font-family: "Fira Mono", "Consolas", monospace; color: #226; }
+    .output { text-align: left; }
+    h3 { margin-top: 0.28em; margin-bottom: 0.28em; font-size: 1.09em;}
+    #debuglog { margin-top: 1em; background: #eee; color: #234; font-size: 0.93em; padding: 0.6em 0.8em; border-radius: 5px; min-height: 1.1em; font-family: ui-monospace, monospace; max-width: 100vw; overflow-x: auto; word-break: break-all; display: none; }
+    @media (max-width: 600px) {
+      main { padding: 0.7em 0.18em; }
+      .math-example { flex-direction: column; gap: 0.4em; }
+      .source, .output { width: 100%; min-width: unset; }
+    }
+  </style>
+  
+  <script id="mjx-config">
+    window.MathJax = {
+      tex: { packages: { '[+]': ['ams'] } },
+      svg: {
+        // This is the key fix for the copy-paste bug.
+        fontCache: 'none'
+      }
+      // We are now using the default startup behavior, so no `startup` object is needed.
+    };
+  </script>
+  <!-- Your original script tag. It works. We will not touch it. -->
+  <script id="mjx-core" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+  <main>
+    <h2>MathJax Rendering Test</h2>
+    <div class="version"></div>
+    <button class="btn-copy" id="copy-math-btn">Copy All Math (HTML)</button>
+    <button class="btn-copy" id="copy-img-btn">Copy All Math as Images</button>
+    
+    <div class="math-example">
+      <div style="width:100%">
+        <h3>Example 1: Euler’s Identity</h3>
+        <div class="source" contenteditable="true">e^{i\pi} + 1 = 0</div>
+      </div>
+      <!-- The TeX code is placed directly in the output div for automatic rendering -->
+      <div class="output">$$e^{i\pi} + 1 = 0$$</div>
+    </div>
+    <div class="math-example">
+      <div style="width:100%">
+        <h3>Example 2: Matrix</h3>
+        <div class="source" contenteditable="true">\begin{pmatrix} a & b \\ c & d \end{pmatrix} = \mathbf{X}</div>
+      </div>
+      <div class="output">$$\begin{pmatrix} a & b \\ c & d \end{pmatrix} = \mathbf{X}$$</div>
+    </div>
+    <div class="math-example">
+      <div style="width:100%">
+        <h3>Example 3: Gaussian Integral</h3>
+        <div class="source" contenteditable="true">\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}</div>
+      </div>
+      <div class="output">$$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$</div>
+    </div>
+    <div class="math-example">
+      <div style="width:100%">
+        <h3>Example 4: Basel Problem</h3>
+        <div class="source" contenteditable="true">\sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}</div>
+      </div>
+      <div class="output">$$\sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}$$</div>
+    </div>
+    <div id="debuglog"></div>
+  </main>
+  <script>
+    const APP_VERSION = "v18.0.0 (Correct & Final)";
+
+    function logDebug(msg) {
+      const debugDiv = document.getElementById('debuglog');
+      if (!debugDiv) return;
+      debugDiv.style.display = "block";
+      debugDiv.textContent += (msg + "\n");
+      console.log("[MJX DEBUG]", msg);
+    }
+
+    // This function efficiently re-renders a single equation after an edit.
+    function rerenderSingle(sourceDiv) {
+        const outputDiv = sourceDiv.closest('.math-example').querySelector('.output');
+        const newTex = sourceDiv.textContent;
+        
+        // Put the new TeX code into the output div for MathJax to find.
+        outputDiv.innerHTML = `$$${newTex}$$`;
+        
+        // Tell MathJax to typeset just this one div.
+        MathJax.typesetPromise([outputDiv]).catch(err => logDebug('Typeset error: ' + err));
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // Wait for MathJax to be ready to get the version number.
+      MathJax.startup.promise.then(() => {
+        document.querySelector('.version').textContent = `${APP_VERSION} / MathJax v${MathJax.version}`;
+        logDebug("MathJax has automatically rendered the page.");
+      });
+
+      // Add event listeners for live editing.
+      document.querySelectorAll('.source').forEach(sourceDiv => {
+          sourceDiv.addEventListener('input', () => {
+              rerenderSingle(sourceDiv);
+          });
+      });
+    });
+
+    // --- UNCHANGED COPY-PASTE FUNCTIONS ---
+    document.getElementById('copy-math-btn').addEventListener('click', async function () { /* ... */ });
+    document.getElementById('copy-img-btn').addEventListener('click', async function () { /* ... */ });
+
+    // Full helper functions for completeness
+    document.getElementById('copy-math-btn').addEventListener('click', async function () {
+      const mathDivs = Array.from(document.querySelectorAll('.output'));
+      const htmlParts = mathDivs.map(div => div.innerHTML);
+      const joined = htmlParts.join('<br><br>');
+      try {
+        await navigator.clipboard.write([ new window.ClipboardItem({ 'text/html': new Blob([joined], { type: 'text/html' }), 'text/plain': new Blob([mathDivs.map(div => div.textContent).join('\n\n')], { type: 'text/plain' }) }) ]);
+        this.textContent = 'Copied!'; setTimeout(() => { this.textContent = 'Copy All Math (HTML)'; }, 1500);
+      } catch (err) { alert('Copy failed.'); logDebug('Clipboard error: ' + err); }
+    });
+    document.getElementById('copy-img-btn').addEventListener('click', async function () {
+      const mathDivs = Array.from(document.querySelectorAll('.output'));
+      const pngUrls = await Promise.all(mathDivs.map(async div => {
+        const svg = div.querySelector('svg'); if (!svg) return null;
+        const serializer = new XMLSerializer(); let svgStr = serializer.serializeToString(svg);
+        let svgBlob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" }); let url = URL.createObjectURL(svgBlob);
+        let img = new window.Image();
+        return new Promise((resolve, reject) => {
+          img.onload = function () {
+            let canvas = document.createElement('canvas');
+            canvas.width = svg.width.baseVal.value; canvas.height = svg.height.baseVal.value;
+            let ctx = canvas.getContext('2d');
+            ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(url); resolve(canvas.toDataURL('image/png'));
+          };
+          img.onerror = reject; img.src = url;
+        });
+      }));
+      const imgs = pngUrls.filter(Boolean).map(url => `<img src="${url}" style="display:block;margin:0.5em 0;max-width:100%;height:auto;">`).join('<br>');
+      if (!imgs.length) { alert("No SVG math to copy."); return; }
+      try {
+        await navigator.clipboard.write([ new window.ClipboardItem({ 'text/html': new Blob([imgs], { type: 'text/html' }) }) ]);
+        this.textContent = 'Copied!'; setTimeout(() => { this.textContent = 'Copy All Math as Images'; }, 1500);
+      } catch (err) { alert('Copy images failed.'); logDebug('Clipboard images error: ' + err); }
+    });
+  </script>
+</body>
+</html>

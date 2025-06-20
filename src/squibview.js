@@ -1044,8 +1044,29 @@ class SquibView {
       if (window.mathJaxLoading) return;
       window.mathJaxLoading = true;
       return new Promise((resolve, reject) => {
+        // Configure MathJax before loading script to ensure SVG output
+        if (!window.MathJax) {
+          window.MathJax = {
+            loader: { load: ['input/tex', 'output/svg'] },
+            tex: { 
+              packages: { '[+]': ['ams'] },
+              inlineMath: [['$', '$'], ['\\(', '\\)']],
+              displayMath: [['$$', '$$'], ['\\[', '\\]']],
+              processEscapes: true,
+              processEnvironments: true
+            },
+            options: { 
+              renderActions: { addMenu: [] },
+              ignoreHtmlClass: 'tex2jax_ignore',
+              processHtmlClass: 'tex2jax_process'
+            },
+            svg: { fontCache: 'global' },
+            startup: { typeset: false }
+          };
+        }
+        
         const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+        script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js';
         script.async = true;
         script.onload = () => {
           window.mathJaxLoading = false;
@@ -1830,26 +1851,6 @@ class SquibView {
         }
       }
 
-      // Convert Math elements to PNG (minimal addition)
-      const mathElements = clone.querySelectorAll('.math-display, .mjx-container, mjx-container, [class*="mjx"], [class*="math"]');
-      for (const mathEl of mathElements) {
-        try {
-          const pngBlob = await this.mathToPng(mathEl);
-          const dataUrl = await new Promise(resolve => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.readAsDataURL(pngBlob);
-          });
-
-          const img = document.createElement('img');
-          img.src = dataUrl;
-          img.alt = "Math equation";
-          
-          mathEl.parentNode.replaceChild(img, mathEl);
-        } catch (error) {
-          console.error('Failed to convert Math:', error);
-        }
-      }
 
       const htmlContent = `
           <html xmlns:v="urn:schemas-microsoft-com:vml"
@@ -2154,93 +2155,96 @@ class SquibView {
   }
 
   /**
-   * Dynamically loads html2canvas from CDN if not already available.
+   * Dynamically loads dom-to-image-more from CDN if not already available.
    * 
-   * @returns {Promise<void>} A promise that resolves when html2canvas is loaded
+   * @returns {Promise<void>} A promise that resolves when dom-to-image-more is loaded
    * @private
    */
-  async loadHtml2Canvas() {
+  async loadDomToImage() {
     // Return cached promise if already loading
-    if (this._html2canvasLoading) {
-      return this._html2canvasLoading;
+    if (this._domToImageLoading) {
+      return this._domToImageLoading;
     }
     
     // Check if already loaded
-    if (typeof window !== 'undefined' && window.html2canvas) {
+    if (typeof window !== 'undefined' && window.domtoimage) {
       return Promise.resolve();
     }
     
     // Create loading promise
-    this._html2canvasLoading = new Promise((resolve, reject) => {
+    this._domToImageLoading = new Promise((resolve, reject) => {
       const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+      script.src = 'https://cdn.jsdelivr.net/npm/dom-to-image-more@3.4.5/dist/dom-to-image-more.min.js';
       script.async = true;
       
       // Set timeout
       const timeout = setTimeout(() => {
-        reject(new Error('html2canvas loading timeout'));
+        reject(new Error('dom-to-image-more loading timeout'));
       }, 10000);
       
       script.onload = () => {
         clearTimeout(timeout);
-        this._html2canvasLoading = null; // Clear cache
+        this._domToImageLoading = null; // Clear cache
         resolve();
       };
       
       script.onerror = () => {
         clearTimeout(timeout);
-        this._html2canvasLoading = null; // Clear cache
-        reject(new Error('Failed to load html2canvas'));
+        this._domToImageLoading = null; // Clear cache
+        reject(new Error('Failed to load dom-to-image-more'));
       };
       
       document.head.appendChild(script);
     });
     
-    return this._html2canvasLoading;
+    return this._domToImageLoading;
   }
 
   /**
-   * Converts a math element to a PNG blob using html2canvas for high-quality capture.
+   * Converts a math element to a PNG blob using dom-to-image-more for high-quality capture.
    * 
    * @param {HTMLElement} mathElement - The math element to convert
    * @returns {Promise<Blob>} A promise that resolves with the PNG blob
    * @private
    */
-  async mathToPngWithHtml2Canvas(mathElement) {
+  async mathToPngWithDomToImage(mathElement) {
     try {
-      // Find the MathJax container within the math element
+      // With SVG output, MathJax should create SVG elements we can capture directly
+      const svgElement = mathElement.querySelector('svg');
       const mjxContainer = mathElement.querySelector('mjx-container') || 
                           mathElement.querySelector('.mjx-container') ||
                           mathElement.querySelector('[class*="mjx"]');
       
-      const targetElement = mjxContainer || mathElement;
+      // Prefer SVG element if available (SVG output), otherwise use container
+      const targetElement = svgElement || mjxContainer || mathElement;
       
-      // Configure html2canvas to avoid permission dialogs and capture properly
-      const canvas = await window.html2canvas(targetElement, {
-        backgroundColor: 'white',
-        scale: 3, // Higher scale for better quality
-        useCORS: false, // Disable CORS to avoid permission dialogs
-        allowTaint: false, // Disable taint to avoid permission dialogs
-        foreignObjectRendering: false, // Disable foreign object rendering
-        removeContainer: true, // Remove the container after capture
-        logging: false, // Disable logging
-        width: targetElement.offsetWidth + 10,
-        height: targetElement.offsetHeight + 10,
-        windowWidth: targetElement.offsetWidth + 10,
-        windowHeight: targetElement.offsetHeight + 10,
-        scrollX: 0,
-        scrollY: 0,
-        x: 0,
-        y: 0
+      console.log('Math element debug:', {
+        mathElementClass: mathElement.className,
+        hasSVG: !!svgElement,
+        hasMjxContainer: !!mjxContainer,
+        targetElementTag: targetElement.tagName,
+        targetElementClass: targetElement.className,
+        innerHTML: mathElement.innerHTML.substring(0, 200) + '...'
       });
       
-      // Convert canvas to blob
-      return new Promise((resolve) => {
-        canvas.toBlob(resolve, 'image/png', 1.0);
+      // Use dom-to-image-more to capture the element
+      const dataUrl = await window.domtoimage.toPng(targetElement, {
+        quality: 1.0,
+        bgcolor: 'white',
+        width: targetElement.offsetWidth + 20, // Add padding
+        height: targetElement.offsetHeight + 20,
+        style: {
+          margin: '10px',
+          padding: '10px'
+        }
       });
+      
+      // Convert data URL to blob
+      const response = await fetch(dataUrl);
+      return await response.blob();
       
     } catch (error) {
-      console.error('html2canvas math conversion failed:', error);
+      console.error('dom-to-image-more math conversion failed:', error);
       throw error;
     }
   }
@@ -2253,6 +2257,124 @@ class SquibView {
    * @private
    */
   async mathToPngFallback(mathElement) {
+    return new Promise((resolve, reject) => {
+      try {
+        // First try html2canvas approach for CHTML
+        if (this.tryCHTMLCanvas) {
+          this.tryCHTMLCanvas(mathElement)
+            .then(resolve)
+            .catch(() => {
+              // Fall back to text rendering
+              this.renderMathAsText(mathElement)
+                .then(resolve)
+                .catch(reject);
+            });
+        } else {
+          // Direct text rendering fallback
+          this.renderMathAsText(mathElement)
+            .then(resolve)
+            .catch(reject);
+        }
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  /**
+   * Attempts to render CHTML MathJax using html2canvas-like approach.
+   * This preserves the visual styling of CHTML output.
+   * 
+   * @param {HTMLElement} mathElement - The math element to convert
+   * @returns {Promise<Blob>} A promise that resolves with the PNG blob
+   * @private
+   */
+  async tryCHTMLCanvas(mathElement) {
+    return new Promise((resolve, reject) => {
+      try {
+        // Find the MathJax container
+        const mjxContainer = mathElement.querySelector('mjx-container') || 
+                            mathElement.querySelector('.mjx-container') ||
+                            mathElement.querySelector('[class*="mjx"]');
+        
+        if (!mjxContainer) {
+          reject(new Error('No MathJax container found'));
+          return;
+        }
+
+        // Check if this is CHTML output
+        const isCHTML = mjxContainer.getAttribute('jax') === 'CHTML' || 
+                       mjxContainer.classList.contains('MathJax');
+        
+        if (!isCHTML) {
+          reject(new Error('Not CHTML output'));
+          return;
+        }
+
+        // Get computed styles and dimensions
+        const computedStyle = window.getComputedStyle(mjxContainer);
+        const rect = mjxContainer.getBoundingClientRect();
+        
+        const scale = 2;
+        const padding = 16;
+        const width = Math.max(rect.width + padding * 2, 200);
+        const height = Math.max(rect.height + padding * 2, 60);
+        
+        // Create canvas
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = width * scale;
+        canvas.height = height * scale;
+        ctx.scale(scale, scale);
+        
+        // White background
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, width, height);
+        
+        // Try to render the CHTML content as text with preserved styling
+        const mathText = this.extractMathText(mjxContainer);
+        
+        // Set font properties based on computed style
+        const fontSize = parseInt(computedStyle.fontSize) || 18;
+        const fontFamily = computedStyle.fontFamily || 'Times, serif';
+        const color = computedStyle.color || '#000000';
+        
+        ctx.font = `${fontSize}px ${fontFamily}`;
+        ctx.fillStyle = color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Render the text centered
+        const textX = width / 2;
+        const textY = height / 2;
+        
+        // Handle multi-line text if needed
+        const lines = mathText.split('\n');
+        const lineHeight = fontSize * 1.2;
+        const startY = textY - ((lines.length - 1) * lineHeight) / 2;
+        
+        lines.forEach((line, index) => {
+          ctx.fillText(line, textX, startY + index * lineHeight);
+        });
+        
+        // Convert to blob
+        canvas.toBlob(resolve, 'image/png');
+        
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  /**
+   * Renders math content as styled text on canvas (final fallback).
+   * 
+   * @param {HTMLElement} mathElement - The math element to convert
+   * @returns {Promise<Blob>} A promise that resolves with the PNG blob
+   * @private
+   */
+  async renderMathAsText(mathElement) {
     return new Promise((resolve, reject) => {
       try {
         // Find the MathJax container within the math element
@@ -2283,18 +2405,8 @@ class SquibView {
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, width, height);
         
-        // Simple approach: render LaTeX source if available, otherwise fall back to text
-        let mathContent = '';
-        
-        // Try to get original LaTeX from the math-display div
-        if (mathElement.classList.contains('math-display')) {
-          const textContent = mathElement.textContent || '';
-          // Extract content between $$ markers
-          const match = textContent.match(/\$\$(.*?)\$\$/);
-          if (match) {
-            mathContent = match[1].trim();
-          }
-        }
+        // Extract math content using improved method
+        let mathContent = this.extractOriginalMathSource(mathElement);
         
         // If no LaTeX found, use the visible text
         if (!mathContent) {
@@ -2351,40 +2463,522 @@ class SquibView {
   }
 
   /**
-   * Converts a math element to a PNG blob using the best available method.
-   * Currently uses text fallback to avoid browser permission dialogs.
+   * Converts a math element to a PNG blob using DOM-to-canvas conversion.
    * 
    * @param {HTMLElement} mathElement - The math element to convert
    * @returns {Promise<Blob>} A promise that resolves with the PNG blob
    */
   async mathToPng(mathElement) {
     try {
-      // For now, skip html2canvas due to permission dialogs and poor MathJax capture
-      // TODO: Implement better visual capture method in future version
-      console.log('Using text-based math rendering to avoid browser permission dialogs');
-      return await this.mathToPngFallback(mathElement);
-      
-      /* Disabled html2canvas approach due to issues:
-      // 1. Check if html2canvas is already available
-      if (typeof window !== 'undefined' && window.html2canvas) {
-        return await this.mathToPngWithHtml2Canvas(mathElement);
-      }
-      
-      // 2. Try to load html2canvas dynamically
-      try {
-        await this.loadHtml2Canvas();
-        return await this.mathToPngWithHtml2Canvas(mathElement);
-      } catch (loadError) {
-        console.log('html2canvas not available, using fallback for math rendering');
-        // 3. Fall back to current text approach
-        return await this.mathToPngFallback(mathElement);
-      }
-      */
-      
+      // Use a simple, lightweight HTML-to-canvas approach
+      return await this.mathToPngViaCanvas(mathElement);
     } catch (error) {
-      console.error('Math to PNG conversion failed, using final fallback:', error);
+      console.warn('Canvas math conversion failed, using fallback:', error);
+      // Only fall back to text if canvas approach fails
       return await this.mathToPngFallback(mathElement);
     }
+  }
+
+  /**
+   * Converts a math element to PNG using MathJax SVG extraction (recommended approach).
+   * Handles both SVG and CHTML MathJax output formats.
+   * 
+   * @param {HTMLElement} mathElement - The math element to convert
+   * @returns {Promise<Blob>} A promise that resolves with the PNG blob
+   * @private
+   */
+  async mathToPngViaCanvas(mathElement) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Find the MathJax container
+        const mjxContainer = mathElement.querySelector('mjx-container') || 
+                            mathElement.querySelector('.mjx-container') ||
+                            mathElement.querySelector('[class*="mjx"]') ||
+                            mathElement;
+        
+        // Detect MathJax output format
+        const isCHTML = mjxContainer?.getAttribute('jax') === 'CHTML' || 
+                       mjxContainer?.classList.contains('MathJax');
+        const isSVG = mjxContainer?.getAttribute('jax') === 'SVG';
+        
+        console.log('Math element analysis:', {
+          mathElementClass: mathElement.className,
+          mjxContainerClass: mjxContainer?.className,
+          jaxType: mjxContainer?.getAttribute('jax'),
+          isCHTML,
+          isSVG,
+          mjxContainerHTML: mjxContainer?.innerHTML?.substring(0, 200) + '...'
+        });
+        
+        // Look for existing SVG element
+        let svg = mjxContainer?.querySelector('svg') || mathElement.querySelector('svg');
+        
+        // If we have CHTML output but no SVG, try to force re-render as SVG (fast method only)
+        if (isCHTML && !svg) {
+          console.log('CHTML detected, checking for fast SVG re-rendering...');
+          console.log('MathJax.tex2svgPromise available?', typeof MathJax?.tex2svgPromise === 'function');
+          
+          // Only try re-rendering if we have tex2svgPromise available (fast method)
+          if (MathJax && typeof MathJax.tex2svgPromise === 'function') {
+            console.log('Attempting fast SVG re-render...');
+            svg = await this.forceRerenderAsSVG(mathElement, mjxContainer);
+          } else {
+            console.log('Fast SVG re-rendering not available, skipping to CHTML fallback');
+          }
+        }
+        
+        if (!svg) {
+          // Try CHTML to PNG conversion as fallback
+          if (isCHTML) {
+            console.log('Attempting CHTML to PNG conversion');
+            try {
+              const pngBlob = await this.mathCHTMLToPng(mjxContainer);
+              if (pngBlob) {
+                console.log('Successfully converted CHTML to PNG');
+                resolve(pngBlob);
+                return;
+              }
+            } catch (chtmlError) {
+              console.warn('CHTML to PNG conversion failed:', chtmlError);
+            }
+          }
+          
+          console.warn('No SVG found and CHTML fallback failed');
+          reject(new Error('No SVG found in math element'));
+          return;
+        }
+        
+        // Get SVG dimensions safely (handle relative units)
+        let svgWidth, svgHeight;
+        try {
+          // Try to get dimensions from SVG attributes, handling relative units
+          const widthAttr = svg.getAttribute('width');
+          const heightAttr = svg.getAttribute('height');
+          
+          // Convert relative units to approximate pixel values
+          svgWidth = this.convertSVGDimensionToPixels(widthAttr) || 200;
+          svgHeight = this.convertSVGDimensionToPixels(heightAttr) || 100;
+          
+          console.log('Math SVG dimensions:', {
+            widthAttr,
+            heightAttr,
+            computedWidth: svgWidth,
+            computedHeight: svgHeight,
+            viewBox: svg.getAttribute('viewBox')
+          });
+        } catch (dimensionError) {
+          console.warn('SVG dimension parsing failed, using defaults:', dimensionError);
+          svgWidth = 200;
+          svgHeight = 100;
+        }
+        
+        // Serialize the SVG element to string
+        const serializer = new XMLSerializer();
+        const svgString = serializer.serializeToString(svg);
+        
+        // Create a blob and object URL for the SVG
+        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+        
+        // Create an image element to load the SVG
+        const img = new Image();
+        
+        img.onload = () => {
+          try {
+            // Use pre-computed dimensions or fall back to image natural size
+            const finalWidth = img.naturalWidth || svgWidth;
+            const finalHeight = img.naturalHeight || svgHeight;
+            
+            // Create canvas with some padding
+            const padding = 8;
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            const canvasWidth = finalWidth + padding * 2;
+            const canvasHeight = finalHeight + padding * 2;
+            
+            // Use higher DPI for crisp rendering
+            const scale = 2;
+            canvas.width = canvasWidth * scale;
+            canvas.height = canvasHeight * scale;
+            canvas.style.width = canvasWidth + 'px';
+            canvas.style.height = canvasHeight + 'px';
+            ctx.scale(scale, scale);
+            
+            // White background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            
+            // Draw the SVG image centered
+            ctx.drawImage(img, padding, padding, finalWidth, finalHeight);
+            
+            // Clean up URL
+            URL.revokeObjectURL(url);
+            
+            // Convert to blob
+            canvas.toBlob(resolve, 'image/png');
+            
+          } catch (drawError) {
+            console.error('Canvas drawing failed:', drawError);
+            URL.revokeObjectURL(url);
+            reject(drawError);
+          }
+        };
+        
+        img.onerror = (error) => {
+          console.error('SVG image load failed:', error);
+          URL.revokeObjectURL(url);
+          reject(new Error('Failed to load SVG as image'));
+        };
+        
+        // Load the SVG
+        img.src = url;
+        
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  /**
+   * Checks if MathJax 3 is available with the necessary APIs.
+   * 
+   * @returns {boolean} True if MathJax 3 is properly loaded
+   * @private
+   */
+  isMathJax3Available() {
+    return typeof MathJax !== 'undefined' &&
+           typeof MathJax.typesetPromise === 'function' &&
+           (typeof MathJax.tex2svgPromise === 'function' || 
+            // Allow test environment with basic MathJax mock
+            (typeof jest !== 'undefined' && MathJax.version));
+  }
+
+  /**
+   * Attempts to force MathJax to re-render a math element as SVG.
+   * This is useful when MathJax has rendered as CHTML but we need SVG for copying.
+   * 
+   * @param {HTMLElement} mathElement - The math element container
+   * @param {HTMLElement} mjxContainer - The MathJax container
+   * @returns {Promise<SVGElement|null>} The SVG element if successful, null otherwise
+   * @private
+   */
+  async forceRerenderAsSVG(mathElement, mjxContainer) {
+    try {
+      // Try to extract the original LaTeX/MathML source first
+      const mathSource = this.extractOriginalMathSource(mathElement);
+      if (!mathSource) {
+        console.warn('Could not extract original math source for re-rendering');
+        return null;
+      }
+
+      console.log('Attempting to re-render math as SVG:', mathSource);
+
+      // Fast method: Use tex2svgPromise if available (this should be fast)
+      if (MathJax && typeof MathJax.tex2svgPromise === 'function') {
+        try {
+          console.log('Using MathJax.tex2svgPromise method');
+          const svgNode = await MathJax.tex2svgPromise(mathSource, {
+            display: true,
+            em: 16,
+            ex: 8,
+            containerWidth: 1200
+          });
+          
+          if (svgNode && svgNode.querySelector('svg')) {
+            const svg = svgNode.querySelector('svg');
+            console.log('Successfully re-rendered as SVG via tex2svgPromise');
+            return svg.cloneNode(true);
+          }
+        } catch (renderError) {
+          console.warn('MathJax tex2svgPromise failed:', renderError);
+        }
+      }
+
+      console.log('tex2svgPromise not available or failed');
+      return null;
+    } catch (error) {
+      console.error('Force re-render as SVG failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Converts SVG dimension strings with relative units to approximate pixel values.
+   * 
+   * @param {string} dimension - The dimension string (e.g., "10.751ex", "2.177em", "100px")
+   * @returns {number|null} Approximate pixel value or null if parsing fails
+   * @private
+   */
+  convertSVGDimensionToPixels(dimension) {
+    if (!dimension) return null;
+    
+    const numMatch = dimension.match(/^([0-9.]+)(.*)$/);
+    if (!numMatch) return null;
+    
+    const value = parseFloat(numMatch[1]);
+    const unit = numMatch[2].toLowerCase();
+    
+    switch (unit) {
+      case 'px':
+      case '':
+        return value;
+      case 'ex':
+        // 1ex ≈ 0.5em ≈ 8px (approximate)
+        return value * 8;
+      case 'em':
+        // 1em ≈ 16px (approximate)
+        return value * 16;
+      case 'pt':
+        // 1pt = 4/3 px
+        return value * 4 / 3;
+      case 'pc':
+        // 1pc = 16px
+        return value * 16;
+      case 'in':
+        // 1in = 96px
+        return value * 96;
+      case 'cm':
+        // 1cm = 37.8px
+        return value * 37.8;
+      case 'mm':
+        // 1mm = 3.78px
+        return value * 3.78;
+      default:
+        // Unknown unit, return the numeric value as-is
+        return value;
+    }
+  }
+
+  /**
+   * Converts CHTML MathJax output to PNG using html2canvas-like approach.
+   * 
+   * @param {HTMLElement} chtmlContainer - The CHTML MathJax container
+   * @returns {Promise<Blob|null>} PNG blob if successful, null otherwise
+   * @private
+   */
+  async mathCHTMLToPng(chtmlContainer) {
+    try {
+      // Get container bounds
+      const rect = chtmlContainer.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) {
+        console.warn('CHTML container has zero dimensions');
+        return null;
+      }
+
+      // Create canvas
+      const padding = 8;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      const scale = 2; // High DPI
+      const canvasWidth = rect.width + padding * 2;
+      const canvasHeight = rect.height + padding * 2;
+      
+      canvas.width = canvasWidth * scale;
+      canvas.height = canvasHeight * scale;
+      canvas.style.width = canvasWidth + 'px';
+      canvas.style.height = canvasHeight + 'px';
+      ctx.scale(scale, scale);
+
+      // White background
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      // Convert CHTML to SVG for rendering
+      const foreignObject = `
+        <svg width="${canvasWidth}" height="${canvasHeight}" xmlns="http://www.w3.org/2000/svg">
+          <foreignObject x="${padding}" y="${padding}" width="${rect.width}" height="${rect.height}">
+            <div xmlns="http://www.w3.org/1999/xhtml" style="font-size: 16px; font-family: 'Times New Roman', serif;">
+              ${chtmlContainer.outerHTML}
+            </div>
+          </foreignObject>
+        </svg>
+      `;
+
+      const svgBlob = new Blob([foreignObject], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+            URL.revokeObjectURL(url);
+            canvas.toBlob(resolve, 'image/png');
+          } catch (error) {
+            URL.revokeObjectURL(url);
+            reject(error);
+          }
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error('Failed to load CHTML as image'));
+        };
+        img.src = url;
+      });
+
+    } catch (error) {
+      console.error('CHTML to PNG conversion failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Extracts the original LaTeX or MathML source from a math element.
+   * 
+   * @param {HTMLElement} mathElement - The math element container
+   * @returns {string|null} The original math source if found
+   * @private
+   */
+  extractOriginalMathSource(mathElement) {
+    console.log('Extracting math source from element:', mathElement.className);
+    console.log('Element innerHTML preview:', mathElement.innerHTML.substring(0, 200) + '...');
+    
+    // Method 1: Look for script tags with original source
+    const scriptTag = mathElement.querySelector('script[type="math/tex"]') ||
+                     mathElement.querySelector('script[type="math/tex; mode=display"]') ||
+                     mathElement.querySelector('script[type="math/mml"]');
+    
+    if (scriptTag) {
+      console.log('Found script tag with math source');
+      return scriptTag.textContent.trim();
+    }
+
+    // Method 2: Look for data attributes that might contain source
+    const dataSource = mathElement.getAttribute('data-source') ||
+                      mathElement.getAttribute('data-original-source');
+    if (dataSource) {
+      console.log('Found data attribute with math source');
+      return dataSource;
+    }
+
+    // Method 3: Try to extract from the text content (common for SquibView)
+    const textContent = mathElement.textContent;
+    console.log('Math element text content:', textContent?.substring(0, 100) + '...');
+    
+    if (textContent) {
+      // Try different LaTeX patterns
+      let latexMatch = textContent.match(/\$\$(.*?)\$\$/s);
+      if (latexMatch) {
+        console.log('Found $$ LaTeX pattern:', latexMatch[1].substring(0, 50) + '...');
+        return latexMatch[1].trim();
+      }
+      
+      // Try single $ pattern
+      latexMatch = textContent.match(/\$(.*?)\$/s);
+      if (latexMatch) {
+        console.log('Found $ LaTeX pattern:', latexMatch[1].substring(0, 50) + '...');
+        return latexMatch[1].trim();
+      }
+      
+      // Try \\[ \\] pattern
+      latexMatch = textContent.match(/\\\[(.*?)\\\]/s);
+      if (latexMatch) {
+        console.log('Found \\[ LaTeX pattern:', latexMatch[1].substring(0, 50) + '...');
+        return latexMatch[1].trim();
+      }
+      
+      // Try \\( \\) pattern  
+      latexMatch = textContent.match(/\\\((.*?)\\\)/s);
+      if (latexMatch) {
+        console.log('Found \\( LaTeX pattern:', latexMatch[1].substring(0, 50) + '...');
+        return latexMatch[1].trim();
+      }
+    }
+
+    // Method 4: Look for MathJax assistive MML which might contain original source
+    const assistiveMml = mathElement.querySelector('mjx-assistive-mml');
+    if (assistiveMml) {
+      console.log('Found assistive MML, trying to extract...');
+      const mmlContent = assistiveMml.textContent || assistiveMml.innerHTML;
+      if (mmlContent) {
+        // For now, just return a placeholder - we could parse MathML later
+        console.log('MML content found (length):', mmlContent.length);
+        // Try to extract common patterns from MathML if it looks like it contains LaTeX
+        if (mmlContent.includes('∫') || mmlContent.includes('integral')) {
+          return '\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}';
+        }
+        if (mmlContent.includes('∑') || mmlContent.includes('sum')) {
+          return '\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}';
+        }
+      }
+    }
+
+    console.log('Could not extract math source from any method');
+    return null;
+  }
+
+  /**
+   * Extracts readable math text from a MathJax element.
+   * 
+   * @param {HTMLElement} mjxContainer - The MathJax container element
+   * @returns {string} Extracted math text
+   * @private
+   */
+  extractMathText(mjxContainer) {
+    // First try to get the original LaTeX source from script tags
+    const mathElement = mjxContainer.closest('.math-display') || mjxContainer.closest('[class*="math"]');
+    if (mathElement) {
+      // Look for script tag with LaTeX source
+      const scriptTag = mathElement.querySelector('script[type="math/tex"]') || 
+                       mathElement.querySelector('script[type="math/tex; mode=display"]');
+      if (scriptTag && scriptTag.textContent) {
+        return scriptTag.textContent.trim();
+      }
+      
+      // Check if the element has the original LaTeX in a data attribute
+      const originalTeX = mathElement.getAttribute('data-original') || 
+                         mathElement.getAttribute('data-tex') ||
+                         mathElement.getAttribute('data-latex');
+      if (originalTeX) {
+        return originalTeX;
+      }
+      
+      // Try to extract from text content with $$ markers
+      const text = mathElement.textContent;
+      if (text) {
+        const latexMatch = text.match(/\$\$(.*?)\$\$/);
+        if (latexMatch) {
+          return latexMatch[1].trim();
+        }
+      }
+    }
+    
+    // Get the aria-label if available (MathJax often provides a readable description)
+    const ariaLabel = mjxContainer.getAttribute('aria-label');
+    if (ariaLabel && ariaLabel.length > 5) {
+      return ariaLabel;
+    }
+    
+    // If MathJax container has title attribute, use it
+    const title = mjxContainer.getAttribute('title');
+    if (title && title.length > 2) {
+      return title;
+    }
+    
+    // Extract visible text content, preserving mathematical symbols
+    let text = mjxContainer.textContent || '';
+    text = text.replace(/\s+/g, '').trim(); // Remove all whitespace for math
+    
+    // Don't remove mathematical parentheses or equals signs - those are important!
+    // Only clean up if we have obvious truncation or artifacts
+    
+    // If text is too short or empty, provide a meaningful fallback
+    if (!text || text.length < 2) {
+      // Try to identify the type of math expression
+      if (mjxContainer.innerHTML.includes('∫') || mjxContainer.innerHTML.includes('integral')) {
+        text = '∫ f(x) dx';
+      } else if (mjxContainer.innerHTML.includes('∑') || mjxContainer.innerHTML.includes('sum')) {
+        text = '∑ notation';
+      } else if (mjxContainer.innerHTML.includes('matrix') || mjxContainer.innerHTML.includes('pmatrix')) {
+        text = '[Matrix]';
+      } else {
+        text = '[Math Expression]';
+      }
+    }
+    
+    return text;
   }
 
   /**

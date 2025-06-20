@@ -33,7 +33,27 @@ Also supports Mermaid diagrams and SVG content within fenced code blocks.
     }
   }
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <!-- MathJax configuration for SVG output -->
+  <script>
+    window.MathJax = {
+      loader: { load: ['input/tex', 'output/svg'] },
+      tex: { 
+        packages: { '[+]': ['ams'] },
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true
+      },
+      options: { 
+        renderActions: { addMenu: [] },
+        ignoreHtmlClass: 'tex2jax_ignore',
+        processHtmlClass: 'tex2jax_process'
+      },
+      svg: { fontCache: 'global' },
+      startup: { typeset: false }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
   <!-- end dependencies -->
 
   <style>

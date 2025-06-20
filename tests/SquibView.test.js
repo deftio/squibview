@@ -2092,7 +2092,10 @@ describe('Fenced Math Rendering', () => {
         };
         if (typeof script.onload === 'function') {
           setTimeout(() => {
+            // Add all MathJax 3 APIs that our code expects
             global.MathJax.typesetPromise = jest.fn().mockResolvedValue(undefined);
+            global.MathJax.tex2svgPromise = jest.fn().mockResolvedValue(document.createElement('div'));
+            global.MathJax.version = '3.2.2'; // Mock version string
             script.onload();
             if (global.MathJax.startup && global.MathJax.startup.ready) {
               global.MathJax.startup.ready();
@@ -2132,7 +2135,7 @@ describe('Fenced Math Rendering', () => {
 
     expect(appendChildSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        src: expect.stringContaining('mathjax@3/es5/tex-mml-chtml.js')
+        src: expect.stringContaining('mathjax@3/es5/tex-mml-svg.js')
       })
     );
     

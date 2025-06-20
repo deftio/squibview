@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width">
+  <title>MathJax v3 with TeX input and SVG output — Copy as Images Demo (Blob Robust)</title>
+  <link rel="icon" href="data:;base64,=" />
+  <script>
+    MathJax = {
+      tex: {inlineMath: [['$', '$'], ['\\(', '\\)']]},
+      svg: {fontCache: 'global'}
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #fafbfc; margin: 0; padding: 0 0.8em; }
+    main { max-width: 820px; margin: 1.2em auto 2em auto; background: #fff; border-radius: 9px; box-shadow: 0 2px 12px #0001; padding: 1.5em 1.2em; }
+    h1, h2 { margin-bottom: 0.33em; }
+    button.copy-math-img { margin: 1em 0 1.5em 0; font-size: 1em; padding: 0.48em 1.5em; background: #357ae8; color: #fff; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 2px #0001; transition: background 0.18s; }
+    button.copy-math-img:active { background: #2054a0; }
+    .success-msg { color: #217743; font-size: 1.02em; margin-bottom: 0.9em; }
+    @media (max-width: 600px) {
+      main { padding: 0.7em 0.2em; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>MathJax v3: TeX to SVG — Copy All Math as Images Demo (Blob Robust)</h1>
+    <button class="copy-math-img">Copy All Math as Images</button>
+    <div class="success-msg" id="copy-result" style="display:none;"></div>
+    <div id="math-content">
+      <p>When $a \ne 0$, there are two solutions to \(ax^2 + bx + c = 0\) and they are</p>
+      <p>$$x = {-b \pm \sqrt{b^2-4ac} \over 2a}.$$</p>
+      <h2>The Lorenz Equations</h2>
+      <p>
+      \begin{align}
+      \dot{x} & = \sigma(y-x) \\
+      \dot{y} & = \rho x - y - xz \\
+      \dot{z} & = -\beta z + xy
+      \end{align}
+      </p>
+      <h2>The Cauchy-Schwarz Inequality</h2>
+      <p>\[
+      \left( \sum_{k=1}^n a_k b_k \right)^{\!\!2} \leq
+       \left( \sum_{k=1}^n a_k^2 \right) \left( \sum_{k=1}^n b_k^2 \right)
+      \]</p>
+      <h2>A Cross Product Formula</h2>
+      <p>\[
+        \mathbf{V}_1 \times \mathbf{V}_2 =
+         \begin{vmatrix}
+          \mathbf{i} & \mathbf{j} & \mathbf{k} \\
+          \frac{\partial X}{\partial u} & \frac{\partial Y}{\partial u} & 0 \\
+          \frac{\partial X}{\partial v} & \frac{\partial Y}{\partial v} & 0 \\
+         \end{vmatrix}
+      \]</p>
+      <h2>The probability of getting \(k\) heads when flipping \(n\) coins is:</h2>
+      <p>\[P(E) = {n \choose k} p^k (1-p)^{ n-k} \]</p>
+      <h2>An Identity of Ramanujan</h2>
+      <p>\[
+         \frac{1}{(\sqrt{\phi \sqrt{5}}-\phi) e^{\frac25 \pi}} =
+           1+\frac{e^{-2\pi}} {1+\frac{e^{-4\pi}} {1+\frac{e^{-6\pi}}
+            {1+\frac{e^{-8\pi}} {1+\ldots} } } }
+      \]</p>
+      <h2>A Rogers-Ramanujan Identity</h2>
+      <p>\[
+        1 +  \frac{q^2}{(1-q)}+\frac{q^6}{(1-q)(1-q^2)}+\cdots =
+          \prod_{j=0}^{\infty}\frac{1}{(1-q^{5j+2})(1-q^{5j+3})},
+           \quad\quad \text{for $|q| < 1$}.
+      \]</p>
+      <h2>Maxwell's Equations</h2>
+      <p>
+      \begin{align}
+        \nabla \times \vec{\mathbf{B}} -\, \frac1c\, \frac{\partial\vec{\mathbf{E}}}{\partial t} & = \frac{4\pi}{c}\vec{\mathbf{j}} \\
+        \nabla \cdot \vec{\mathbf{E}} & = 4 \pi \rho \\
+        \nabla \times \vec{\mathbf{E}}\, +\, \frac1c\, \frac{\partial\vec{\mathbf{B}}}{\partial t} & = \vec{\mathbf{0}} \\
+        \nabla \cdot \vec{\mathbf{B}} & = 0
+      \end{align}
+      </p>
+      <h2>In-line Mathematics</h2>
+      <p>Finally, while display equations look good for a page of samples, the
+      ability to mix math and text in a paragraph is also important.  This
+      expression $\sqrt{3x-1}+(1+x)^2$ is an example of an inline equation.  As
+      you see, MathJax equations can be used this way as well, without unduly
+      disturbing the spacing between lines.</p>
+    </div>
+  </main>
+  <script>
+  // Robust Copy Math as Images using Blob URLs for max compatibility
+  document.querySelector('.copy-math-img').addEventListener('click', async function() {
+    await MathJax.startup.promise;
+    // Only grab MathJax SVGs rendered as math, not icons/defs
+    const svgs = Array.from(document.querySelectorAll('#math-content svg[role="img"]'));
+    if (!svgs.length) return alert('No math SVGs found.');
+    // For each SVG, produce a PNG Blob URL, then copy as HTML <img>+<br>
+    const blobUrls = await Promise.all(svgs.map(svg => svgToPngBlobUrl(svg)));
+    const html = blobUrls.map(url => `<img src="${url}" style="max-width:100%;display:block;margin-bottom:0.5em;"><br>`).join('');
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'text/html': new Blob([html], {type: 'text/html'}) })
+      ]);
+      document.getElementById('copy-result').textContent = 'Copied ' + svgs.length + ' math images!';
+      document.getElementById('copy-result').style.display = 'block';
+      setTimeout(()=>{
+        document.getElementById('copy-result').style.display='none';
+      }, 2200);
+    } catch (e) {
+      alert('Could not copy images. This feature requires a modern browser with ClipboardItem image support.');
+    }
+  });
+
+  // SVG to PNG Blob URL (uses getBBox for reliable sizing)
+  async function svgToPngBlobUrl(svg) {
+    const clone = svg.cloneNode(true);
+    clone.removeAttribute('width');
+    clone.removeAttribute('height');
+    const box = svg.getBBox();
+    // Build a standalone SVG string with correct viewBox
+    const serializer = new XMLSerializer();
+    const svgMarkup = `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"${box.x} ${box.y} ${box.width} ${box.height}\">${clone.innerHTML}</svg>`;
+    const svgBlob = new Blob([svgMarkup], {type: 'image/svg+xml'});
+    const svgUrl = URL.createObjectURL(svgBlob);
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      img.onload = function () {
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.ceil(box.width || 1);
+        canvas.height = Math.ceil(box.height || 1);
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(svgUrl);
+        canvas.toBlob(function(blob) {
+          if (!blob) return reject(new Error('Failed to convert SVG to PNG.'));
+          const pngUrl = URL.createObjectURL(blob);
+          resolve(pngUrl);
+        }, 'image/png');
+      };
+      img.onerror = reject;
+      img.src = svgUrl;
+    });
+  }
+  </script>
+</body>
+</html>

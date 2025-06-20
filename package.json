@@ -1,6 +1,6 @@
 {
   "name": "squibview",
-  "version": "1.0.7-dev.21",
+  "version": "1.0.7-dev.41",
   "description": "SquibView is a light weight editor which live-renders mardown (including code, diagrams, etc) or HTML to a browser",
   "keywords": [
     "markdown",
