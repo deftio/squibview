@@ -221,3 +221,23 @@ npm test              # Run tests
 [⭐ Star on GitHub](https://github.com/deftio/squibview) • [📦 npm Package](https://www.npmjs.com/package/squibview) • [🐛 Report Issues](https://github.com/deftio/squibview/issues)
 
 </div>
+
+### UMD Standalone Build
+
+This build bundles all dependencies, including `mermaid` and `highlight.js`.
+
+```html
+<script src="https://unpkg.com/squibview/dist/squibview.standalone.umd.min.js"></script>
+```
+
+The UMD build can also be used with module bundlers if needed.
+
+### Including SquibView in a plain HTML/JS project
+
+The easiest way is to use the standalone UMD build from a CDN:
+
+```html
+<script src="https://unpkg.com/squibview/dist/squibview.standalone.umd.min.js"></script>
+```
+
+This will create a global `SquibView` object you can use.

@@ -73,7 +73,7 @@ const umdConfig = {
 const umdStandaloneConfig = {
   input: 'src/standalone.squibview.js',
   output: {
-    file: 'dist/squibview.standalone.min.js',
+    file: 'dist/squibview.standalone.umd.min.js',
     format: 'umd',
     name: 'SquibView',
     sourcemap: true,

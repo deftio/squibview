@@ -304,3 +304,15 @@ Please make sure your contributions follow the project's coding style and that t
 
 This project is licensed under the BSD-2 License. See the LICENSE file for details.
 
+To use it, you can include the standalone UMD build from the `dist` folder:
+
+```html
+<script src="../dist/squibview.standalone.umd.min.js"></script>
+```
+
+Or from a CDN like unpkg:
+
+```html
+<script src="https://unpkg.com/squibview@latest/dist/squibview.standalone.umd.min.js"></script>
+```
+

@@ -430,3 +430,22 @@ To run the script, navigate to the root of the SquibView repository in your term
 This script is particularly useful for quickly testing changes with an updated version number in a development context without creating git tags.
 
 For more comprehensive information on the development workflow, versioning strategy, running tests, and debugging, please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+
+For browser environments, you can use a `<script>` tag pointing to a CDN:
+
+```html
+<script src="https://unpkg.com/squibview/dist/squibview.standalone.umd.min.js"></script>
+```
+
+Or, if you have it locally:
+
+```html
+<script src="../dist/squibview.standalone.umd.min.js"></script>
+```
+
+### Basic Instantiation
+```javascript
+const editor = new SquibView('#editorContainer', {
+  // Configuration options
+});
+```
