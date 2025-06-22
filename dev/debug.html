@@ -23,15 +23,50 @@ Also supports Mermaid diagrams and SVG content within fenced code blocks.
 
   <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
   <script src="https://unpkg.com/papaparse@5.3.2/papaparse.min.js"></script>
+  <script src="https://unpkg.com/tiny-emitter@2.1.0/dist/tinyemitter.min.js"></script>
+  <script src="https://unpkg.com/diff-match-patch@1.0.5/diff_match_patch.js"></script>
+  <script src="https://unpkg.com/turndown@7.1.2/dist/turndown.js"></script>
+
+  <!-- GeoJSON/TopoJSON mapping dependencies -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+
+  <!-- STL 3D rendering dependency loaded via import map -->
+
+  <!-- Configure Leaflet icon paths -->
+  <script>
+    // Fix Leaflet default icon paths after DOM loads
+    window.addEventListener('DOMContentLoaded', function() {
+      if (typeof L !== 'undefined') {
+        delete L.Icon.Default.prototype._getIconUrl;
+        L.Icon.Default.mergeOptions({
+          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+        });
+      }
+    });
+  </script>
 
   <link rel="stylesheet" href="../dist/squibview.css"/>
   
+  
   <script type="importmap">
-  {
-    "imports": {
-      "markdown-it": "https://esm.sh/markdown-it@12.3.2"
+    {
+      "imports": {
+        "markdown-it": "https://esm.sh/markdown-it@12.3.2",
+        "three": "https://esm.sh/three@0.164.1",
+        "three/addons/": "https://esm.sh/three@0.164.1/examples/jsm/",
+        "tiny-emitter": "https://esm.sh/tiny-emitter@2.1.0",
+        "diff-match-patch": "https://esm.sh/diff-match-patch@1.0.5",
+        "turndown": "https://esm.sh/turndown@7.2.0",
+        "papaparse": "https://esm.sh/papaparse@5.4.1",
+        "highlight.js": "https://esm.sh/highlight.js@11.11.1",
+        "eventemitter3": "https://esm.sh/eventemitter3@5.0.1"
+      }
     }
-  }
+    
   </script>
   <!-- MathJax configuration for SVG output -->
   <script>
@@ -94,11 +129,13 @@ Also supports Mermaid diagrams and SVG content within fenced code blocks.
 
   <script type="module">
     import SquibView from '../dist/squibview.esm.js'; // Load unminified ESM build from dist
+    import * as THREE from 'three'; // Import Three.js as ES module
+    
     window.SquibView = SquibView;  // user can access SquibView from the console
+    window.THREE = THREE;  // Make Three.js available globally for SquibView
     console.log("SquibView version:", SquibView.version.version);
 
     // This is the main code that creates the editor and sets the content
-    // it has nothing to do with the GraphicalMD editor
     const editor = new SquibView('#editorContainer', {
       titleShow: true,
       titleContent: "SquibView Editor : Debug Page " + SquibView.version.version

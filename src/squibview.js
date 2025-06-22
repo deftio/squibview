@@ -242,40 +242,20 @@ class SquibView {
 
       // Handle GeoJSON maps
       if (info === 'geojson') {
-        const geojsonId = 'geojson-' + Math.random().toString(36).substring(2, 15);
-        return `<div id="${geojsonId}" class="geojson-map" data-source-type="geojson" style="width: 100%; height: 300px;"></div>
-                <script>
-                  (function() {
-                    const initMap = function() {
-                      if (typeof L !== 'undefined') {
-                        const mapContainer = document.getElementById('${geojsonId}');
-                        if (mapContainer && !mapContainer.dataset.initialized) {
-                          const map = L.map('${geojsonId}').setView([0, 0], 2);
-                          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                          }).addTo(map);
-                          try {
-                            const geojsonData = JSON.parse(content); // Parse the raw content
-                            const geojsonLayer = L.geoJSON(geojsonData).addTo(map);
-                            map.fitBounds(geojsonLayer.getBounds(), { padding: [20, 20] });
-                            mapContainer.dataset.initialized = 'true';
-                          } catch (e) {
-                            console.error('Error rendering GeoJSON:', e, 'Original content:', content);
-                            mapContainer.innerHTML = '<p style="color: red; text-align: center;">Error rendering GeoJSON map.</p>';
-                            mapContainer.dataset.initialized = 'error';
-                          }
-                        }
-                      } else {
-                        console.warn('Leaflet not loaded when trying to initialize GeoJSON map:', '${geojsonId}');
-                      }
-                    };
-                    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-                        initMap();
-                    } else {
-                        window.addEventListener('load', initMap);
-                    }
-                  })();
-                </script>`;
+        const escapedContent = this.md.utils.escapeHtml(content);
+        return `<div class="geojson-container" data-source-type="geojson">${escapedContent}</div>`;
+      }
+
+      // Handle TopoJSON maps  
+      if (info === 'topojson') {
+        const escapedContent = this.md.utils.escapeHtml(content);
+        return `<div class="topojson-container" data-source-type="topojson">${escapedContent}</div>`;
+      }
+
+      // Handle STL 3D models
+      if (info === 'stl') {
+        const escapedContent = this.md.utils.escapeHtml(content);
+        return `<div class="stl-container" data-source-type="stl">${escapedContent}</div>`;
       }
 
       // Handle mathematical expressions
@@ -1020,6 +1000,12 @@ class SquibView {
 
     // Initialize mermaid diagrams after all images are processed
     mermaid.init(undefined, this.output.querySelectorAll('.mermaid'));
+
+    // Initialize GeoJSON/TopoJSON maps after content is rendered
+    this.initializeGeoRenderers();
+
+    // Initialize STL 3D models after content is rendered
+    this.initializeSTLRenderers();
     
     // Ensure MathJax is loaded and typeset all math blocks
     await this.ensureMathJaxAndTypeset();
@@ -1081,6 +1067,270 @@ class SquibView {
     } else {
       return typesetAll();
     }
+  }
+
+  /**
+   * Initializes GeoJSON and TopoJSON map renderers.
+   * @private
+   */
+  initializeGeoRenderers() {
+    // Skip if output element not yet available (during initial setup)
+    if (!this.output) return;
+    
+    // Initialize GeoJSON containers
+    const geojsonContainers = this.output.querySelectorAll('.geojson-container');
+    geojsonContainers.forEach(container => {
+      if (!container.dataset.initialized) {
+        this.renderGeoJSON(container);
+      }
+    });
+
+    // Initialize TopoJSON containers
+    const topojsonContainers = this.output.querySelectorAll('.topojson-container');
+    topojsonContainers.forEach(container => {
+      if (!container.dataset.initialized) {
+        this.renderTopoJSON(container);
+      }
+    });
+  }
+
+  /**
+   * Initializes STL 3D model renderers.
+   * @private
+   */
+  initializeSTLRenderers() {
+    // Skip if output element not yet available (during initial setup)
+    if (!this.output) return;
+    
+    const stlContainers = this.output.querySelectorAll('.stl-container');
+    stlContainers.forEach(container => {
+      if (!container.dataset.initialized) {
+        this.renderSTL(container);
+      }
+    });
+  }
+
+  /**
+   * Renders a GeoJSON map in the given container.
+   * @param {HTMLElement} container - The container element
+   * @private
+   */
+  renderGeoJSON(container) {
+    try {
+      const originalData = container.textContent;
+      
+      // Store original data for HtmlToMarkdown conversion FIRST
+      container.setAttribute('data-original-source', originalData);
+      
+      if (typeof L === 'undefined') {
+        console.warn('Leaflet not loaded, cannot render GeoJSON');
+        container.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">Leaflet library not loaded</p>';
+        return;
+      }
+
+      const jsonData = JSON.parse(originalData);
+      
+      // Clear container and set up for map
+      container.innerHTML = '';
+      container.style.cssText = 'width: 100%; height: 300px; border: 1px solid #ddd; border-radius: 4px;';
+      
+      // Create unique ID for this map
+      const mapId = 'map-' + Math.random().toString(36).substring(2, 15);
+      container.id = mapId;
+      
+      // Initialize Leaflet map
+      const map = L.map(mapId).setView([0, 0], 2);
+      
+      // Add tile layer
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+      
+      // Add GeoJSON layer
+      const geojsonLayer = L.geoJSON(jsonData).addTo(map);
+      
+      // Fit map to data bounds
+      if (geojsonLayer.getBounds().isValid()) {
+        map.fitBounds(geojsonLayer.getBounds(), { padding: [20, 20] });
+      }
+      
+      container.dataset.initialized = 'true';
+    } catch (error) {
+      console.error('Error rendering GeoJSON:', error);
+      container.innerHTML = '<p style="color: red; text-align: center; padding: 20px;">Error rendering GeoJSON map</p>';
+      container.dataset.initialized = 'error';
+    }
+  }
+
+  /**
+   * Renders a TopoJSON map in the given container.
+   * @param {HTMLElement} container - The container element
+   * @private
+   */
+  renderTopoJSON(container) {
+    try {
+      const originalData = container.textContent;
+      
+      // Store original data for HtmlToMarkdown conversion FIRST
+      container.setAttribute('data-original-source', originalData);
+      
+      if (typeof L === 'undefined') {
+        console.warn('Leaflet not loaded, cannot render TopoJSON');
+        container.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">Leaflet library not loaded</p>';
+        return;
+      }
+
+      if (typeof topojson === 'undefined') {
+        console.warn('TopoJSON client not loaded, cannot render TopoJSON');
+        container.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">TopoJSON client library not loaded</p>';
+        return;
+      }
+
+      const topoData = JSON.parse(originalData);
+      
+      // Convert TopoJSON to GeoJSON
+      const geojsonData = topojson.feature(topoData, Object.keys(topoData.objects)[0]);
+      
+      // Clear container and set up for map
+      container.innerHTML = '';
+      container.style.cssText = 'width: 100%; height: 300px; border: 1px solid #ddd; border-radius: 4px;';
+      
+      // Create unique ID for this map
+      const mapId = 'map-' + Math.random().toString(36).substring(2, 15);
+      container.id = mapId;
+      
+      // Initialize Leaflet map
+      const map = L.map(mapId).setView([0, 0], 2);
+      
+      // Add tile layer
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+      
+      // Add GeoJSON layer
+      const geojsonLayer = L.geoJSON(geojsonData).addTo(map);
+      
+      // Fit map to data bounds
+      if (geojsonLayer.getBounds().isValid()) {
+        map.fitBounds(geojsonLayer.getBounds(), { padding: [20, 20] });
+      }
+      
+      container.dataset.initialized = 'true';
+    } catch (error) {
+      console.error('Error rendering TopoJSON:', error);
+      container.innerHTML = '<p style="color: red; text-align: center; padding: 20px;">Error rendering TopoJSON map</p>';
+      container.dataset.initialized = 'error';
+    }
+  }
+
+  /**
+   * Renders an STL 3D model in the given container.
+   * @param {HTMLElement} container - The container element
+   * @private
+   */
+  renderSTL(container) {
+    try {
+      const originalData = container.textContent;
+      
+      // Store original data for HtmlToMarkdown conversion FIRST
+      container.setAttribute('data-original-source', originalData);
+      
+      if (typeof THREE === 'undefined') {
+        console.warn('Three.js not loaded, cannot render STL');
+        container.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">Three.js library not loaded</p>';
+        return;
+      }
+
+      const stlData = originalData;
+      
+      // Clear container and set up for 3D rendering
+      container.innerHTML = '';
+      container.style.cssText = 'width: 100%; height: 300px; border: 1px solid #ddd; border-radius: 4px; position: relative;';
+      
+      // Create Three.js scene
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, container.offsetWidth / container.offsetHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+      renderer.setClearColor(0xf0f0f0);
+      container.appendChild(renderer.domElement);
+      
+      // Parse STL data (basic ASCII STL parser)
+      const geometry = this.parseSTL(stlData);
+      const material = new THREE.MeshLambertMaterial({ color: 0x606060 });
+      const mesh = new THREE.Mesh(geometry, material);
+      
+      scene.add(mesh);
+      
+      // Add lighting
+      const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+      scene.add(ambientLight);
+      
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(1, 1, 1).normalize();
+      scene.add(directionalLight);
+      
+      // Position camera
+      const box = new THREE.Box3().setFromObject(mesh);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      
+      camera.position.set(center.x + maxDim, center.y + maxDim, center.z + maxDim);
+      camera.lookAt(center);
+      
+      // Animation loop
+      const animate = () => {
+        requestAnimationFrame(animate);
+        mesh.rotation.y += 0.01;
+        renderer.render(scene, camera);
+      };
+      animate();
+      
+      container.dataset.initialized = 'true';
+    } catch (error) {
+      console.error('Error rendering STL:', error);
+      container.innerHTML = '<p style="color: red; text-align: center; padding: 20px;">Error rendering STL model</p>';
+      container.dataset.initialized = 'error';
+    }
+  }
+
+  /**
+   * Basic ASCII STL parser.
+   * @param {string} stlData - The STL file content
+   * @returns {THREE.BufferGeometry} - The parsed geometry
+   * @private
+   */
+  parseSTL(stlData) {
+    const geometry = new THREE.BufferGeometry();
+    const vertices = [];
+    const normals = [];
+    
+    const lines = stlData.split('\n');
+    let currentNormal = null;
+    let vertexCount = 0;
+    
+    for (let line of lines) {
+      line = line.trim();
+      
+      if (line.startsWith('facet normal')) {
+        const parts = line.split(/\s+/);
+        currentNormal = [parseFloat(parts[2]), parseFloat(parts[3]), parseFloat(parts[4])];
+      } else if (line.startsWith('vertex')) {
+        const parts = line.split(/\s+/);
+        vertices.push(parseFloat(parts[1]), parseFloat(parts[2]), parseFloat(parts[3]));
+        if (currentNormal) {
+          normals.push(currentNormal[0], currentNormal[1], currentNormal[2]);
+        }
+        vertexCount++;
+      }
+    }
+    
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+    
+    return geometry;
   }
 
   /**

@@ -2191,3 +2191,136 @@ ${mathContent2}
 describe('Content Rendering', () => {
   // Add more tests for content rendering scenarios
 });
+
+// Test New Fenced Block Renderers
+describe('New Fenced Block Renderers', () => {
+  let container, squibView;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    if (squibView && typeof squibView.destroy === 'function') {
+      squibView.destroy();
+    }
+    squibView = null;
+    if (container && container.parentNode) {
+      container.parentNode.removeChild(container);
+    }
+  });
+
+  test('should render GeoJSON fenced block with correct structure', () => {
+    const geojsonContent = `{
+  "type": "Feature",
+  "geometry": {
+    "type": "Point",
+    "coordinates": [-74.0445, 40.6892]
+  },
+  "properties": {
+    "name": "Statue of Liberty"
+  }
+}`;
+
+    const markdownInput = `# Test\n\n\`\`\`geojson\n${geojsonContent}\n\`\`\``;
+    squibView = new SquibView(container, { initialContent: markdownInput, inputContentType: 'md' });
+
+    const geojsonContainer = squibView.output.querySelector('.geojson-container[data-source-type="geojson"]');
+    expect(geojsonContainer).toBeTruthy();
+    expect(geojsonContainer.getAttribute('data-original-source').trim()).toBe(geojsonContent.trim());
+  });
+
+  test('should render TopoJSON fenced block with correct structure', () => {
+    const topojsonContent = `{
+  "type": "Topology",
+  "objects": {
+    "example": {
+      "type": "GeometryCollection",
+      "geometries": []
+    }
+  }
+}`;
+
+    const markdownInput = `# Test\n\n\`\`\`topojson\n${topojsonContent}\n\`\`\``;
+    squibView = new SquibView(container, { initialContent: markdownInput, inputContentType: 'md' });
+
+    const topojsonContainer = squibView.output.querySelector('.topojson-container[data-source-type="topojson"]');
+    expect(topojsonContainer).toBeTruthy();
+    expect(topojsonContainer.getAttribute('data-original-source').trim()).toBe(topojsonContent.trim());
+  });
+
+  test('should render STL fenced block with correct structure', () => {
+    const stlContent = `solid cube
+  facet normal 0 0 1
+    outer loop
+      vertex 0 0 1
+      vertex 1 0 1
+      vertex 1 1 1
+    endloop
+  endfacet
+endsolid cube`;
+
+    const markdownInput = `# Test\n\n\`\`\`stl\n${stlContent}\n\`\`\``;
+    squibView = new SquibView(container, { initialContent: markdownInput, inputContentType: 'md' });
+
+    const stlContainer = squibView.output.querySelector('.stl-container[data-source-type="stl"]');
+    expect(stlContainer).toBeTruthy();
+    expect(stlContainer.getAttribute('data-original-source').trim()).toBe(stlContent.trim());
+  });
+
+  test('should handle multiple GeoJSON blocks correctly', () => {
+    const geojson1 = `{"type": "Feature", "geometry": {"type": "Point", "coordinates": [0, 0]}}`;
+    const geojson2 = `{"type": "Feature", "geometry": {"type": "Point", "coordinates": [1, 1]}}`;
+
+    const markdownInput = `\`\`\`geojson\n${geojson1}\n\`\`\`\n\nSome text\n\n\`\`\`geojson\n${geojson2}\n\`\`\``;
+    squibView = new SquibView(container, { initialContent: markdownInput, inputContentType: 'md' });
+
+    const geojsonContainers = squibView.output.querySelectorAll('.geojson-container[data-source-type="geojson"]');
+    expect(geojsonContainers.length).toBe(2);
+    expect(geojsonContainers[0].getAttribute('data-original-source').trim()).toBe(geojson1.trim());
+    expect(geojsonContainers[1].getAttribute('data-original-source').trim()).toBe(geojson2.trim());
+  });
+
+  test('should initialize geo and STL renderers', () => {
+    const content = `# Test\n\n\`\`\`geojson\n{"type": "Feature"}\n\`\`\`\n\n\`\`\`stl\nsolid test\n\`\`\``;
+    squibView = new SquibView(container, { initialContent: content, inputContentType: 'md' });
+    
+    // Check that renderer methods exist
+    expect(typeof squibView.renderGeoJSON).toBe('function');
+    expect(typeof squibView.renderTopoJSON).toBe('function');
+    expect(typeof squibView.renderSTL).toBe('function');
+    expect(typeof squibView.initializeGeoRenderers).toBe('function');
+    expect(typeof squibView.initializeSTLRenderers).toBe('function');
+  });
+
+  test('should handle invalid JSON gracefully in GeoJSON', () => {
+    const invalidJson = `invalid json content`;
+    const markdownInput = `# Test\n\n\`\`\`geojson\n${invalidJson}\n\`\`\``;
+    squibView = new SquibView(container, { initialContent: markdownInput, inputContentType: 'md' });
+    
+    const geojsonContainer = squibView.output.querySelector('.geojson-container[data-source-type="geojson"]');
+    expect(geojsonContainer).toBeTruthy();
+    expect(geojsonContainer.getAttribute('data-original-source').trim()).toBe(invalidJson);
+  });
+
+  test('should handle invalid JSON gracefully in TopoJSON', () => {
+    const invalidJson = `invalid topojson content`;
+    const markdownInput = `# Test\n\n\`\`\`topojson\n${invalidJson}\n\`\`\``;
+    squibView = new SquibView(container, { initialContent: markdownInput, inputContentType: 'md' });
+    
+    const topojsonContainer = squibView.output.querySelector('.topojson-container[data-source-type="topojson"]');
+    expect(topojsonContainer).toBeTruthy();
+    expect(topojsonContainer.getAttribute('data-original-source').trim()).toBe(invalidJson);
+  });
+
+  test('should preserve STL data regardless of content format', () => {
+    const stlData = `some random stl-like content\nwith multiple lines\nand spaces`;
+    const markdownInput = `# Test\n\n\`\`\`stl\n${stlData}\n\`\`\``;
+    squibView = new SquibView(container, { initialContent: markdownInput, inputContentType: 'md' });
+    
+    const stlContainer = squibView.output.querySelector('.stl-container[data-source-type="stl"]');
+    expect(stlContainer).toBeTruthy();
+    expect(stlContainer.getAttribute('data-original-source').trim()).toBe(stlData);
+  });
+});

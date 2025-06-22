@@ -139,4 +139,98 @@ function hello() {
     expect(backToMarkdown).not.toContain('<div data-source-type');
     expect(backToMarkdown).not.toContain('<pre><code');
   });
+
+  test('GeoJSON bidirectional editing - rendered to source conversion', async () => {
+    const originalMarkdown = `# Test Doc
+
+\`\`\`geojson
+{
+  "type": "Feature",
+  "geometry": {
+    "type": "Point",
+    "coordinates": [-74.0445, 40.6892]
+  },
+  "properties": {
+    "name": "Statue of Liberty"
+  }
+}
+\`\`\``;
+
+    console.log('=== ORIGINAL GEOJSON MARKDOWN ===');
+    console.log(originalMarkdown);
+
+    const squibView = new SquibView(container, { initialContent: originalMarkdown, inputContentType: 'md' });
+    
+    const renderedHTML = squibView.output.innerHTML;
+    console.log('=== RENDERED HTML ===');
+    console.log(renderedHTML);
+
+    const backToMarkdown = squibView.htmlToMarkdown(renderedHTML);
+    console.log('=== BACK TO MARKDOWN (source view) ===');
+    console.log(backToMarkdown);
+
+    expect(backToMarkdown.trim()).toBe(originalMarkdown.trim());
+  });
+
+  test('TopoJSON bidirectional editing - rendered to source conversion', async () => {
+    const originalMarkdown = `# Test Doc
+
+\`\`\`topojson
+{
+  "type": "Topology",
+  "objects": {
+    "example": {
+      "type": "GeometryCollection",
+      "geometries": []
+    }
+  }
+}
+\`\`\``;
+
+    console.log('=== ORIGINAL TOPOJSON MARKDOWN ===');
+    console.log(originalMarkdown);
+
+    const squibView = new SquibView(container, { initialContent: originalMarkdown, inputContentType: 'md' });
+    
+    const renderedHTML = squibView.output.innerHTML;
+    console.log('=== RENDERED HTML ===');
+    console.log(renderedHTML);
+
+    const backToMarkdown = squibView.htmlToMarkdown(renderedHTML);
+    console.log('=== BACK TO MARKDOWN (source view) ===');
+    console.log(backToMarkdown);
+
+    expect(backToMarkdown.trim()).toBe(originalMarkdown.trim());
+  });
+
+  test('STL bidirectional editing - rendered to source conversion', async () => {
+    const originalMarkdown = `# Test Doc
+
+\`\`\`stl
+solid cube
+  facet normal 0 0 1
+    outer loop
+      vertex 0 0 1
+      vertex 1 0 1
+      vertex 1 1 1
+    endloop
+  endfacet
+endsolid cube
+\`\`\``;
+
+    console.log('=== ORIGINAL STL MARKDOWN ===');
+    console.log(originalMarkdown);
+
+    const squibView = new SquibView(container, { initialContent: originalMarkdown, inputContentType: 'md' });
+    
+    const renderedHTML = squibView.output.innerHTML;
+    console.log('=== RENDERED HTML ===');
+    console.log(renderedHTML);
+
+    const backToMarkdown = squibView.htmlToMarkdown(renderedHTML);
+    console.log('=== BACK TO MARKDOWN (source view) ===');
+    console.log(backToMarkdown);
+
+    expect(backToMarkdown.trim()).toBe(originalMarkdown.trim());
+  });
 });

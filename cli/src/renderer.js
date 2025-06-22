@@ -4,7 +4,7 @@
  */
 
 import { createJSDOMEnvironment } from './jsdom-setup.js';
-import SquibView from '../../dist/squibview.esm.min.js';
+import SquibView from '../../dist/squibview.standalone.esm.min.js';
 
 /**
  * Renders markdown content to HTML using SquibView in a headless environment

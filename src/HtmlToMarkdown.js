@@ -51,6 +51,22 @@ export default class HtmlToMarkdown {
             tempDiv.innerHTML = contentFromHtml; // Let browser parse it
             innerContent = tempDiv.textContent || tempDiv.innerText || ''; // Get text content
             break;
+          case 'geojson':
+          case 'topojson':
+          case 'stl':
+            // For GeoJSON, TopoJSON, and STL, the original data is stored in data-original-source attribute
+            if (node.hasAttribute('data-original-source')) {
+              // The attribute value is HTML-escaped, browser will decode it when getting the attribute
+              innerContent = node.getAttribute('data-original-source');
+            } else if (node.textContent && node.textContent.trim()) {
+              // Fallback to text content if not yet rendered
+              innerContent = node.textContent;
+            } else {
+              // If no original data available, we can't recover it
+              console.warn('[HtmlToMarkdown] Missing original data for', lang, 'block');
+              innerContent = 'Error: Original data lost during rendering';
+            }
+            break;
           case 'svg':
             // The 'node' is the div with data-source-type="svg".
             // For proper round-trip fidelity, use the original source from the data attribute if available
@@ -458,7 +474,7 @@ export default class HtmlToMarkdown {
       let content;
       if (sourceType === 'svg' && div.hasAttribute('data-original-source')) {
         content = div.getAttribute('data-original-source');
-      } else if (['mermaid', 'math', 'geojson'].includes(sourceType) && div.hasAttribute('data-original-source')) {
+      } else if (['mermaid', 'math', 'geojson', 'topojson', 'stl'].includes(sourceType) && div.hasAttribute('data-original-source')) {
         content = div.getAttribute('data-original-source');
       } else if (sourceType === 'csv' || sourceType === 'tsv' || sourceType === 'psv') {
         const tableElement = div.querySelector('table');
@@ -572,7 +588,7 @@ export default class HtmlToMarkdown {
         const type = match[1];
         const content = match[2];
         
-        if (type === 'mermaid' || type === 'svg' || type === 'geojson' || type === 'math') {
+        if (type === 'mermaid' || type === 'svg' || type === 'geojson' || type === 'topojson' || type === 'stl' || type === 'math') {
           originalBlocks.push({
             type,
             content: match[0],
@@ -612,6 +628,26 @@ export default class HtmlToMarkdown {
         const geojsonBlocks = originalBlocks.filter(b => b.type === 'geojson');
         if (geojsonIndex < geojsonBlocks.length) {
           return geojsonBlocks[geojsonIndex++].content;
+        }
+        return match;
+      });
+      
+      // Replace TopoJSON blocks
+      let topojsonIndex = 0;
+      markdown = markdown.replace(/```topojson\s*([\s\S]*?)```/g, (match, content) => {
+        const topojsonBlocks = originalBlocks.filter(b => b.type === 'topojson');
+        if (topojsonIndex < topojsonBlocks.length) {
+          return topojsonBlocks[topojsonIndex++].content;
+        }
+        return match;
+      });
+      
+      // Replace STL blocks
+      let stlIndex = 0;
+      markdown = markdown.replace(/```stl\s*([\s\S]*?)```/g, (match, content) => {
+        const stlBlocks = originalBlocks.filter(b => b.type === 'stl');
+        if (stlIndex < stlBlocks.length) {
+          return stlBlocks[stlIndex++].content;
         }
         return match;
       });

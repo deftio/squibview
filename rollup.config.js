@@ -65,7 +65,41 @@ const umdConfig = {
 };
 
 /* ------------------------------------------------------------------
-   2) "Standalone" UMD Build:
+   2) "Standalone Basic" UMD Build:
+   Bundles core functionality excluding heavy deps like Three.js
+------------------------------------------------------------------ */
+const umdStandaloneBasicConfig = {
+  input: 'src/standalone-basic.squibview.js',
+  output: {
+    file: 'dist/squibview.standalone-basic.umd.min.js',
+    format: 'umd',
+    name: 'SquibView',
+    sourcemap: true,
+    inlineDynamicImports: true,
+  },
+  external: ['debug'],
+  plugins: [
+    // json(), // if needed
+    polyfillNode(),
+    resolve({ extensions, browser: true }),
+    commonjs({
+      include: /node_modules/
+    }),
+    postcss({
+      extract: 'squibview.css',
+      minimize: false
+    }),
+    babel({
+      babelHelpers: 'bundled',
+      extensions,
+      presets: ['@babel/preset-env'],
+    }),
+    terser(),
+  ],
+};
+
+/* ------------------------------------------------------------------
+   3) "Standalone Full" UMD Build:
    Bundles everything (no externals). The user or dev can just drop
    in the one script. Depends on a separate .js entry if you want 
    to orchestrate different imports for bundling everything.
@@ -292,4 +326,5 @@ export default process.env.BUILD === 'react' ? reactConfig :
        process.env.BUILD === 'umd' ? umdConfig :
        process.env.BUILD === 'esm' ? esmRegularConfig :
        process.env.BUILD === 'standalone' ? umdStandaloneConfig :
-       [umdConfig, umdStandaloneConfig, esmRegularConfig, esmStandaloneConfig, reactConfig, vueConfig, htmlToMarkdownConfig];
+       process.env.BUILD === 'standalone-basic' ? umdStandaloneBasicConfig :
+       [umdConfig, umdStandaloneBasicConfig, umdStandaloneConfig, esmRegularConfig, esmStandaloneConfig, reactConfig, vueConfig, htmlToMarkdownConfig];

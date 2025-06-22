@@ -114,6 +114,22 @@ var HtmlToMarkdown = /*#__PURE__*/function () {
               tempDiv.innerHTML = contentFromHtml; // Let browser parse it
               innerContent = tempDiv.textContent || tempDiv.innerText || ''; // Get text content
               break;
+            case 'geojson':
+            case 'topojson':
+            case 'stl':
+              // For GeoJSON, TopoJSON, and STL, the original data is stored in data-original-source attribute
+              if (node.hasAttribute('data-original-source')) {
+                // The attribute value is HTML-escaped, browser will decode it when getting the attribute
+                innerContent = node.getAttribute('data-original-source');
+              } else if (node.textContent && node.textContent.trim()) {
+                // Fallback to text content if not yet rendered
+                innerContent = node.textContent;
+              } else {
+                // If no original data available, we can't recover it
+                console.warn('[HtmlToMarkdown] Missing original data for', lang, 'block');
+                innerContent = 'Error: Original data lost during rendering';
+              }
+              break;
             case 'svg':
               // The 'node' is the div with data-source-type="svg".
               // For proper round-trip fidelity, use the original source from the data attribute if available

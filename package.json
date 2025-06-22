@@ -1,6 +1,6 @@
 {
   "name": "squibview",
-  "version": "1.0.8",
+  "version": "1.0.9-dev.4",
   "description": "SquibView is a light weight editor which live-renders mardown (including code, diagrams, etc) or HTML to a browser",
   "keywords": [
     "markdown",
@@ -92,11 +92,14 @@
     "diff-match-patch": "^1.0.5",
     "highlight.js": "^11.11.1",
     "jsdom": "^26.1.0",
+    "leaflet": "^1.9.4",
     "markdown-it": "^14.1.0",
     "mathjax": "^3.2.2",
     "mermaid": "^11.6.0",
     "papaparse": "^5.4.1",
+    "three": "^0.171.0",
     "tiny-emitter": "^2.1.0",
+    "topojson-client": "^3.1.0",
     "turndown": "^7.2.0"
   }
 }

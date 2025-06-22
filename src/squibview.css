@@ -162,3 +162,87 @@
 .squibview-output .mermaid text.error-text {
     display: none;
 }
+
+/* 
+  GeoJSON/TopoJSON Map Container Styles
+  Scoped to within SquibView's output to avoid global conflicts.
+*/
+.squibview-output .geojson-container,
+.squibview-output .topojson-container {
+    border: 1px solid var(--squibview-border-color);
+    border-radius: 4px;
+    margin: 1em 0;
+    min-height: 300px;
+    width: 100%;
+    position: relative;
+    background-color: var(--squibview-background-color);
+}
+
+/* Styling for containers before rendering (showing loading state) */
+.squibview-output .geojson-container:not([data-initialized]),
+.squibview-output .topojson-container:not([data-initialized]) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-style: italic;
+}
+
+.squibview-output .geojson-container:not([data-initialized])::before,
+.squibview-output .topojson-container:not([data-initialized])::before {
+    content: "Loading map...";
+}
+
+/* Error state styling */
+.squibview-output .geojson-container[data-initialized="error"],
+.squibview-output .topojson-container[data-initialized="error"] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff5f5;
+    border-color: #fc8181;
+}
+
+/* 
+  STL 3D Model Container Styles
+  Scoped to within SquibView's output to avoid global conflicts.
+*/
+.squibview-output .stl-container {
+    border: 1px solid var(--squibview-border-color);
+    border-radius: 4px;
+    margin: 1em 0;
+    min-height: 300px;
+    width: 100%;
+    position: relative;
+    background-color: var(--squibview-background-color);
+    overflow: hidden; /* Prevent 3D canvas overflow */
+}
+
+/* Styling for STL containers before rendering */
+.squibview-output .stl-container:not([data-initialized]) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-style: italic;
+}
+
+.squibview-output .stl-container:not([data-initialized])::before {
+    content: "Loading 3D model...";
+}
+
+/* Error state styling for STL */
+.squibview-output .stl-container[data-initialized="error"] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff5f5;
+    border-color: #fc8181;
+}
+
+/* Ensure Three.js canvas fits container properly */
+.squibview-output .stl-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 3px; /* Slightly less than container to avoid border overlap */
+}

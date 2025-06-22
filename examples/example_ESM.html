@@ -16,16 +16,44 @@ Also supports Mermaid diagrams and SVG content within fenced code blocks.
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
 
+  <!-- Required external dependencies for lean ESM build -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
+  <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://unpkg.com/tiny-emitter@2.1.0/dist/tinyemitter.min.js"></script>
+  <script src="https://unpkg.com/diff-match-patch@1.0.5/diff_match_patch.js"></script>
+  <script src="https://unpkg.com/turndown@7.1.2/dist/turndown.js"></script>
+  
+  <!-- New renderer dependencies -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+
+  <!-- Configure Leaflet icon paths -->
+  <script>
+    // Fix Leaflet default icon paths after DOM loads
+    window.addEventListener('DOMContentLoaded', function() {
+      if (typeof L !== 'undefined') {
+        delete L.Icon.Default.prototype._getIconUrl;
+        L.Icon.Default.mergeOptions({
+          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+        });
+      }
+    });
+  </script>
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/default.min.css">
-
   <link rel="stylesheet" href="../dist/squibview.css">
 
   <script type="importmap">
   {
     "imports": {
-      "markdown-it": "https://esm.sh/markdown-it@12.3.2"
+      "markdown-it": "https://esm.sh/markdown-it@12.3.2",
+      "three": "https://esm.sh/three@0.164.1",
+      "three/addons/": "https://esm.sh/three@0.164.1/examples/jsm/"
     }
   }
   </script>
@@ -77,8 +105,11 @@ Also supports Mermaid diagrams and SVG content within fenced code blocks.
   <div id="editorContainer"></div>
 
   <script type="module">
-    import SquibView from '../dist/squibview.standalone.esm.min.js';
+    import SquibView from '../dist/squibview.esm.min.js';
+    import * as THREE from 'three'; // Import Three.js as ES module
+    
     window.SquibView = SquibView;  // user can access SquibView from the console
+    window.THREE = THREE;  // Make Three.js available globally for SquibView
 
     // This is the main code that creates the editor and sets the content
     // it has nothing to do with the GraphicalMD editor

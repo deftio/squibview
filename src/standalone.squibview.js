@@ -6,6 +6,9 @@ import hljs from 'highlight.js/lib/core';
 import markdownit from 'markdown-it';
 import mermaid from 'mermaid';
 import Papa from 'papaparse';
+import leaflet from 'leaflet';
+import * as topojson from 'topojson-client';
+import * as THREE from 'three';
 
 // Import highlight.js languages
 import javascript from 'highlight.js/lib/languages/javascript';
@@ -23,6 +26,7 @@ import typescript from 'highlight.js/lib/languages/typescript';
 
 // Optionally, import the necessary CSS (if you want them inlined or processed by your CSS plugin)
 import 'highlight.js/styles/default.css';
+import 'leaflet/dist/leaflet.css';
 
 // Register languages with hljs
 hljs.registerLanguage('javascript', javascript);
@@ -49,6 +53,9 @@ window.hljs = hljs;
 window.markdownit = markdownit;
 window.mermaid = mermaid;
 window.Papa = Papa;
+window.L = leaflet;
+window.topojson = topojson;
+window.THREE = THREE;
 
 // Now import SquibView itself
 import SquibView from './squibview.js';
