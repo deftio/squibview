@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Copy Functionality - GeoJSON and STL</title>
+    <link rel="stylesheet" href="dist/squibview.min.css">
+    <style>
+        body { margin: 20px; font-family: Arial, sans-serif; }
+        .test-section { margin-bottom: 30px; padding: 20px; border: 1px solid #ccc; }
+        .copy-output { margin-top: 10px; padding: 10px; background: #f5f5f5; border: 1px solid #ddd; max-height: 300px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test Copy Functionality for GeoJSON and STL Blocks</h1>
+    
+    <div class="test-section">
+        <h2>Test Document</h2>
+        <div id="squibview-container"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Copy HTML Output</h2>
+        <button onclick="testCopyHTML()">Test Copy HTML</button>
+        <div id="copy-output" class="copy-output">
+            <em>Click "Test Copy HTML" to see the formatted output that would be copied to clipboard</em>
+        </div>
+    </div>
+
+    <script src="dist/squibview.standalone.umd.min.js"></script>
+    <script>
+        // Test markdown with GeoJSON and STL blocks
+        const testMarkdown = `# Test Document
+
+## GeoJSON Example
+\`\`\`geojson
+{
+  "type": "Feature",
+  "geometry": {
+    "type": "Point",
+    "coordinates": [-74.0445, 40.6892]
+  },
+  "properties": {
+    "name": "Statue of Liberty"
+  }
+}
+\`\`\`
+
+## STL Example
+\`\`\`stl
+solid cube
+  facet normal 0 0 1
+    outer loop
+      vertex 0 0 1
+      vertex 1 0 1
+      vertex 1 1 1
+    endloop
+  endfacet
+  facet normal 0 0 -1
+    outer loop
+      vertex 0 0 0
+      vertex 1 1 0
+      vertex 1 0 0
+    endloop
+  endfacet
+endsolid cube
+\`\`\`
+
+## Regular Content
+This is regular markdown content for comparison.
+`;
+
+        // Initialize SquibView
+        const container = document.getElementById('squibview-container');
+        const squibView = new SquibView(container, {
+            initialContent: testMarkdown,
+            initialView: 'html'
+        });
+
+        // Test function to simulate copyHTML() and show the output
+        async function testCopyHTML() {
+            const outputDiv = document.getElementById('copy-output');
+            
+            try {
+                const contentDiv = container.querySelector('div[contenteditable="true"]');
+                if (!contentDiv) {
+                    throw new Error('Content div not found');
+                }
+
+                const clone = contentDiv.cloneNode(true);
+
+                // Simulate the same processing that copyHTML() does for GeoJSON and STL
+                // Handle GeoJSON containers
+                clone.querySelectorAll('.geojson-container').forEach(container => {
+                    const originalSource = container.getAttribute('data-original-source');
+                    if (originalSource) {
+                        try {
+                            const geoData = JSON.parse(originalSource);
+                            
+                            const table = document.createElement('table');
+                            table.style.cssText = 'width: 100%; border-collapse: collapse; border: 1px solid #ddd; margin: 0.5em 0;';
+                            
+                            const headerRow = document.createElement('tr');
+                            headerRow.innerHTML = '<td colspan="2" style="background-color: #f5f5f5; padding: 8px; border: 1px solid #ddd; font-weight: bold;">GeoJSON Data</td>';
+                            table.appendChild(headerRow);
+                            
+                            const typeRow = document.createElement('tr');
+                            typeRow.innerHTML = `<td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Type:</td><td style="padding: 8px; border: 1px solid #ddd;">${geoData.type || 'Unknown'}</td>`;
+                            table.appendChild(typeRow);
+                            
+                            if (geoData.geometry && geoData.geometry.coordinates) {
+                                const coordsRow = document.createElement('tr');
+                                const coords = JSON.stringify(geoData.geometry.coordinates);
+                                coordsRow.innerHTML = `<td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Coordinates:</td><td style="padding: 8px; border: 1px solid #ddd;">${coords}</td>`;
+                                table.appendChild(coordsRow);
+                            }
+                            
+                            if (geoData.properties) {
+                                Object.keys(geoData.properties).forEach(key => {
+                                    const propRow = document.createElement('tr');
+                                    propRow.innerHTML = `<td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">${key}:</td><td style="padding: 8px; border: 1px solid #ddd;">${geoData.properties[key]}</td>`;
+                                    table.appendChild(propRow);
+                                });
+                            }
+                            
+                            container.parentNode.replaceChild(table, container);
+                        } catch (error) {
+                            console.error('Error processing GeoJSON:', error);
+                        }
+                    }
+                });
+
+                // Handle STL containers
+                clone.querySelectorAll('.stl-container').forEach(container => {
+                    const originalSource = container.getAttribute('data-original-source');
+                    if (originalSource) {
+                        const table = document.createElement('table');
+                        table.style.cssText = 'width: 100%; border-collapse: collapse; border: 1px solid #ddd; margin: 0.5em 0;';
+                        
+                        const headerRow = document.createElement('tr');
+                        headerRow.innerHTML = '<td colspan="2" style="background-color: #f5f5f5; padding: 8px; border: 1px solid #ddd; font-weight: bold;">STL 3D Model</td>';
+                        table.appendChild(headerRow);
+                        
+                        const lines = originalSource.split('\n');
+                        const solidLine = lines.find(line => line.trim().startsWith('solid'));
+                        const facetCount = (originalSource.match(/facet normal/g) || []).length;
+                        
+                        if (solidLine) {
+                            const modelName = solidLine.replace('solid', '').trim() || 'Unnamed';
+                            const nameRow = document.createElement('tr');
+                            nameRow.innerHTML = `<td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Model Name:</td><td style="padding: 8px; border: 1px solid #ddd;">${modelName}</td>`;
+                            table.appendChild(nameRow);
+                        }
+                        
+                        const facetRow = document.createElement('tr');
+                        facetRow.innerHTML = `<td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Facets:</td><td style="padding: 8px; border: 1px solid #ddd;">${facetCount}</td>`;
+                        table.appendChild(facetRow);
+                        
+                        const formatRow = document.createElement('tr');
+                        formatRow.innerHTML = '<td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Format:</td><td style="padding: 8px; border: 1px solid #ddd;">ASCII STL</td>';
+                        table.appendChild(formatRow);
+                        
+                        container.parentNode.replaceChild(table, container);
+                    }
+                });
+
+                // Show the processed HTML
+                outputDiv.innerHTML = `
+                    <h3>Processed HTML (what would be copied):</h3>
+                    <div style="border: 1px solid #ccc; padding: 10px; background: white;">
+                        ${clone.innerHTML}
+                    </div>
+                `;
+                
+            } catch (error) {
+                outputDiv.innerHTML = `<span style="color: red;">Error: ${error.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>

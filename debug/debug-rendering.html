@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug GeoJSON/STL Rendering</title>
+    <link rel="stylesheet" href="dist/squibview.min.css">
+    <style>
+        body { margin: 20px; font-family: Arial, sans-serif; }
+    </style>
+</head>
+<body>
+    <h1>Debug GeoJSON/STL Rendering</h1>
+    
+    <div id="squibview-container"></div>
+    
+    <h2>Status</h2>
+    <div id="status"></div>
+
+    <script src="dist/squibview.standalone.umd.min.js"></script>
+    <script>
+        // Test markdown with GeoJSON and STL blocks
+        const testMarkdown = `# Debug Test
+
+## GeoJSON Test
+\`\`\`geojson
+{
+  "type": "Feature",
+  "geometry": {
+    "type": "Point",
+    "coordinates": [-122.4194, 37.7749]
+  },
+  "properties": {
+    "name": "San Francisco"
+  }
+}
+\`\`\`
+
+## STL Test
+\`\`\`stl
+solid cube
+  facet normal 0 0 1
+    outer loop
+      vertex 0 0 1
+      vertex 1 0 1
+      vertex 1 1 1
+    endloop
+  endfacet
+endsolid cube
+\`\`\`
+
+## Regular Content
+This should render normally.
+`;
+
+        // Initialize SquibView
+        const container = document.getElementById('squibview-container');
+        const squibView = new SquibView(container, {
+            initialContent: testMarkdown,
+            initialView: 'html'
+        });
+
+        // Check what's actually being rendered
+        setTimeout(() => {
+            const geoContainer = container.querySelector('.geojson-container');
+            const stlContainer = container.querySelector('.stl-container');
+            
+            const status = document.getElementById('status');
+            status.innerHTML = `
+                <h3>Rendering Status:</h3>
+                <p><strong>GeoJSON Container Found:</strong> ${!!geoContainer}</p>
+                <p><strong>GeoJSON Content:</strong> ${geoContainer ? geoContainer.innerHTML.substring(0, 200) + '...' : 'N/A'}</p>
+                <p><strong>STL Container Found:</strong> ${!!stlContainer}</p>
+                <p><strong>STL Content:</strong> ${stlContainer ? stlContainer.innerHTML.substring(0, 200) + '...' : 'N/A'}</p>
+                <p><strong>Leaflet Available:</strong> ${typeof L !== 'undefined'}</p>
+                <p><strong>Three.js Available:</strong> ${typeof THREE !== 'undefined'}</p>
+            `;
+        }, 1000);
+    </script>
+</body>
+</html>

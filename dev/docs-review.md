@@ -9,6 +9,17 @@ The documentation will be restructured around two primary audiences: **Users** a
 -   **For Users:** People who want to use SquibView in their projects or as a CLI tool. They need to know *what* it does and *how* to use it quickly.
 -   **For Contributors:** People who want to fix bugs, add features, or improve the codebase. They need to know *how* the project is built, tested, and structured.
 
+### A Note on File Structure: Many Small vs. Few Long Files
+
+The proposed structure uses multiple, focused Markdown files rather than a few long ones. This is a deliberate choice with the following advantages:
+
+-   **Findability:** It's much easier for a user to find a specific topic (e.g., "CLI Usage") from a clear navigation menu than to scroll through a massive single page.
+-   **Linkability:** We can easily link directly to a specific page or section (e.g., `.../api/02-methods.md#setContent`).
+-   **Maintainability:** Smaller files are easier to update and manage.
+-   **Less Overwhelming:** A new user isn't presented with a "wall of text." They can digest the information in smaller, more manageable chunks.
+
+The key to making this work is excellent navigation. The final documentation site should have a persistent sidebar menu that clearly shows the structure and the user's current location.
+
 ## 2. Proposed Documentation Structure
 
 ```
@@ -29,10 +40,10 @@ squibview/
     │   └── 03-exporting.md        # (New) How to use copy/export functions
     ├── api/
     │   ├── 01-options.md       # (New) Detailed breakdown of all constructor options
-    │   └── 02-methods.md       # (New) Reference for public methods (.setContent, .getContent, etc.)
+    │   └── 02-methods.md       # (New) Ref for public methods (.setContent, .getContent, etc.)
     │   └── 03-events.md        # (New) Documenting the event system
     └── development/
-        ├── 01-build-system.md  # (From CONTRIBUTING.md) Explaining Rollup builds
+        ├── 01-build-system.md  # (From CONTRIBUTING.md) Explaining the build process
         └── 02-testing.md       # (From CONTRIBUTING.md) How to run and debug tests
 ```
 
@@ -94,8 +105,13 @@ squibview/
 #### `development/`
 
 -   This section will contain the detailed information moved from `CONTRIBUTING.md`.
--   **`01-build-system.md`**: The deep dive on Rollup, build targets, and scripts.
--   **`02-testing.md`**: The deep dive on Jest, Puppeteer, and debugging strategies.
+-   **`01-build-system.md`**: The deep dive on the build process. It will cover:
+    -   **Build Types:** Detailed explanations of the UMD, ESM, and CLI builds.
+    -   **Dependency Handling:** A clear breakdown of the different build strategies and when to use them:
+        -   **Library builds:** The standard, lean builds that require external dependencies.
+        -   **Standalone builds:** The fully bundled versions that include all dependencies for easy, drop-in use.
+    -   **How it Works:** An overview of the Rollup configuration and custom build scripts.
+-   **`02-testing.md`**: A comprehensive guide to testing, including Jest, Puppeteer, and debugging strategies.
 
 ## 4. Visuals and Examples
 

@@ -4,7 +4,6 @@
  */
 
 import { createJSDOMEnvironment } from './jsdom-setup.js';
-import SquibView from '../../dist/squibview.standalone.esm.min.js';
 
 /**
  * Renders markdown content to HTML using SquibView in a headless environment
@@ -17,6 +16,10 @@ export async function renderMarkdownToHTML(content, options = {}) {
   const { window, document } = createJSDOMEnvironment();
   
   try {
+    // Dynamically import SquibView using .mjs extension for standalone ESM build
+    const SquibViewModule = await import('../../dist/squibview.standalone.esm.min.mjs');
+    const SquibView = SquibViewModule.default;
+    
     // Get the container element
     const container = document.getElementById('squibview-container');
     if (!container) {

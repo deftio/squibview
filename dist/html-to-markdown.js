@@ -522,7 +522,7 @@ var HtmlToMarkdown = /*#__PURE__*/function () {
         var content;
         if (sourceType === 'svg' && div.hasAttribute('data-original-source')) {
           content = div.getAttribute('data-original-source');
-        } else if (['mermaid', 'math', 'geojson'].includes(sourceType) && div.hasAttribute('data-original-source')) {
+        } else if (['mermaid', 'math', 'geojson', 'topojson', 'stl'].includes(sourceType) && div.hasAttribute('data-original-source')) {
           content = div.getAttribute('data-original-source');
         } else if (sourceType === 'csv' || sourceType === 'tsv' || sourceType === 'psv') {
           var tableElement = div.querySelector('table');
@@ -638,7 +638,7 @@ var HtmlToMarkdown = /*#__PURE__*/function () {
         while ((match = codeBlockRegex.exec(originalSource)) !== null) {
           var type = match[1];
           match[2];
-          if (type === 'mermaid' || type === 'svg' || type === 'geojson' || type === 'math') {
+          if (type === 'mermaid' || type === 'svg' || type === 'geojson' || type === 'topojson' || type === 'stl' || type === 'math') {
             originalBlocks.push({
               type: type,
               content: match[0],
@@ -684,6 +684,30 @@ var HtmlToMarkdown = /*#__PURE__*/function () {
           });
           if (geojsonIndex < geojsonBlocks.length) {
             return geojsonBlocks[geojsonIndex++].content;
+          }
+          return match;
+        });
+
+        // Replace TopoJSON blocks
+        var topojsonIndex = 0;
+        markdown = markdown.replace(/```topojson\s*([\s\S]*?)```/g, function (match, content) {
+          var topojsonBlocks = originalBlocks.filter(function (b) {
+            return b.type === 'topojson';
+          });
+          if (topojsonIndex < topojsonBlocks.length) {
+            return topojsonBlocks[topojsonIndex++].content;
+          }
+          return match;
+        });
+
+        // Replace STL blocks
+        var stlIndex = 0;
+        markdown = markdown.replace(/```stl\s*([\s\S]*?)```/g, function (match, content) {
+          var stlBlocks = originalBlocks.filter(function (b) {
+            return b.type === 'stl';
+          });
+          if (stlIndex < stlBlocks.length) {
+            return stlBlocks[stlIndex++].content;
           }
           return match;
         });

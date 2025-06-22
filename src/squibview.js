@@ -243,19 +243,22 @@ class SquibView {
       // Handle GeoJSON maps
       if (info === 'geojson') {
         const escapedContent = this.md.utils.escapeHtml(content);
-        return `<div class="geojson-container" data-source-type="geojson">${escapedContent}</div>`;
+        const escapedSource = this.md.utils.escapeHtml(content);
+        return `<div class="geojson-container" data-source-type="geojson" data-original-source="${escapedSource}">${escapedContent}</div>`;
       }
 
       // Handle TopoJSON maps  
       if (info === 'topojson') {
         const escapedContent = this.md.utils.escapeHtml(content);
-        return `<div class="topojson-container" data-source-type="topojson">${escapedContent}</div>`;
+        const escapedSource = this.md.utils.escapeHtml(content);
+        return `<div class="topojson-container" data-source-type="topojson" data-original-source="${escapedSource}">${escapedContent}</div>`;
       }
 
       // Handle STL 3D models
       if (info === 'stl') {
         const escapedContent = this.md.utils.escapeHtml(content);
-        return `<div class="stl-container" data-source-type="stl">${escapedContent}</div>`;
+        const escapedSource = this.md.utils.escapeHtml(content);
+        return `<div class="stl-container" data-source-type="stl" data-original-source="${escapedSource}">${escapedContent}</div>`;
       }
 
       // Handle mathematical expressions
@@ -1141,6 +1144,9 @@ class SquibView {
       // Initialize Leaflet map
       const map = L.map(mapId).setView([0, 0], 2);
       
+      // Store map reference for copy functionality
+      window[mapId + '_map'] = map;
+      
       // Add tile layer
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -1255,6 +1261,11 @@ class SquibView {
       renderer.setSize(container.offsetWidth, container.offsetHeight);
       renderer.setClearColor(0xf0f0f0);
       container.appendChild(renderer.domElement);
+      
+      // Store references for copy functionality
+      container._threeScene = scene;
+      container._threeCamera = camera;
+      container._threeRenderer = renderer;
       
       // Parse STL data (basic ASCII STL parser)
       const geometry = this.parseSTL(stlData);
@@ -2084,20 +2095,6 @@ class SquibView {
           img.setAttribute('v:shapes', 'image' + Math.random().toString(36).substr(2, 9));
           img.alt = "Converted diagram";
           
-          console.log('Image replacement debug:', {
-            isMermaidSvg: isMermaidSvg,
-            hasExplicitDimensions: hasExplicitDimensions,
-            svgOriginalWidth: svg.getAttribute('width'),
-            svgOriginalHeight: svg.getAttribute('height'),
-            svgClientWidth: svg.clientWidth,
-            svgClientHeight: svg.clientHeight,
-            calculatedWidth: imgWidth,
-            calculatedHeight: imgHeight,
-            imgWidth: img.width,
-            imgHeight: img.height,
-            imgStyleWidth: img.style.width,
-            imgStyleHeight: img.style.height
-          });
           
           svg.parentNode.replaceChild(img, svg);
         } catch (error) {
@@ -2108,17 +2105,9 @@ class SquibView {
       // Convert Math elements to PNG images using the copy-as-image approach from math-test.html
       const mathElements = Array.from(clone.querySelectorAll('.math-display'));
       if (mathElements.length > 0) {
-        console.log(`Found ${mathElements.length} math elements to convert to images for clipboard`);
         
         for (const mathEl of mathElements) {
           try {
-            console.log('Math element debug:', {
-              className: mathEl.className,
-              innerHTML: mathEl.innerHTML.substring(0, 200) + '...',
-              hasDirectSVG: !!mathEl.querySelector('svg'),
-              hasMjxContainer: !!mathEl.querySelector('mjx-container'),
-              allSVGs: mathEl.querySelectorAll('svg').length
-            });
             
             const svg = mathEl.querySelector('svg');
             if (!svg) {
@@ -2155,7 +2144,6 @@ class SquibView {
                   }
                 }
                 
-                console.log('Math SVG dimensions before scaling:', { width, height });
                 
                 // Scale down math images to reasonable size for documents
                 // MathJax SVGs often have large coordinate systems, scale them down
@@ -2178,7 +2166,6 @@ class SquibView {
                 width *= scaleFactor;
                 height *= scaleFactor;
                 
-                console.log('Math SVG dimensions after scaling:', { width, height, scaleFactor });
                 
                 canvas.width = width;
                 canvas.height = height;
@@ -2212,12 +2199,183 @@ class SquibView {
             imgElement.style.cssText = 'display:block;margin:0.5em 0;max-width:100%;height:auto;';
             imgElement.alt = 'Math equation';
             
-            console.log('Successfully converted math element to PNG image for clipboard');
             mathEl.parentNode.replaceChild(imgElement, mathEl);
           } catch (error) {
             console.error('Failed to convert math element to image:', error);
             // Keep the original element if conversion fails
           }
+        }
+      }
+
+      // Handle GeoJSON containers - convert canvas to image
+      const geojsonContainers = clone.querySelectorAll('.geojson-container');
+      for (const container of geojsonContainers) {
+        try {
+          // Find the corresponding GeoJSON container in the original DOM by searching with proper escaping
+          const originalSource = container.getAttribute('data-original-source');
+          if (!originalSource) {
+            console.warn('No original source found for GeoJSON container');
+            throw new Error('No original source');
+          }
+
+          // Find original container more reliably
+          let originalContainer = null;
+          const allOriginalContainers = this.output.querySelectorAll('.geojson-container');
+          for (const candidate of allOriginalContainers) {
+            if (candidate.getAttribute('data-original-source') === originalSource) {
+              originalContainer = candidate;
+              break;
+            }
+          }
+          
+          if (originalContainer) {
+            try {
+              // Use div-to-image conversion to capture the entire container
+              const dataUrl = await this.divToDataUrl(originalContainer);
+              if (dataUrl) {
+                const img = document.createElement('img');
+                img.src = dataUrl;
+                img.style.cssText = 'width: 100%; height: 300px; border: 1px solid #ddd; border-radius: 4px; margin: 0.5em 0;';
+                img.alt = 'GeoJSON Map';
+                
+                // Replace the container with the image
+                container.parentNode.replaceChild(img, container);
+                continue;
+              }
+            } catch (error) {
+              console.warn('Failed to convert GeoJSON container to image:', error);
+            }
+          } else {
+            console.warn('Could not find original GeoJSON container');
+          }
+          
+          // Fallback to placeholder if canvas conversion fails
+          const placeholder = document.createElement('div');
+          placeholder.style.cssText = 'padding: 12px; background-color: #f0f0f0; border: 1px solid #ccc; text-align: center; margin: 0.5em 0;';
+          placeholder.textContent = '[GeoJSON Map - Interactive content not available in copy]';
+          container.parentNode.replaceChild(placeholder, container);
+        } catch (error) {
+          console.error('Error processing GeoJSON container for copy:', error);
+          // Fallback to placeholder
+          const placeholder = document.createElement('div');
+          placeholder.style.cssText = 'padding: 12px; background-color: #f0f0f0; border: 1px solid #ccc; text-align: center; margin: 0.5em 0;';
+          placeholder.textContent = '[GeoJSON Map - Interactive content not available in copy]';
+          container.parentNode.replaceChild(placeholder, container);
+        }
+      }
+
+      // Handle TopoJSON containers - convert to structured data tables
+      clone.querySelectorAll('.topojson-container').forEach(container => {
+        const originalSource = container.getAttribute('data-original-source');
+        if (originalSource) {
+          try {
+            const topoData = JSON.parse(originalSource);
+            
+            // Create a simple table showing TopoJSON data
+            const table = document.createElement('table');
+            table.style.cssText = 'width: 100%; border-collapse: collapse; border: 1px solid #ddd; margin: 0.5em 0;';
+            
+            const headerRow = document.createElement('tr');
+            headerRow.innerHTML = '<td colspan="2" style="background-color: #f5f5f5; padding: 8px; border: 1px solid #ddd; font-weight: bold;">TopoJSON Data</td>';
+            table.appendChild(headerRow);
+            
+            const typeRow = document.createElement('tr');
+            typeRow.innerHTML = `<td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Type:</td><td style="padding: 8px; border: 1px solid #ddd;">${topoData.type || 'Unknown'}</td>`;
+            table.appendChild(typeRow);
+            
+            if (topoData.objects) {
+              const objectsRow = document.createElement('tr');
+              const objectNames = Object.keys(topoData.objects).join(', ');
+              objectsRow.innerHTML = `<td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Objects:</td><td style="padding: 8px; border: 1px solid #ddd;">${objectNames}</td>`;
+              table.appendChild(objectsRow);
+            }
+            
+            container.parentNode.replaceChild(table, container);
+          } catch (error) {
+            // If JSON parsing fails, create a simple text block
+            const textBlock = document.createElement('div');
+            textBlock.style.cssText = 'padding: 12px; background-color: #f5f5f5; border: 1px solid #ddd; font-family: monospace; white-space: pre-wrap; margin: 0.5em 0;';
+            textBlock.textContent = `TopoJSON Data:\n${originalSource}`;
+            container.parentNode.replaceChild(textBlock, container);
+          }
+        } else {
+          // No original source, replace with placeholder
+          const placeholder = document.createElement('div');
+          placeholder.style.cssText = 'padding: 12px; background-color: #f0f0f0; border: 1px solid #ccc; text-align: center; margin: 0.5em 0;';
+          placeholder.textContent = '[TopoJSON Map - Interactive content not available in copy]';
+          container.parentNode.replaceChild(placeholder, container);
+        }
+      });
+
+      // Handle STL containers - convert canvas to image
+      const stlContainers = clone.querySelectorAll('.stl-container');
+      for (const container of stlContainers) {
+        try {
+          // Find the corresponding STL container in the original DOM by searching with proper escaping
+          const originalSource = container.getAttribute('data-original-source');
+          if (!originalSource) {
+            console.warn('No original source found for STL container');
+            throw new Error('No original source');
+          }
+
+          // Find original container more reliably
+          let originalContainer = null;
+          const allOriginalContainers = this.output.querySelectorAll('.stl-container');
+          for (const candidate of allOriginalContainers) {
+            if (candidate.getAttribute('data-original-source') === originalSource) {
+              originalContainer = candidate;
+              break;
+            }
+          }
+          
+          if (originalContainer) {
+            // Look for canvas element in the original container (Three.js WebGL canvas)
+            const canvas = originalContainer.querySelector('canvas');
+            if (canvas && canvas.width > 0 && canvas.height > 0) {
+              try {
+                // Ensure the Three.js scene is rendered before capturing
+                // The renderer should be accessible through the canvas or container
+                const renderer = canvas._threeRenderer || originalContainer._threeRenderer;
+                const scene = originalContainer._threeScene;
+                const camera = originalContainer._threeCamera;
+                
+                // If we have access to the Three.js objects, render the scene
+                if (renderer && scene && camera) {
+                  renderer.render(scene, camera);
+                }
+                
+                // Create image from canvas with error handling for WebGL context
+                const dataUrl = canvas.toDataURL('image/png', 1.0);
+                const img = document.createElement('img');
+                img.src = dataUrl;
+                img.style.cssText = 'width: 100%; height: 300px; border: 1px solid #ddd; border-radius: 4px; margin: 0.5em 0;';
+                img.alt = 'STL 3D Model';
+                
+                // Replace the container with the image
+                container.parentNode.replaceChild(img, container);
+                continue;
+              } catch (error) {
+                console.warn('Failed to convert STL canvas to image (likely WebGL context issue):', error);
+              }
+            } else {
+              console.warn('No valid canvas found in STL container');
+            }
+          } else {
+            console.warn('Could not find original STL container');
+          }
+          
+          // Fallback to placeholder if canvas conversion fails
+          const placeholder = document.createElement('div');
+          placeholder.style.cssText = 'padding: 12px; background-color: #f0f0f0; border: 1px solid #ccc; text-align: center; margin: 0.5em 0;';
+          placeholder.textContent = '[STL 3D Model - Interactive content not available in copy]';
+          container.parentNode.replaceChild(placeholder, container);
+        } catch (error) {
+          console.error('Error processing STL container for copy:', error);
+          // Fallback to placeholder
+          const placeholder = document.createElement('div');
+          placeholder.style.cssText = 'padding: 12px; background-color: #f0f0f0; border: 1px solid #ccc; text-align: center; margin: 0.5em 0;';
+          placeholder.textContent = '[STL 3D Model - Interactive content not available in copy]';
+          container.parentNode.replaceChild(placeholder, container);
         }
       }
 
@@ -2352,19 +2510,6 @@ class SquibView {
                     svgElement.clientHeight || 300;
       }
 
-      // Debug logging
-      console.log('SVG Debug Info:', {
-        isMermaidSvg: isMermaidSvg,
-        hasExplicitDimensions: hasExplicitDimensions,
-        width: svgElement.getAttribute('width'),
-        height: svgElement.getAttribute('height'),
-        clientWidth: svgElement.clientWidth,
-        clientHeight: svgElement.clientHeight,
-        viewBox: svgElement.viewBox ? svgElement.viewBox.baseVal : null,
-        calculatedWidth: svgWidth,
-        calculatedHeight: svgHeight,
-        svgString: svgString.substring(0, 200) + '...'
-      });
 
       // Ensure the SVG string has explicit dimensions by modifying it if necessary
       let modifiedSvgString = svgString;
@@ -2380,7 +2525,6 @@ class SquibView {
         }
       }
 
-      console.log('Modified SVG string:', modifiedSvgString.substring(0, 200) + '...');
 
       canvas.width = svgWidth * scale;
       canvas.height = svgHeight * scale;
@@ -2901,6 +3045,195 @@ class SquibView {
   toggleLinefeedView() {
     this.linefeedViewEnabled = !this.linefeedViewEnabled;
     this.renderOutput();
+  }
+
+  /**
+   * Converts a DOM element to a data URL image.
+   * @param {HTMLElement} element - The DOM element to convert
+   * @returns {Promise<string>} A promise that resolves with the data URL
+   */
+  async divToDataUrl(element) {
+    return new Promise((resolve, reject) => {
+      try {
+        // Get the element's dimensions
+        const rect = element.getBoundingClientRect();
+        const width = rect.width || 400;
+        const height = rect.height || 300;
+
+        // Special handling for Leaflet maps (GeoJSON containers)
+        if (element.classList.contains('geojson-container') || element.id && element.id.startsWith('map-')) {
+          // Try to access the Leaflet map instance
+          const mapId = element.id;
+          if (typeof L !== 'undefined' && mapId && window[mapId + '_map']) {
+            const map = window[mapId + '_map'];
+            
+            // Use Leaflet's built-in screenshot functionality if available
+            if (map.getContainer) {
+              try {
+                // Create a canvas from the map container using html2canvas-like approach
+                const mapContainer = map.getContainer();
+                const mapRect = mapContainer.getBoundingClientRect();
+                
+                // Create canvas and draw the map tiles
+                const canvas = document.createElement('canvas');
+                canvas.width = mapRect.width;
+                canvas.height = mapRect.height;
+                const ctx = canvas.getContext('2d');
+                
+                // White background
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Try to capture tile layers
+                const tileLayers = mapContainer.querySelectorAll('.leaflet-tile');
+                let tilesLoaded = 0;
+                const totalTiles = tileLayers.length;
+                
+                if (totalTiles === 0) {
+                  // No tiles, just return white canvas
+                  const dataUrl = canvas.toDataURL('image/png', 1.0);
+                  resolve(dataUrl);
+                  return;
+                }
+                
+                // Load and draw each tile
+                for (const tile of tileLayers) {
+                  const img = new Image();
+                  img.crossOrigin = 'anonymous';
+                  
+                  img.onload = () => {
+                    try {
+                      const tileRect = tile.getBoundingClientRect();
+                      const offsetX = tileRect.left - mapRect.left;
+                      const offsetY = tileRect.top - mapRect.top;
+                      
+                      ctx.drawImage(img, offsetX, offsetY, tileRect.width, tileRect.height);
+                    } catch (e) {
+                      console.warn('Failed to draw tile:', e);
+                    }
+                    
+                    tilesLoaded++;
+                    if (tilesLoaded === totalTiles) {
+                      // All tiles loaded, now draw SVG overlays
+                      const svgElements = mapContainer.querySelectorAll('svg');
+                      for (const svg of svgElements) {
+                        if (svg.classList.contains('leaflet-attribution-flag')) continue;
+                        
+                        try {
+                          const svgRect = svg.getBoundingClientRect();
+                          const svgOffsetX = svgRect.left - mapRect.left;
+                          const svgOffsetY = svgRect.top - mapRect.top;
+                          
+                          // Convert SVG to image and draw it
+                          const svgData = new XMLSerializer().serializeToString(svg);
+                          const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                          const svgUrl = URL.createObjectURL(svgBlob);
+                          
+                          const svgImg = new Image();
+                          svgImg.onload = () => {
+                            ctx.drawImage(svgImg, svgOffsetX, svgOffsetY);
+                            URL.revokeObjectURL(svgUrl);
+                          };
+                          svgImg.src = svgUrl;
+                        } catch (e) {
+                          console.warn('Failed to draw SVG overlay:', e);
+                        }
+                      }
+                      
+                      const dataUrl = canvas.toDataURL('image/png', 1.0);
+                      resolve(dataUrl);
+                    }
+                  };
+                  
+                  img.onerror = () => {
+                    tilesLoaded++;
+                    if (tilesLoaded === totalTiles) {
+                      const dataUrl = canvas.toDataURL('image/png', 1.0);
+                      resolve(dataUrl);
+                    }
+                  };
+                  
+                  img.src = tile.src;
+                }
+                
+                return;
+              } catch (error) {
+                console.warn('Leaflet-specific approach failed:', error);
+              }
+            }
+          }
+        }
+
+        // First try to find existing canvas or SVG elements
+        const canvas = element.querySelector('canvas');
+        if (canvas && canvas.width > 0 && canvas.height > 0) {
+          try {
+            const dataUrl = canvas.toDataURL('image/png', 1.0);
+            resolve(dataUrl);
+            return;
+          } catch (error) {
+            console.warn('Canvas toDataURL failed, trying SVG approach:', error);
+          }
+        }
+
+        // Try to find SVG elements
+        const svgs = element.querySelectorAll('svg');
+        if (svgs.length > 0) {
+          // Find the largest SVG (excluding small attribution icons)
+          let bestSvg = null;
+          let maxArea = 0;
+          
+          for (const svg of svgs) {
+            if (svg.classList.contains('leaflet-attribution-flag')) continue;
+            
+            const svgWidth = svg.clientWidth || parseFloat(svg.getAttribute('width')) || 0;
+            const svgHeight = svg.clientHeight || parseFloat(svg.getAttribute('height')) || 0;
+            const area = svgWidth * svgHeight;
+            
+            if (area > maxArea && area > 100) {
+              maxArea = area;
+              bestSvg = svg;
+            }
+          }
+          
+          if (bestSvg) {
+            try {
+              this.svgToPng(bestSvg).then(pngBlob => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.readAsDataURL(pngBlob);
+              }).catch(reject);
+              return;
+            } catch (error) {
+              console.warn('SVG conversion failed, trying simple approach:', error);
+            }
+          }
+        }
+
+        // Simple fallback: create a placeholder image
+        const fallbackCanvas = document.createElement('canvas');
+        fallbackCanvas.width = width;
+        fallbackCanvas.height = height;
+        const ctx = fallbackCanvas.getContext('2d');
+        
+        // White background
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, width, height);
+        
+        // Draw simple text indicating content type
+        ctx.fillStyle = '#666';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('GeoJSON Map', width / 2, height / 2);
+        ctx.fillText('(Interactive content)', width / 2, height / 2 + 20);
+        
+        const dataUrl = fallbackCanvas.toDataURL('image/png', 1.0);
+        resolve(dataUrl);
+        
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 }
 
