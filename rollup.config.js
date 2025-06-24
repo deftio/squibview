@@ -224,7 +224,7 @@ const esmStandaloneConfig = {
 ------------------------------------------------------------------ */
 const reactConfig = {
   input: 'src/SquibViewReact.js',
-  external: ['https://esm.sh/react@18.2.0', '../dist/squibview.esm.js'], // Update SquibView path
+  external: ['https://esm.sh/react@18.2.0', './squibview.esm.min.js'],
   output: [
     {
       file: 'dist/squibview-react.js',
@@ -260,7 +260,7 @@ const reactConfig = {
 ------------------------------------------------------------------ */
 const vueConfig = {
   input: 'src/SquibViewVue.js',
-  external: ['vue', './squibview.js'],
+  external: ['vue', './squibview.esm.min.js'],
   output: [
     {
       file: 'dist/squibview-vue.js',

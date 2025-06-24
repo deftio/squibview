@@ -1,4 +1,4 @@
-import SquibView from './squibview.js';
+import SquibView from './squibview.esm.min.js';
 
 var SquibViewVue = {
   name: 'SquibViewVue',

@@ -57,6 +57,16 @@ window.L = leaflet;
 window.topojson = topojson;
 window.THREE = THREE;
 
+// Configure Leaflet marker icons for standalone build
+if (typeof leaflet !== 'undefined') {
+  delete leaflet.Icon.Default.prototype._getIconUrl;
+  leaflet.Icon.Default.mergeOptions({
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+  });
+}
+
 // Now import SquibView itself
 import SquibView from './squibview.js';
 export default SquibView;

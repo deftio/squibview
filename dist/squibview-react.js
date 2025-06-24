@@ -1,5 +1,5 @@
 import React from 'https://esm.sh/react@18.2.0';
-import SquibView from '../dist/squibview.esm.js';
+import SquibView from './squibview.esm.min.js';
 
 function _assertThisInitialized(e) {
   if (void 0 === e) throw new ReferenceError("this hasn't been initialised - super() hasn't been called");

@@ -6,8 +6,6 @@
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14a14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0a7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
 
-  <!-- SquibView Standalone UMD build -->
-  <script src="../dist/squibview.standalone.umd.min.js"></script>
   <link rel="stylesheet" href="../dist/squibview.css">
 
   <!-- External libraries for the lean UMD build -->
@@ -16,6 +14,68 @@
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <script type="module">
+    // Load Three.js as ESM and wait for it before loading SquibView
+    import * as THREE from 'https://unpkg.com/three@0.171.0/build/three.module.js';
+    window.THREE = THREE;
+    
+    // Fix global variable name mapping for lean UMD build
+    if (typeof window.markdownit !== 'undefined') {
+      window.MarkdownIt = window.markdownit;
+    }
+    
+    // Now dynamically load SquibView after THREE is available
+    const script = document.createElement('script');
+    script.src = '../dist/squibview.umd.min.js';
+    script.onload = function() {
+      initializeSquibView();
+    };
+    document.head.appendChild(script);
+    
+    function initializeSquibView() {
+      // Configure Leaflet icon paths
+      if (typeof L !== 'undefined') {
+        delete L.Icon.Default.prototype._getIconUrl;
+        L.Icon.Default.mergeOptions({
+          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+        });
+      }
+
+      // Create the editor
+      const editor = new SquibView('#editorContainer', {
+        titleShow: true,
+        titleContent: "SquibView Editor (UMD Example) " + SquibView.version.version
+      });
+
+      console.log('SquibView version:', SquibView.version.version);
+
+      window.editor = editor; // Make the editor instance accessible globally
+
+      (async filename => {
+        try {
+          editor.setContent(await (await fetch(filename)).text(), "md");
+        } catch (error) {
+          console.error("Failed to load Markdown:", error);
+        }
+      })("./sample-content.md");
+
+      // External test functions for playing around with the editor
+      window.toggleTitle = function() {
+        const currentState = editor.title.style.display !== 'none';
+        editor.titleShow(!currentState);
+      };
+
+      window.toggleControls = function() {
+        const currentState = editor.controls.style.display !== 'none';
+        editor.controlsShow(!currentState);
+      };
+    }
+  </script>
 
   <style>
     body {
@@ -43,33 +103,5 @@
 <body>
   <div id="editorContainer"></div>
 
-  <script>
-    // This is the main code that creates the editor and sets the content
-    const editor = new SquibView('#editorContainer', {
-      titleShow: true,
-      titleContent: "SquibView Editor (UMD Example) " + SquibView.version.version
-    });
-
-    window.editor = editor; // Make the editor instance accessible globally
-
-    (async filename => {
-      try {
-        editor.setContent(await (await fetch(filename)).text(), "md");
-      } catch (error) {
-        console.error("Failed to load Markdown:", error);
-      }
-    })("./sample-content.md");
-
-    // External test functions for playing around with the editor
-    function toggleTitle() {
-      const currentState = editor.title.style.display !== 'none';
-      editor.titleShow(!currentState);
-    }
-
-    function toggleControls() {
-      const currentState = editor.controls.style.display !== 'none';
-      editor.controlsShow(!currentState);
-    }
-  </script>
 </body>
 </html>

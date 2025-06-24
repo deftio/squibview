@@ -1,5 +1,5 @@
 import React from 'https://esm.sh/react@18.2.0';
-import SquibView from '../dist/squibview.esm.js';
+import SquibView from './squibview.esm.min.js';
 
 /**
  * React component wrapper for SquibView

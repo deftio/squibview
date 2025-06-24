@@ -10,6 +10,10 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
   <script type="importmap">
   {
@@ -17,6 +21,20 @@
       "markdown-it": "https://esm.sh/markdown-it@12.3.2"
     }
   }
+  </script>
+
+  <script>
+    // Configure Leaflet icon paths
+    window.addEventListener('DOMContentLoaded', function() {
+      if (typeof L !== 'undefined') {
+        delete L.Icon.Default.prototype._getIconUrl;
+        L.Icon.Default.mergeOptions({
+          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+        });
+      }
+    });
   </script>
 
   <style>
@@ -72,6 +90,10 @@
   <div id="app"></div>
 
   <script type="module">
+    // Import Three.js and assign to window for SquibView
+    import * as THREE from 'https://unpkg.com/three@0.171.0/build/three.module.js';
+    window.THREE = THREE;
+    
     // Import Vue from CDN
     import { createApp, ref, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
     // Import SquibViewVue and version from local dist
@@ -102,7 +124,8 @@
         });
 
         const handleContentChange = (newContent) => {
-          content.value = newContent;
+          // Don't update content.value to avoid infinite loop with watcher
+          // The SquibView component manages its own content state
         };
 
         const handleViewChange = (newView) => {
@@ -156,8 +179,12 @@
           }
         };
 
+        let hasLoggedVersion = false;
         const handleContentRendered = (type) => {
-          console.log('Content rendered:', type);
+          if (!hasLoggedVersion) {
+            console.log('SquibView version:', VERSION);
+            hasLoggedVersion = true;
+          }
         };
 
         const handleRevisionUndo = (content, type) => {
