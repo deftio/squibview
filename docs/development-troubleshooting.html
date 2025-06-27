@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SquibView Development Troubleshooting</title>
+  <style>
+
+
+/* Additional CSS */
+/* SquibView CLI Generated Styles */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  line-height: 1.6;
+  color: #333;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 3rem;
+  background-color: #fff;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+h1 { 
+  font-size: 2rem;
+  
+}
+h2 { 
+  font-size: 1.5rem;
+  
+}
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1rem; }
+h5 { font-size: 0.875rem; }
+h6 { font-size: 0.85rem; color: #666; }
+
+p { margin-bottom: 1rem; }
+
+a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #0066cc;
+  text-decoration: underline;
+}
+
+ul, ol {
+  margin-bottom: 1rem;
+  padding-left: 2rem;
+}
+
+li {
+  margin-bottom: 0.25rem;
+}
+
+blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 4px solid #ddd;
+  background-color: #f9f9f9;
+  color: #666;
+}
+
+code {
+  background-color: #f5f5f5;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.85em;
+}
+
+pre {
+  background-color: #f8f8f8;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  border-radius: 4px;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 1rem;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 2rem 0;
+}
+
+/* Badge images - inline display */
+p img {
+  display: inline;
+  margin: 0 2px;
+  vertical-align: middle;
+}
+
+/* Math styling */
+.MathJax {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  body {
+    padding: 1rem 1.5rem;
+  }
+  
+  table {
+    font-size: 0.875rem;
+  }
+  
+  th, td {
+    padding: 0.25rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    padding: 0;
+    color: #000;
+  }
+  
+  a {
+    color: #000;
+    text-decoration: underline;
+  }
+  
+  pre, blockquote {
+    page-break-inside: avoid;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+}
+  </style>
+    <!-- Highlight.js for syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <!-- Leaflet for GeoJSON/TopoJSON maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <!-- Three.js for STL 3D models -->
+  <script src="https://unpkg.com/three@0.171.0/build/three.min.js"></script>
+  <!-- MathJax for math rendering -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true
+      },
+      options: {
+        ignoreHtmlClass: 'tex2jax_ignore',
+        processHtmlClass: 'tex2jax_process'
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+  </script>
+  <!-- Mermaid for diagram rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+</head>
+<body>
+<div><h1>SquibView Development Troubleshooting</h1><h2>Module Resolution Issues</h2><p>When running the development files in the <code>/dev</code> directory, you might encounter these errors:</p><ol><li><code>Uncaught TypeError: Failed to resolve module specifier "tiny-emitter". Relative references must start with either "/", "./", or "../".</code></li><li><code>Uncaught SyntaxError: The requested module 'diff-match-patch' does not provide an export named 'default'</code></li></ol><h3>The Issue</h3><p>The development files in <code>/dev</code> use ES modules directly with import statements like:</p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-keyword">import</span><span class="hljs-title class_">TinyEmitter</span><span class="hljs-keyword">from</span><span class="hljs-string">'tiny-emitter'</span>;
+<span class="hljs-keyword">import</span><span class="hljs-title class_">DiffMatchPatch</span><span class="hljs-keyword">from</span><span class="hljs-string">'diff-match-patch'</span>;
+</code></pre></div><p>However, these modules are CommonJS modules, not ES modules, and they don’t provide default exports.</p><h3>The Solution</h3><p>We use import maps to resolve the module specifiers and <a href="http://esm.sh">esm.sh</a> to convert CommonJS modules to ES modules:</p><div data-source-type="html"><pre><code class="hljs language-html" data-source-type="code" data-lang="html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">type</span>=<span class="hljs-string">"importmap"</span>&gt;</span><span class="language-javascript">
+{
+  <span class="hljs-string">"imports"</span>: {
+    <span class="hljs-string">"tiny-emitter"</span>: <span class="hljs-string">"https://esm.sh/tiny-emitter@2.1.0"</span>,
+    <span class="hljs-string">"diff-match-patch"</span>: <span class="hljs-string">"https://esm.sh/diff-match-patch@1.0.5"</span>,
+    <span class="hljs-string">"turndown"</span>: <span class="hljs-string">"https://esm.sh/turndown@7.1.2"</span>
+  }
+}
+</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre></div><p>This ensures that when the source file imports from <code>tiny-emitter</code> or <code>diff-match-patch</code>, it receives a proper ES module with default exports.</p><h2>UMD Build Issues</h2><p>The UMD build of SquibView may have issues in browser environments with errors like:</p><ol><li><code>Uncaught ReferenceError: module is not defined</code></li><li><code>Cannot read properties of undefined (reading 'version')</code></li><li><code>Uncaught TypeError: e is not a constructor</code></li></ol><h3>The Solution</h3><p>For UMD build issues, use the wrapper solution in <code>/examples/example_UMD_fixed.html</code>:</p><div data-source-type="html"><pre><code class="hljs language-html" data-source-type="code" data-lang="html"><span class="hljs-comment">&lt;!-- Fix for UMD module issues --&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span>&gt;</span><span class="language-javascript"><span class="hljs-comment">// Define module if not already defined (browser environment)</span><span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span><span class="hljs-variable language_">module</span> === <span class="hljs-string">'undefined'</span>) {
+    <span class="hljs-keyword">var</span><span class="hljs-variable language_">module</span> = { <span class="hljs-attr">exports</span>: {} };
+  }
+</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-comment">&lt;!-- The UMD build --&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"../dist/squibview.umd.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span>&gt;</span><span class="language-javascript"><span class="hljs-comment">// Fix SquibView global if needed</span><span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span><span class="hljs-title class_">SquibView</span> === <span class="hljs-string">'object'</span> &amp;&amp; <span class="hljs-title class_">SquibView</span>.<span class="hljs-property">__esModule</span>) {
+    <span class="hljs-variable language_">window</span>.<span class="hljs-property">SquibView</span> = <span class="hljs-title class_">SquibView</span>.<span class="hljs-property">default</span> || <span class="hljs-title class_">SquibView</span>;
+  }
+</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre></div><h2>Development Tips</h2><ol><li><strong>Use <a href="http://ESM.sh">ESM.sh</a> for Development:</strong> When working with ES modules and CommonJS dependencies, <a href="http://esm.sh">esm.sh</a> provides proper ES module versions of CommonJS libraries</li><li><strong>Use Import Maps:</strong> Import maps help browsers resolve bare module specifiers like <code>import X from 'library'</code></li><li><strong>Prefer Standalone Build:</strong> For testing, the standalone build includes all dependencies and is easier to work with</li><li><strong>Test Multiple Browsers:</strong> Some browsers handle ES modules and import maps differently</li></ol><h2>Examples</h2><ul><li><code>/examples/example_ESM.html</code> - ES modules example</li><li><code>/examples/example_UMD.html</code> - UMD example with fixes</li><li><code>/examples/example_UMD_fixed.html</code> - Simplified UMD example with fixes</li><li><code>/examples/standalone_umd.html</code> - Standalone UMD example (no external dependencies)</li></ul></div>
+  <script>
+    // Initialize MathJax after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise().catch(function(err) {
+          console.warn('MathJax typesetting failed:', err);
+        });
+      }
+    });
+  </script>
+  <script>
+    // Initialize Mermaid after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.mermaid) {
+        try {
+          window.mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose',
+            fontFamily: 'inherit'
+          });
+          
+          // Manually render all mermaid diagrams
+          const mermaidElements = document.querySelectorAll('.mermaid');
+          mermaidElements.forEach(function(element, index) {
+            const id = 'mermaid-' + index;
+            element.id = id;
+            try {
+              window.mermaid.render(id + '-svg', element.textContent, function(svgCode) {
+                element.innerHTML = svgCode;
+              });
+            } catch (err) {
+              console.warn('Mermaid rendering failed for element', index, ':', err);
+              // Fallback: show the text content
+              element.innerHTML = '<pre>' + element.textContent + '</pre>';
+            }
+          });
+        } catch (err) {
+          console.warn('Mermaid initialization failed:', err);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

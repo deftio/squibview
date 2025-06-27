@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SquibView Automated Demo</title>
+    <link rel="stylesheet" href="../dist/squibview.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #ffffff;
+            color: #333333;
+            -webkit-font-smoothing: antialiased;
+        }
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+        }
+        /* Hide any extra controls for clean demo */
+        .squibview-title {
+            display: none;
+        }
+        /* Ensure proper colors */
+        * {
+            color-scheme: light;
+        }
+        /* Fix any weird color issues */
+        .squibview-rendered-content {
+            background: white !important;
+            color: #333 !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div id="squibview-demo"></div>
+    </div>
+
+    <script src="../dist/squibview.standalone.umd.min.js"></script>
+    <script>
+        try {
+            // Create SquibView instance
+            console.log('Creating SquibView instance...');
+            window.demoEditor = new SquibView('#squibview-demo', {
+                content: '',
+                initialView: 'split',
+                showControls: false, // Clean demo without controls
+                titleShow: false
+            });
+            console.log('SquibView created successfully');
+
+            // Expose setContent for Puppeteer
+            window.setDemoContent = (content) => {
+                console.log('Setting content:', content.substring(0, 50) + '...');
+                window.demoEditor.setContent(content, 'md');
+            };
+            console.log('Demo setup complete');
+        } catch (error) {
+            console.error('Error creating SquibView:', error);
+            window.initError = error.message;
+        }
+    </script>
+</body>
+</html>

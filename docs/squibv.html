@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SquibView CLI Documentation</title>
+  <style>
+
+
+/* Additional CSS */
+/* SquibView CLI Generated Styles */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  line-height: 1.6;
+  color: #333;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 3rem;
+  background-color: #fff;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+h1 { 
+  font-size: 2rem;
+  
+}
+h2 { 
+  font-size: 1.5rem;
+  
+}
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1rem; }
+h5 { font-size: 0.875rem; }
+h6 { font-size: 0.85rem; color: #666; }
+
+p { margin-bottom: 1rem; }
+
+a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #0066cc;
+  text-decoration: underline;
+}
+
+ul, ol {
+  margin-bottom: 1rem;
+  padding-left: 2rem;
+}
+
+li {
+  margin-bottom: 0.25rem;
+}
+
+blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 4px solid #ddd;
+  background-color: #f9f9f9;
+  color: #666;
+}
+
+code {
+  background-color: #f5f5f5;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.85em;
+}
+
+pre {
+  background-color: #f8f8f8;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  border-radius: 4px;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 1rem;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 2rem 0;
+}
+
+/* Badge images - inline display */
+p img {
+  display: inline;
+  margin: 0 2px;
+  vertical-align: middle;
+}
+
+/* Math styling */
+.MathJax {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  body {
+    padding: 1rem 1.5rem;
+  }
+  
+  table {
+    font-size: 0.875rem;
+  }
+  
+  th, td {
+    padding: 0.25rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    padding: 0;
+    color: #000;
+  }
+  
+  a {
+    color: #000;
+    text-decoration: underline;
+  }
+  
+  pre, blockquote {
+    page-break-inside: avoid;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+}
+  </style>
+    <!-- Highlight.js for syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <!-- Leaflet for GeoJSON/TopoJSON maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <!-- Three.js for STL 3D models -->
+  <script src="https://unpkg.com/three@0.171.0/build/three.min.js"></script>
+  <!-- MathJax for math rendering -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true
+      },
+      options: {
+        ignoreHtmlClass: 'tex2jax_ignore',
+        processHtmlClass: 'tex2jax_process'
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+  </script>
+  <!-- Mermaid for diagram rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+</head>
+<body>
+<div><h1>SquibView CLI Documentation</h1><p>The SquibView CLI (<code>squibv</code>) is a command-line tool that converts Markdown files into high-quality HTML documents using SquibView’s powerful rendering engine. It supports all the advanced features that make SquibView special, including math expressions, Mermaid diagrams, CSV tables, SVG graphics, and syntax-highlighted code blocks.</p><h2>Why SquibView CLI?</h2><h3>Beyond Standard Markdown</h3><p>Unlike basic markdown converters, SquibView CLI provides:</p><ul><li><strong>Rich Content Support</strong>: Math (MathJax), diagrams (Mermaid), SVG graphics, CSV/TSV tables</li><li><strong>Advanced Code Highlighting</strong>: Syntax highlighting for dozens of programming languages</li><li><strong>Self-Contained Output</strong>: Generate fully portable HTML files that work offline</li><li><strong>Professional Styling</strong>: Clean, readable default styles with customization options</li><li><strong>Government/Enterprise Ready</strong>: Offline bundling for environments without internet access</li></ul><h3>Use Cases</h3><ul><li><strong>Documentation Generation</strong>: Convert technical docs with math, diagrams, and code</li><li><strong>Static Site Generation</strong>: Create standalone HTML pages for websites</li><li><strong>Report Generation</strong>: Build professional reports with tables, charts, and formatting</li><li><strong>Offline Environments</strong>: Generate fully self-contained files for air-gapped systems</li><li><strong>CI/CD Integration</strong>: Automate document generation in build pipelines</li><li><strong>Academic Publishing</strong>: Convert research papers with mathematical notation</li></ul><h2>Installation</h2><h3>NPX (Recommended)</h3><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash"><span class="hljs-comment"># No installation required - run directly</span>
+npx squibv document.md
+</code></pre></div><h3>Global Installation</h3><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash">npm install -g squibview
+squibv document.md
+</code></pre></div><h3>Local Project Installation</h3><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash">npm install squibview
+npx squibv document.md
+</code></pre></div><h2>Basic Usage</h2><h3>Simple Conversion</h3><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash"><span class="hljs-comment"># Convert markdown to HTML</span>
+squibv document.md
+
+<span class="hljs-comment"># Specify output file</span>
+squibv document.md -o report.html
+
+<span class="hljs-comment"># Use alias command</span>
+squibv build document.md -o report.html
+</code></pre></div><h3>Advanced Features</h3><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash"><span class="hljs-comment"># Bundle all dependencies offline (4MB+ but fully self-contained)</span>
+squibv document.md --bundle-offline
+
+<span class="hljs-comment"># Custom CSS styling</span>
+squibv document.md --css custom-theme.css
+
+<span class="hljs-comment"># Watch for changes and rebuild automatically</span>
+squibv document.md --watch
+</code></pre></div><h2>Command Reference</h2><h3>Basic Commands</h3><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash">squibv &lt;file.md&gt;              <span class="hljs-comment"># Convert markdown file</span>
+squibv build &lt;file.md&gt;        <span class="hljs-comment"># Explicit build command</span>
+squibv --<span class="hljs-built_in">help</span><span class="hljs-comment"># Show help</span>
+squibv --version              <span class="hljs-comment"># Show version</span></code></pre></div><h3>Options</h3><table><thead><tr><th>Option</th><th>Short</th><th>Description</th><th>Default</th></tr></thead><tbody><tr><td><code>--input &lt;source&gt;</code></td><td><code>-i</code></td><td>Input source (file path or “-” for stdin)</td><td>Positional argument</td></tr><tr><td><code>--output &lt;dest&gt;</code></td><td><code>-o</code></td><td>Output destination (file path, “-” or “stdout” for stdout)</td><td><code>input.html</code></td></tr><tr><td><code>--standalone</code></td><td><code>-s</code></td><td>Create self-contained HTML</td><td><code>true</code></td></tr><tr><td><code>--css &lt;file&gt;</code></td><td></td><td>Custom CSS file</td><td>Default styles</td></tr><tr><td><code>--bundle-offline</code></td><td></td><td>Bundle all libraries locally</td><td>CDN links</td></tr><tr><td><code>--log &lt;file&gt;</code></td><td></td><td>Log file for messages</td><td>stderr</td></tr><tr><td><code>--quiet</code></td><td></td><td>Suppress progress messages</td><td>Off</td></tr><tr><td><code>--watch</code></td><td><code>-w</code></td><td>Watch file and rebuild on changes</td><td>Off</td></tr></tbody></table><h3>Examples</h3><h4>Document Conversion</h4><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash"><span class="hljs-comment"># Basic conversion</span>
+squibv README.md
+
+<span class="hljs-comment"># Professional report with custom styling</span>
+squibv report.md --css corporate-theme.css -o quarterly-report.html
+
+<span class="hljs-comment"># Academic paper with offline bundling</span>
+squibv research-paper.md --bundle-offline -o paper.html
+</code></pre></div><h4>Development Workflow</h4><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash"><span class="hljs-comment"># Live development with auto-rebuild</span>
+squibv documentation.md --watch
+
+<span class="hljs-comment"># Custom output location</span>
+squibv src/docs/api.md -o dist/api-docs.html
+</code></pre></div><h4>Pipeline Workflows</h4><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash"><span class="hljs-comment"># Read from stdin, write to stdout</span><span class="hljs-built_in">cat</span> document.md | squibv -i - -o - &gt; output.html
+
+<span class="hljs-comment"># Clean pipeline (no progress messages)</span>
+curl -s https://api.github.com/repos/user/repo/readme | \
+  jq -r .content | <span class="hljs-built_in">base64</span> -d | \
+  squibv -i - -o - --quiet &gt; readme.html
+
+<span class="hljs-comment"># Chain with compression</span><span class="hljs-built_in">cat</span> report.md | squibv -i - -o - | gzip &gt; report.html.gz
+
+<span class="hljs-comment"># Process with logging</span>
+squibv document.md --<span class="hljs-built_in">log</span> conversion.log --quiet
+</code></pre></div><h4>CI/CD Integration</h4><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash"><span class="hljs-comment"># Build all documentation</span><span class="hljs-keyword">for</span> file <span class="hljs-keyword">in</span> docs/*.md; <span class="hljs-keyword">do</span>
+  squibv <span class="hljs-string">"<span class="hljs-variable">$file</span>"</span> -o <span class="hljs-string">"dist/<span class="hljs-subst">$(basename <span class="hljs-string">"<span class="hljs-variable">$file</span>"</span> .md)</span>.html"</span> --<span class="hljs-built_in">log</span> build.log
+<span class="hljs-keyword">done</span><span class="hljs-comment"># Generate offline documentation package</span>
+squibv documentation.md --bundle-offline -o standalone-docs.html
+
+<span class="hljs-comment"># Pipeline processing in CI</span>
+find docs/ -name <span class="hljs-string">"*.md"</span> | \
+  xargs -I {} squibv {} --<span class="hljs-built_in">log</span> ci.log --quiet
+</code></pre></div><h2>Advanced Markdown Features</h2><p>SquibView CLI supports all the advanced features of the SquibView editor:</p><h3>Mathematical Expressions</h3><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown">Inline math: $E = mc^2$
+
+Display math:
+$$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$
+
+Fenced math blocks:
+\`\`\`math
+\\begin{pmatrix}
+a &amp; b \\\\
+c &amp; d
+\\end{pmatrix}
+\`\`\`
+</code></pre></div><h3>Mermaid Diagrams</h3><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown">\`\`\`mermaid
+graph TD
+    A[Start] --&gt; B{Decision}
+    B --&gt; C[Option 1]
+    B --&gt; D[Option 2]
+\`\`\`
+</code></pre></div><h3>Data Tables</h3><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown">\`\`\`csv
+Name,Age,City
+Alice,30,New York
+Bob,25,Los Angeles
+\`\`\`
+
+\`\`\`tsv
+Name	Age	City
+Alice	30	New York
+\`\`\`
+</code></pre></div><h3>SVG Graphics</h3><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown">\`\`\`svg
+&lt;svg width="200" height="100"&gt;
+  &lt;circle cx="50" cy="50" r="40" fill="blue" /&gt;
+&lt;/svg&gt;
+\`\`\`
+</code></pre></div><h3>Code Highlighting</h3><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown">\`\`\`javascript
+function greet(name) {
+  console.log(\`Hello, \${name}!\`);
+}
+\`\`\`
+</code></pre></div><h2>Output Modes</h2><h3>CDN Mode (Default)</h3><ul><li><strong>Size</strong>: Small (~7KB)</li><li><strong>Dependencies</strong>: Requires internet for MathJax/Mermaid</li><li><strong>Use Case</strong>: Online environments, smaller files</li><li><strong>Command</strong>: <code>squibv document.md</code></li></ul><h3>Offline Bundle Mode</h3><ul><li><strong>Size</strong>: Large (~5MB)</li><li><strong>Dependencies</strong>: Fully self-contained</li><li><strong>Use Case</strong>: Air-gapped systems, archival, reliability</li><li><strong>Command</strong>: <code>squibv document.md --bundle-offline</code></li></ul><h2>Styling and Customization</h2><h3>Default Styles</h3><p>SquibView CLI includes professional default styles:</p><ul><li>Clean typography with system fonts</li><li>Responsive design for mobile/desktop</li><li>Syntax highlighting for code blocks</li><li>Professional table styling</li><li>Print-optimized layouts</li></ul><h3>Custom CSS</h3><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash"><span class="hljs-comment"># Override with custom styles</span>
+squibv document.md --css my-theme.css
+</code></pre></div><p>Example custom CSS:</p><div data-source-type="css"><pre><code class="hljs language-css" data-source-type="code" data-lang="css"><span class="hljs-comment">/* Override default styles */</span><span class="hljs-selector-tag">body</span> {
+  <span class="hljs-attribute">font-family</span>: <span class="hljs-string">'Georgia'</span>, serif;
+  <span class="hljs-attribute">background-color</span>: <span class="hljs-number">#f8f9fa</span>;
+}
+
+<span class="hljs-selector-tag">h1</span>, <span class="hljs-selector-tag">h2</span>, <span class="hljs-selector-tag">h3</span> {
+  <span class="hljs-attribute">color</span>: <span class="hljs-number">#2c3e50</span>;
+}
+
+<span class="hljs-selector-class">.mermaid</span> {
+  <span class="hljs-attribute">background-color</span>: white;
+  <span class="hljs-attribute">border</span>: <span class="hljs-number">1px</span> solid <span class="hljs-number">#ddd</span>;
+  <span class="hljs-attribute">border-radius</span>: <span class="hljs-number">8px</span>;
+  <span class="hljs-attribute">padding</span>: <span class="hljs-number">1rem</span>;
+}
+</code></pre></div><h2>Integration Examples</h2><h3>GitHub Actions</h3><div data-source-type="yaml"><pre><code class="hljs language-yaml" data-source-type="code" data-lang="yaml">name: Generate Documentation
+on: [push]
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+      - run: npx squibv README.md -o docs/index.html
+      - run: npx squibv API.md --bundle-offline -o docs/api.html
+</code></pre></div><h3>npm Scripts</h3><div data-source-type="json"><pre><code class="hljs language-json" data-source-type="code" data-lang="json"><span class="hljs-punctuation">{</span><span class="hljs-attr">"scripts"</span><span class="hljs-punctuation">:</span><span class="hljs-punctuation">{</span><span class="hljs-attr">"docs"</span><span class="hljs-punctuation">:</span><span class="hljs-string">"squibv README.md -o dist/documentation.html"</span><span class="hljs-punctuation">,</span><span class="hljs-attr">"docs:watch"</span><span class="hljs-punctuation">:</span><span class="hljs-string">"squibv README.md --watch"</span><span class="hljs-punctuation">,</span><span class="hljs-attr">"docs:offline"</span><span class="hljs-punctuation">:</span><span class="hljs-string">"squibv README.md --bundle-offline -o standalone.html"</span><span class="hljs-punctuation">}</span><span class="hljs-punctuation">}</span></code></pre></div><h3>Makefile</h3><div data-source-type="makefile"><pre><code class="hljs language-makefile" data-source-type="code" data-lang="makefile">docs: README.md
+	squibv README.md -o docs/index.html
+
+docs-offline: README.md
+	squibv README.md --bundle-offline -o docs/offline.html
+
+.PHONY: docs docs-offline
+</code></pre></div><h2>Troubleshooting</h2><h3>Common Issues</h3><p><strong>File not found errors</strong></p><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash"><span class="hljs-comment"># Use absolute paths if needed</span>
+squibv /full/path/to/document.md
+</code></pre></div><p><strong>Permission errors</strong></p><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash"><span class="hljs-comment"># Check file permissions</span><span class="hljs-built_in">ls</span> -la document.md
+<span class="hljs-built_in">chmod</span> 644 document.md
+</code></pre></div><p><strong>Large file sizes with --bundle-offline</strong></p><ul><li>This is expected (~5MB) for full offline capability</li><li>Use regular mode for smaller files with internet dependency</li></ul><p><strong>Math not rendering</strong></p><ul><li>Ensure proper LaTeX syntax in math blocks</li><li>Check browser console for MathJax errors</li></ul><p><strong>Mermaid diagrams not showing</strong></p><ul><li>Verify mermaid syntax is correct</li><li>Check browser console for rendering errors</li></ul><h3>Performance Tips</h3><ul><li>Use <code>--bundle-offline</code> for maximum reliability</li><li>Use regular mode for faster builds and smaller files</li><li>Custom CSS can significantly impact file size</li><li>Watch mode is efficient for development workflows</li></ul><h2>Technical Details</h2><h3>Dependencies</h3><ul><li><strong>Node.js</strong>: &gt;= 14.0.0</li><li><strong>Core Libraries</strong>: MathJax 3, Mermaid 11, Highlight.js 11</li><li><strong>Build Tool</strong>: Commander.js for CLI, jsdom for headless rendering</li></ul><h3>File Processing</h3><ol><li><strong>Parse</strong>: Markdown parsed with SquibView’s enhanced markdown-it</li><li><strong>Render</strong>: Headless browser simulation with jsdom</li><li><strong>Process</strong>: Special content types (math, diagrams, tables) processed</li><li><strong>Bundle</strong>: CSS and JavaScript embedded or linked</li><li><strong>Output</strong>: Clean, standalone HTML generated</li></ol><h3>Security</h3><ul><li>No external network requests during build (except CDN mode)</li><li>Sandboxed execution environment</li><li>No arbitrary code execution from markdown</li><li>Safe handling of SVG and HTML content</li></ul><hr><p>For more information about SquibView’s web editor capabilities, see the <a href="../README.html">main README</a>.</p></div>
+  <script>
+    // Initialize MathJax after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise().catch(function(err) {
+          console.warn('MathJax typesetting failed:', err);
+        });
+      }
+    });
+  </script>
+  <script>
+    // Initialize Mermaid after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.mermaid) {
+        try {
+          window.mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose',
+            fontFamily: 'inherit'
+          });
+          
+          // Manually render all mermaid diagrams
+          const mermaidElements = document.querySelectorAll('.mermaid');
+          mermaidElements.forEach(function(element, index) {
+            const id = 'mermaid-' + index;
+            element.id = id;
+            try {
+              window.mermaid.render(id + '-svg', element.textContent, function(svgCode) {
+                element.innerHTML = svgCode;
+              });
+            } catch (err) {
+              console.warn('Mermaid rendering failed for element', index, ':', err);
+              // Fallback: show the text content
+              element.innerHTML = '<pre>' + element.textContent + '</pre>';
+            }
+          });
+        } catch (err) {
+          console.warn('Mermaid initialization failed:', err);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

@@ -119,4 +119,234 @@ squibview/
 -   **Runnable Examples:** Every code block should be copy-paste-runnable.
 -   **Link to `examples/`:** Actively link from the documentation pages to the corresponding files in the `examples/` directory so users can see the code in a full, working context. A table in `examples/README.md` could be created to describe what each example file demonstrates.
 
-This plan provides a clear path to creating a high-quality, user-centric documentation suite. 
+## 5. HTML Documentation Generation and Build Process
+
+### Current State and Issues
+- Currently using `docbat.js` (npm package) to convert README.md to index.html for local repo serving
+- Should migrate to using `squibv` CLI tool for HTML generation (currently has dependency issues)
+- Need automated HTML generation for all documentation files
+
+### Proposed HTML Generation Workflow
+
+#### Phase 1: Fix squibv CLI Dependencies
+- **Task**: Investigate and resolve dependency issues in squibv CLI tool
+- **Goal**: Ensure squibv can reliably generate clean HTML from Markdown with all SquibView features
+- **Priority**: High - this is foundational for the rest of the workflow
+
+#### Phase 2: Automated Documentation Build
+- **Replace docbat.js**: Use `squibv` to generate `index.html` from `README.md`
+- **Batch Convert docs/**: Create script to convert all `.md` files in `docs/` directory to `.html` files
+- **Generate Navigation**: Create `docs/index.html` with navigation links to all documentation sections
+- **Build Integration**: Add documentation HTML generation to the main build process
+
+#### Phase 3: Documentation Site Structure
+```
+squibview/
+├── index.html              # Generated from README.md using squibv
+├── docs/
+│   ├── index.html          # Generated navigation page
+│   ├── home.html           # Generated from home.md
+│   ├── guides/
+│   │   ├── index.html      # Section navigation
+│   │   ├── 01-quick-start.html
+│   │   ├── 02-installation.html
+│   │   ├── 03-basic-usage.html
+│   │   └── 04-cli-usage.html
+│   ├── features/
+│   │   ├── index.html      # Section navigation
+│   │   ├── 01-markdown-support.html
+│   │   ├── 02-graphical-content.html
+│   │   └── 03-exporting.html
+│   ├── api/
+│   │   ├── index.html      # Section navigation
+│   │   ├── 01-options.html
+│   │   ├── 02-methods.html
+│   │   └── 03-events.html
+│   └── development/
+│       ├── index.html      # Section navigation
+│       ├── 01-build-system.html
+│       └── 02-testing.html
+```
+
+#### Phase 4: Build Scripts and Automation
+- **`npm run build-docs`**: Generate all HTML documentation files
+- **`npm run serve-docs`**: Start local server for documentation browsing
+- **Watch Mode**: Auto-regenerate HTML when Markdown files change during development
+- **CI Integration**: Ensure documentation HTML is built and up-to-date in releases
+
+### Benefits of This Approach
+1. **Self-Hosting**: Users can serve documentation locally without external dependencies
+2. **Consistency**: All documentation uses SquibView's own rendering engine
+3. **Feature Showcase**: Documentation demonstrates SquibView's capabilities (Mermaid, math, etc.)
+4. **Offline Capable**: Documentation works in air-gapped environments
+5. **Professional Appearance**: Clean, consistent styling across all documentation
+
+### Implementation Priority
+1. **Fix squibv CLI dependencies** (blocker for everything else)
+2. **Create basic HTML generation script** for README.md and docs/
+3. **Generate navigation index files** for easy browsing
+4. **Integrate into build process** and npm scripts
+5. **Add watch mode and development workflow** improvements
+
+This plan provides a clear path to creating a high-quality, user-centric documentation suite with professional HTML output.
+
+## README.md Content Strategy & Outline
+
+### Current Issues with README.md
+1. **Poor "above the fold" content** - doesn't immediately sell SquibView's value proposition
+2. **Missing links to documentation** - no clear path from homepage to comprehensive docs
+3. **Weak value proposition** - doesn't clearly explain why someone should choose SquibView
+4. **No visual hierarchy** - all content feels equal weight, no prioritization for key messages
+
+### Target Audience Analysis
+- **Primary**: Web developers looking for markdown rendering solutions
+- **Secondary**: Documentation writers, technical writers, educators
+- **Use cases**: Component integration, CLI documentation generation, rapid prototyping
+
+### Proposed README.md Structure
+
+#### 1. Hero Section (Above the Fold)
+**Goal**: Immediately communicate value and get users excited
+
+```markdown
+# SquibView
+*The most powerful markdown renderer for modern web applications*
+
+[![NPM Version](https://img.shields.io/npm/v/squibview.svg)](https://www.npmjs.com/package/squibview)
+[![License](https://img.shields.io/badge/License-BSD_2--Clause-orange.svg)](LICENSE)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/deftio/squibview/ci.yml?branch=main&style=flat&logo=github&label=Build&color=blue)](https://github.com/deftio/squibview/actions/workflows/ci.yml)
+
+**Transform markdown into rich, interactive content with zero configuration.**
+
+SquibView renders GitHub-Flavored Markdown with live Mermaid diagrams, interactive maps, 3D models, math equations, and syntax-highlighted code—all in real-time.
+
+[🚀 **Try the Live Demo**](https://deftio.github.io/squibview/examples/example_ESM.html) | [📖 **Read the Docs**](./docs/home.html) | [⚡ **Quick Start**](./docs/guides/01-quick-start.html)
+```
+
+#### 2. Visual Proof Section
+**Goal**: Show, don't tell—immediate visual impact
+
+```markdown
+## See SquibView in Action
+
+<img src="./squibview-example.png" alt="SquibView rendering Mermaid diagrams, math equations, and interactive content" width="100%">
+
+**What you're seeing:**
+- 📊 Live Mermaid diagrams that update as you type
+- 🧮 LaTeX math equations rendered with MathJax  
+- 🗺️ Interactive GeoJSON maps with Leaflet
+- 🎯 Syntax-highlighted code blocks
+- 📱 Responsive design that works everywhere
+```
+
+#### 3. Quick Win Section
+**Goal**: Get users to success in under 30 seconds
+
+```markdown
+## Get Started in 30 Seconds
+
+### Option 1: CLI (Perfect for Documentation)
+```bash
+npx squibv document.md
+# Creates a beautiful, standalone HTML file instantly
+```
+
+### Option 2: Component (Perfect for Apps)
+```html
+<script src="https://unpkg.com/squibview/dist/squibview.standalone.min.js"></script>
+<div id="editor"></div>
+<script>
+  new SquibView({
+    element: document.getElementById('editor'),
+    content: '# Hello **SquibView**! 🚀'
+  });
+</script>
+```
+**That's it!** Your markdown is now rendering with all advanced features enabled.
+```
+
+#### 4. Why Choose SquibView Section
+**Goal**: Differentiate from competitors with unique selling points
+
+```markdown
+## Why Developers Choose SquibView
+
+| Feature | SquibView | Other Solutions |
+|---------|-----------|-----------------|
+| **Zero Config** | ✅ Works out of the box | ❌ Complex setup required |
+| **Rich Content** | ✅ Diagrams, maps, 3D, math | ❌ Basic markdown only |
+| **Live Preview** | ✅ Real-time rendering | ❌ Static or slow updates |
+| **Offline Ready** | ✅ Self-contained builds | ❌ CDN dependencies |
+| **Bidirectional** | ✅ Edit in source or preview | ❌ One-way rendering |
+| **Enterprise Ready** | ✅ Air-gapped environments | ❌ Internet required |
+
+### 🎯 Perfect For:
+- **Documentation sites** that need rich content
+- **Technical blogs** with code and diagrams  
+- **Educational platforms** with math and visualizations
+- **Internal tools** requiring offline operation
+- **Rapid prototyping** of content-rich applications
+```
+
+#### 5. Feature Showcase Section
+**Goal**: Highlight unique capabilities that competitors can't match
+
+```markdown
+## Unique Capabilities
+
+### 📊 Live Diagrams & Visualizations
+- **Mermaid diagrams** - Flowcharts, sequence diagrams, Gantt charts
+- **GeoJSON/TopoJSON maps** - Interactive geographic visualizations
+- **STL 3D models** - Three.js powered 3D model viewer
+- **Math equations** - LaTeX rendering with MathJax
+
+### ⚡ Developer Experience
+- **Multiple builds** - ESM, UMD, Standalone options
+- **Framework agnostic** - Works with React, Vue, Angular, or vanilla JS
+- **Plugin system** - Extend with custom renderers
+- **TypeScript support** - Full type definitions included
+
+### 🏢 Enterprise Features
+- **Offline bundles** - Zero external dependencies
+- **Custom styling** - Complete CSS control
+- **Security focused** - No remote code execution
+- **Professional support** - BSD-2 licensed
+```
+
+#### 6. Navigation & Next Steps Section
+**Goal**: Guide users to appropriate resources based on their needs
+
+```markdown
+## Documentation & Resources
+
+### 📚 **Complete Documentation**
+- [📖 **Documentation Home**](./docs/home.html) - Start here for comprehensive guides
+- [⚡ **Quick Start Guide**](./docs/guides/01-quick-start.html) - Get running in minutes
+- [🔧 **Installation Options**](./docs/guides/02-installation.html) - Choose the right build
+- [💻 **CLI Reference**](./docs/guides/04-cli-usage.html) - Master the command line
+
+### 🎯 **By Use Case**
+- [🧩 **Component Integration**](./docs/guides/03-basic-usage.html) - Embed in your app
+- [📄 **Documentation Generation**](./docs/guides/04-cli-usage.html) - Build docs with CLI
+- [🎨 **Custom Styling**](./docs/api/01-options.html) - Customize appearance
+- [🔌 **Plugin Development**](./docs/development/) - Extend functionality
+
+### 🌟 **Examples & Demos**
+- [🚀 **Live Demo**](https://deftio.github.io/squibview/examples/example_ESM.html) - Try all features
+- [📁 **Example Projects**](./examples/) - Copy-paste implementations
+- [🎮 **Interactive Tutorial**](./docs/guides/01-quick-start.html) - Hands-on learning
+```
+
+### Key Messaging Principles
+1. **Value-first**: Lead with benefits, not features
+2. **Social proof**: Show the badge, mention adoption
+3. **Urgency**: "30 seconds", "instantly", "zero config"
+4. **Differentiation**: Clear comparison with alternatives
+5. **Progressive disclosure**: Easy start → deep capabilities
+6. **Multiple entry points**: Different paths for different users
+
+### Success Metrics
+- **Immediate value perception**: Users understand SquibView's benefits within 10 seconds
+- **Quick success**: Users can generate their first output within 30 seconds
+- **Clear navigation**: Users know exactly where to go next for their specific needs
+- **Competitive advantage**: Users understand why SquibView vs alternatives 

@@ -1,0 +1,71 @@
+{
+  "typography": {
+    "fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif",
+    "lineHeight": 1.6,
+    "fontSize": {
+      "h1": "2rem",
+      "h2": "1.5rem", 
+      "h3": "1.25rem",
+      "h4": "1rem",
+      "h5": "0.875rem",
+      "h6": "0.85rem"
+    }
+  },
+  "colors": {
+    "text": "#333",
+    "background": "#fff",
+    "link": "#0066cc",
+    "linkHover": "#0066cc",
+    "h6": "#666",
+    "blockquote": "#666",
+    "blockquoteBorder": "#ddd",
+    "blockquoteBackground": "#f9f9f9",
+    "codeBackground": "#f5f5f5",
+    "preBackground": "#f8f8f8",
+    "tableBorder": "#ddd",
+    "tableHeaderBackground": "#f2f2f2"
+  },
+  "layout": {
+    "maxWidth": "900px",
+    "margin": "0 auto",
+    "padding": "2rem 3rem",
+    "mobilePadding": "1rem 1.5rem"
+  },
+  "spacing": {
+    "headingTopMargin": "1.5em",
+    "headingBottomMargin": "0.5em",
+    "paragraphBottomMargin": "1rem",
+    "listPadding": "2rem",
+    "listItemMargin": "0.25rem",
+    "blockquotePadding": "0.5rem 1rem",
+    "codePadding": "0.2em 0.4em",
+    "prePadding": "1rem",
+    "tableCellPadding": "0.5rem",
+    "imageBottomMargin": "1rem"
+  },
+  "borders": {
+    "h1": {
+      "enabled": false,
+      "style": "2px solid #eee",
+      "paddingBottom": "0.3em"
+    },
+    "h2": {
+      "enabled": false,
+      "style": "1px solid #eee", 
+      "paddingBottom": "0.3em"
+    },
+    "blockquoteLeft": "4px solid #ddd",
+    "table": "1px solid #ddd"
+  },
+  "borderRadius": {
+    "code": "3px",
+    "pre": "4px"
+  },
+  "fontWeight": {
+    "headings": 600,
+    "bold": "bold"
+  },
+  "breakpoints": {
+    "mobile": "768px"
+  }
+}

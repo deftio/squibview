@@ -7,6 +7,7 @@ import { readFileSync, writeFileSync, existsSync, statSync, watchFile, unwatchFi
 import { extname, basename, resolve, dirname } from 'path';
 import { renderMarkdownToHTML } from './renderer.js';
 import { generateStandaloneHTML, extractTitleFromContent } from './html-generator.js';
+import { loadStyleConfig, applyConfigOverrides, generateCSS } from './style-generator.js';
 
 /**
  * Main build function
@@ -22,7 +23,11 @@ export async function build(inputFile, options = {}) {
     bundleOffline = false,
     watch = false,
     log,
-    quiet = false
+    quiet = false,
+    htmlStyleConfig,
+    htmlStyleParam = {},
+    convertMdLinks = false,
+    favicon
   } = options;
 
   // Set up logging
@@ -176,7 +181,7 @@ async function readStdin() {
  * @param {Object} logger - Logger instance
  */
 async function buildContent(inputPath, outputPath, isStdin, isStdout, options = {}, logger) {
-  const { css, standalone = true, bundleOffline = false } = options;
+  const { css, standalone = true, bundleOffline = false, htmlStyleConfig, htmlStyleParam = {}, convertMdLinks = false, favicon } = options;
 
   try {
     // Read input content
@@ -203,12 +208,27 @@ async function buildContent(inputPath, outputPath, isStdin, isStdout, options = 
       throw new Error('Input content is empty');
     }
 
+    // Process MD links if requested
+    if (convertMdLinks) {
+      markdownContent = convertMarkdownLinks(markdownContent);
+    }
+
     // Render markdown to HTML using SquibView
     let renderedHTML;
     try {
       renderedHTML = await renderMarkdownToHTML(markdownContent);
     } catch (error) {
       throw new Error(`Failed to render markdown: ${error.message}`);
+    }
+
+    // Generate CSS from configuration
+    let customCSS = null;
+    try {
+      const styleConfig = loadStyleConfig(htmlStyleConfig);
+      const finalStyleConfig = applyConfigOverrides(styleConfig, htmlStyleParam);
+      customCSS = generateCSS(finalStyleConfig);
+    } catch (error) {
+      logger.warn(`Warning: Failed to generate CSS from config: ${error.message}`);
     }
 
     // Generate complete HTML document
@@ -219,8 +239,10 @@ async function buildContent(inputPath, outputPath, isStdin, isStdout, options = 
       completeHTML = generateStandaloneHTML(renderedHTML, {
         title,
         css: css ? resolve(css) : null,
-        includeDefaultCSS: true,
-        bundleOffline
+        customCSS,
+        includeDefaultCSS: !customCSS, // Only include default CSS if we don't have custom CSS
+        bundleOffline,
+        favicon
       });
     } catch (error) {
       throw new Error(`Failed to generate HTML: ${error.message}`);
@@ -338,10 +360,26 @@ function createLogger(logFile, quiet = false) {
     info: (message) => log('info', message),
     success: (message) => log('success', message),
     error: (message) => log('error', message),
+    warn: (message) => log('warn', message),
     close: () => {
       if (logStream) {
         logStream.end();
       }
     }
   };
+}
+
+/**
+ * Converts markdown links (.md) to HTML links (.html)
+ * @param {string} content - Markdown content
+ * @returns {string} - Content with converted links
+ */
+function convertMarkdownLinks(content) {
+  // Match markdown links: [text](path.md) or [text](path.md#anchor)
+  return content.replace(/\[([^\]]+)\]\(([^)]+\.md)(#[^)]+)?\)/g, (match, text, path, anchor) => {
+    // Convert .md to .html
+    const htmlPath = path.replace(/\.md$/, '.html');
+    const fullPath = htmlPath + (anchor || '');
+    return `[${text}](${fullPath})`;
+  });
 }

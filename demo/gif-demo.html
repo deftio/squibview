@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SquibView GIF Demo</title>
+    <link rel="stylesheet" href="../dist/squibview.min.css">
+    <style>
+        body { 
+            margin: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f8f9fa;
+        }
+        .demo-container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px;
+            background: white;
+            min-height: 100vh;
+        }
+        .demo-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+        }
+        .recording-tips {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+        .recording-tips h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>📹 SquibView GIF Demo Setup</h1>
+            <p>Perfect content for creating compelling animated demonstrations</p>
+        </div>
+        
+        <div class="recording-tips">
+            <h3>🎬 Recording Tips</h3>
+            <ul>
+                <li><strong>Start with empty editor</strong> - Type content step by step</li>
+                <li><strong>Keep it smooth</strong> - Type at moderate speed (not too fast)</li>
+                <li><strong>Show the magic</strong> - Pause to let viewers see live updates</li>
+                <li><strong>Highlight features</strong> - Focus on Mermaid, math, bidirectional editing</li>
+                <li><strong>Resolution:</strong> 1280x720 or 1920x1080 (16:9 ratio)</li>
+                <li><strong>Duration:</strong> 30-45 seconds for optimal GIF size</li>
+            </ul>
+        </div>
+        
+        <div id="squibview-demo"></div>
+    </div>
+
+    <script src="../dist/squibview.standalone.min.js"></script>
+    <script>
+        // Initialize SquibView with demo content
+        const demoEditor = new SquibView({
+            element: document.getElementById('squibview-demo'),
+            content: ``, // Start empty for step-by-step recording
+            initialView: 'split',
+            showControls: true,
+            titleShow: false
+        });
+
+        // Utility function to load demo content for testing
+        function loadDemoContent() {
+            fetch('./gif-demo-content.md')
+                .then(response => response.text())
+                .then(content => {
+                    demoEditor.setContent(content, 'md');
+                })
+                .catch(error => {
+                    console.log('Demo content not loaded, using fallback');
+                    demoEditor.setContent('# Start typing to see SquibView magic!', 'md');
+                });
+        }
+
+        // Load demo content after a short delay
+        setTimeout(loadDemoContent, 1000);
+    </script>
+</body>
+</html>

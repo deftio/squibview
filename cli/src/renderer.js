@@ -34,7 +34,7 @@ export async function renderMarkdownToHTML(content, options = {}) {
       titleShow: false,
       initialContent: content,
       // Disable features that don't work well headlessly
-      preserveImageTags: false, // Convert images to data URLs
+      preserveImageTags: true, // Keep original image URLs for static HTML
       ...options.squibViewOptions
     };
 
@@ -94,8 +94,9 @@ function cleanupHTML(html) {
 }
 
 /**
- * Gets the default CSS styles for standalone HTML output
+ * Gets the default CSS styles for standalone HTML output (legacy function)
  * @returns {string} - CSS styles
+ * @deprecated Use generateCSS from style-generator.js instead
  */
 export function getDefaultCSS() {
   return `
@@ -104,9 +105,9 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
   line-height: 1.6;
   color: #333;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 1rem 2.5rem;
+  padding: 1rem 3rem;
   background-color: #fff;
 }
 

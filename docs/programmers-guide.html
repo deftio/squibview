@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SquibView Programmer’s Guide</title>
+  <style>
+
+
+/* Additional CSS */
+/* SquibView CLI Generated Styles */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  line-height: 1.6;
+  color: #333;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 3rem;
+  background-color: #fff;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+h1 { 
+  font-size: 2rem;
+  
+}
+h2 { 
+  font-size: 1.5rem;
+  
+}
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1rem; }
+h5 { font-size: 0.875rem; }
+h6 { font-size: 0.85rem; color: #666; }
+
+p { margin-bottom: 1rem; }
+
+a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #0066cc;
+  text-decoration: underline;
+}
+
+ul, ol {
+  margin-bottom: 1rem;
+  padding-left: 2rem;
+}
+
+li {
+  margin-bottom: 0.25rem;
+}
+
+blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 4px solid #ddd;
+  background-color: #f9f9f9;
+  color: #666;
+}
+
+code {
+  background-color: #f5f5f5;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.85em;
+}
+
+pre {
+  background-color: #f8f8f8;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  border-radius: 4px;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 1rem;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 2rem 0;
+}
+
+/* Badge images - inline display */
+p img {
+  display: inline;
+  margin: 0 2px;
+  vertical-align: middle;
+}
+
+/* Math styling */
+.MathJax {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  body {
+    padding: 1rem 1.5rem;
+  }
+  
+  table {
+    font-size: 0.875rem;
+  }
+  
+  th, td {
+    padding: 0.25rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    padding: 0;
+    color: #000;
+  }
+  
+  a {
+    color: #000;
+    text-decoration: underline;
+  }
+  
+  pre, blockquote {
+    page-break-inside: avoid;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+}
+  </style>
+    <!-- Highlight.js for syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <!-- Leaflet for GeoJSON/TopoJSON maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <!-- Three.js for STL 3D models -->
+  <script src="https://unpkg.com/three@0.171.0/build/three.min.js"></script>
+  <!-- MathJax for math rendering -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true
+      },
+      options: {
+        ignoreHtmlClass: 'tex2jax_ignore',
+        processHtmlClass: 'tex2jax_process'
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+  </script>
+  <!-- Mermaid for diagram rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+</head>
+<body>
+<div><h1>SquibView Programmer’s Guide</h1><p>This guide provides detailed documentation for developers using SquibView in their applications.</p><h2>Table of Contents</h2><ul><li><a href="#installation">Installation</a></li><li><a href="#build-formats">Build Formats</a></li><li><a href="#basic-usage">Basic Usage</a></li><li><a href="#configuration-options">Configuration Options</a></li><li><a href="#content-types">Content Types</a></li><li><a href="#api-reference">API Reference</a></li><li><a href="#react-integration">React Integration</a></li><li><a href="#plugin-system">Plugin System</a></li><li><a href="#event-system">Event System</a></li><li><a href="#examples">Examples</a></li><li><a href="#development-and-testing">Development and Testing</a></li></ul><h2>Installation</h2><h3>NPM</h3><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash">npm install squibview
+</code></pre></div><h3>CDN</h3><div data-source-type="html"><pre><code class="hljs language-html" data-source-type="code" data-lang="html"><span class="hljs-comment">&lt;!-- Latest version --&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"https://unpkg.com/squibview/dist/squibview.standalone.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">link</span><span class="hljs-attr">rel</span>=<span class="hljs-string">"stylesheet"</span><span class="hljs-attr">href</span>=<span class="hljs-string">"https://unpkg.com/squibview/dist/squibview.css"</span>&gt;</span></code></pre></div><h2>Build Formats</h2><p>SquibView is available in three formats:</p><h3>ESM (ES Modules)</h3><div data-source-type="html"><pre><code class="hljs language-html" data-source-type="code" data-lang="html"><span class="hljs-comment">&lt;!-- Required dependencies --&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"https://unpkg.com/mermaid/dist/mermaid.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-comment">&lt;!-- SquibView --&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">link</span><span class="hljs-attr">rel</span>=<span class="hljs-string">"stylesheet"</span><span class="hljs-attr">href</span>=<span class="hljs-string">"../dist/squibview.css"</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">type</span>=<span class="hljs-string">"module"</span>&gt;</span><span class="language-javascript"><span class="hljs-keyword">import</span><span class="hljs-title class_">SquibView</span><span class="hljs-keyword">from</span><span class="hljs-string">'../dist/squibview.esm.min.js'</span>;
+  <span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editor'</span>);
+</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre></div><h3>UMD (Universal Module Definition)</h3><div data-source-type="html"><pre><code class="hljs language-html" data-source-type="code" data-lang="html"><span class="hljs-comment">&lt;!-- Required dependencies --&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"https://unpkg.com/mermaid/dist/mermaid.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"https://unpkg.com/tiny-emitter@2.1.0/dist/tinyemitter.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"https://unpkg.com/diff-match-patch@1.0.5/index.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"https://unpkg.com/turndown@7.1.2/dist/turndown.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-comment">&lt;!-- SquibView --&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">link</span><span class="hljs-attr">rel</span>=<span class="hljs-string">"stylesheet"</span><span class="hljs-attr">href</span>=<span class="hljs-string">"../dist/squibview.css"</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"../dist/squibview.umd.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span>&gt;</span><span class="language-javascript"><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editor'</span>);
+</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre></div><h3>Standalone (All Dependencies Bundled)</h3><div data-source-type="html"><pre><code class="hljs language-html" data-source-type="code" data-lang="html"><span class="hljs-comment">&lt;!-- SquibView --&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">link</span><span class="hljs-attr">rel</span>=<span class="hljs-string">"stylesheet"</span><span class="hljs-attr">href</span>=<span class="hljs-string">"../dist/squibview.css"</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"../dist/squibview.standalone.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span>&gt;</span><span class="language-javascript"><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editor'</span>);
+</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre></div><h2>Basic Usage</h2><h3>Creating an Instance</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editorContainer'</span>, {
+  <span class="hljs-comment">// Configuration options</span>
+});
+</code></pre></div><h3>Setting Content</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Set Markdown content</span>
+editor.<span class="hljs-title function_">setContent</span>(<span class="hljs-string">'# Hello World\n\nThis is a test.'</span>, <span class="hljs-string">'md'</span>);
+
+<span class="hljs-comment">// Set HTML content</span>
+editor.<span class="hljs-title function_">setContent</span>(<span class="hljs-string">'&lt;h1&gt;Hello World&lt;/h1&gt;&lt;p&gt;This is a test.&lt;/p&gt;'</span>, <span class="hljs-string">'html'</span>);
+
+<span class="hljs-comment">// Set CSV content</span>
+editor.<span class="hljs-title function_">setContent</span>(<span class="hljs-string">'name,age\nJohn,30\nJane,25'</span>, <span class="hljs-string">'csv'</span>);
+</code></pre></div><h3>Changing Views</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Switch to source view</span>
+editor.<span class="hljs-title function_">setView</span>(<span class="hljs-string">'src'</span>);
+
+<span class="hljs-comment">// Switch to rendered view</span>
+editor.<span class="hljs-title function_">setView</span>(<span class="hljs-string">'html'</span>);
+
+<span class="hljs-comment">// Switch to split view</span>
+editor.<span class="hljs-title function_">setView</span>(<span class="hljs-string">'split'</span>);
+</code></pre></div><h2>Configuration Options</h2><h3>Basic Options</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editorContainer'</span>, {
+  <span class="hljs-attr">initialContent</span>: <span class="hljs-string">''</span>,           <span class="hljs-comment">// Initial content to load</span><span class="hljs-attr">inputContentType</span>: <span class="hljs-string">'md'</span>,       <span class="hljs-comment">// Type of content ('md', 'html', 'reveal', 'csv', 'tsv')</span><span class="hljs-attr">showControls</span>: <span class="hljs-literal">true</span>,          <span class="hljs-comment">// Whether to show control buttons</span><span class="hljs-attr">titleShow</span>: <span class="hljs-literal">false</span>,            <span class="hljs-comment">// Whether to show the title section</span><span class="hljs-attr">titleContent</span>: <span class="hljs-string">''</span>,            <span class="hljs-comment">// Content for the title section</span><span class="hljs-attr">initialView</span>: <span class="hljs-string">'split'</span>,        <span class="hljs-comment">// Initial view mode ('src', 'html', 'split')</span><span class="hljs-attr">baseClass</span>: <span class="hljs-string">'squibview'</span>,      <span class="hljs-comment">// Base CSS class for styling</span>
+});
+</code></pre></div><h3>Image Handling</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editorContainer'</span>, {
+  <span class="hljs-attr">preserveImageTags</span>: <span class="hljs-literal">true</span>,     <span class="hljs-comment">// Whether to keep original image URLs in source view</span><span class="hljs-comment">// When true: images remain as &lt;img&gt; tags with original URLs</span><span class="hljs-comment">// When false: images are converted to data URLs</span><span class="hljs-comment">// Note: Images are always converted to data URLs when copying</span>
+});
+</code></pre></div><p><strong>Detailed Explanation of <code>preserveImageTags</code>:</strong></p><p>The <code>preserveImageTags</code> option (boolean, defaults to <code>true</code>) controls how SquibView handles <code>&lt;img&gt;</code> tags when processing and displaying Markdown content, particularly in the source view and during copy operations.</p><ul><li><p><strong><code>preserveImageTags: true</code> (Default Behavior):</strong></p><ul><li><strong>Source View:</strong> When SquibView renders Markdown, <code>&lt;img&gt;</code> tags will retain their original <code>src</code> attributes (e.g., <code>https://example.com/image.png</code> or <code>../images/local.jpg</code>). This is generally preferred for maintaining a clean and readable Markdown source, as it keeps image references as links rather than embedding large data strings.</li><li><strong>Rendered View:</strong> Images are displayed as usual by the browser fetching them from their <code>src</code> URLs.</li><li><strong>Implications:</strong> Requires the image URLs to be accessible by the browser. If images are on a local filesystem or a private network not accessible to the user viewing the rendered output, they may appear broken.</li></ul></li><li><p><strong><code>preserveImageTags: false</code>:</strong></p><ul><li><strong>Source View &amp; Rendered View:</strong> When SquibView renders Markdown, it will attempt to fetch each image, convert it to a base64 data URL, and embed this data URL directly into the <code>src</code> attribute of the <code>&lt;img&gt;</code> tag. Both the source view (if you were to inspect the HTML generated by <code>renderMarkdown</code> before it’s placed in the DOM) and the live rendered view will use these data URLs.</li><li><strong>Implications:</strong><ul><li><strong>Portability:</strong> Makes the HTML output more self-contained, as images are embedded. This is useful if the HTML needs to be displayed in environments where the original image URLs might not be accessible.</li><li><strong>Performance:</strong> Can increase the initial size of the HTML content significantly if there are many or large images. Fetching and converting images to data URLs can also add a small delay to the rendering process.</li><li><strong>Security:</strong> Images are fetched by the SquibView instance. Ensure that the environment running SquibView has access to the image URLs. Cross-origin restrictions might apply if images are on different domains and the server doesn’t set appropriate CORS headers (though SquibView attempts to use <code>crossOrigin = 'anonymous'</code> for images, which helps for CORS-enabled servers).</li></ul></li></ul></li><li><p><strong>Behavior during <code>copyHTML()</code> (Copy Rendered):</strong></p><ul><li>Regardless of the <code>preserveImageTags</code> setting, when the user clicks the “Copy Rendered” button (which calls the <code>copyHTML()</code> method), SquibView will <em>always</em> attempt to convert all images within the copied content to data URLs.</li><li><strong>Rationale:</strong> This ensures maximum portability of the copied HTML. If the user pastes this HTML into an email client, another document, or a different web page, the images will be embedded and should display correctly without relying on external links that might break or be inaccessible in the new context.</li></ul></li></ul><p><strong>When to Use Which Setting:</strong></p><ul><li>Use <code>preserveImageTags: true</code> (default) if:
+<ul><li>You prefer your Markdown source to remain clean with linked images.</li><li>All image URLs are expected to be accessible by the end-user’s browser.</li><li>You are primarily concerned with the live view and not necessarily with generating fully self-contained HTML snippets directly from the source view rendering.</li></ul></li><li>Use <code>preserveImageTags: false</code> if:
+<ul><li>You need the rendered output in the SquibView panel to use embedded data URLs by default (e.g., for immediate display in a restricted environment or for a specific type of export where data URLs are preferred from the live view itself).</li><li>You understand the potential performance and size implications.</li></ul></li></ul><h3>Text Selection</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editorContainer'</span>, {
+  <span class="hljs-attr">onReplaceSelectedText</span>: <span class="hljs-function">(<span class="hljs-params">selectionData</span>) =&gt;</span> {
+    <span class="hljs-comment">// Handle text selection</span><span class="hljs-keyword">return</span><span class="hljs-string">'replacement text'</span>;  <span class="hljs-comment">// Return string to replace selection</span>
+  }
+});
+</code></pre></div><h2>Content Types</h2><h3>Markdown (md)</h3><ul><li>Supports GitHub-flavored Markdown</li><li>Renders Mermaid diagrams</li><li>Syntax highlighting for code blocks</li><li>Table formatting</li><li>Inline SVG graphics</li></ul><h3>HTML (html)</h3><ul><li>Renders complete HTML pages</li><li>Supports embedded iframes</li><li>Preserves HTML structure</li></ul><h3>RevealJS (reveal)</h3><ul><li>Converts markdown to RevealJS slides</li><li>Splits content on ‘—’ delimiters</li><li>Supports Mermaid diagrams in slides</li></ul><h3>CSV/TSV (csv, tsv)</h3><ul><li>Renders tabular data</li><li>Converts to markdown tables</li><li>Supports different delimiters (comma, tab, semicolon, space)</li></ul><h2>API Reference</h2><h3>Core Methods</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Content Management</span>
+editor.<span class="hljs-title function_">setContent</span>(content, contentType)  <span class="hljs-comment">// Set content</span>
+editor.<span class="hljs-title function_">getContent</span>()                      <span class="hljs-comment">// Get current content</span>
+editor.<span class="hljs-title function_">getMarkdownSource</span>()               <span class="hljs-comment">// Get markdown source</span>
+editor.<span class="hljs-title function_">getHTMLSource</span>()                   <span class="hljs-comment">// Get HTML source</span><span class="hljs-comment">// View Management</span>
+editor.<span class="hljs-title function_">setView</span>(view)                     <span class="hljs-comment">// Set view mode</span>
+editor.<span class="hljs-title function_">toggleView</span>()                      <span class="hljs-comment">// Toggle between views</span>
+editor.<span class="hljs-title function_">controlsShow</span>(show)                <span class="hljs-comment">// Show/hide controls</span>
+editor.<span class="hljs-title function_">titleShow</span>(show)                   <span class="hljs-comment">// Show/hide title</span>
+editor.<span class="hljs-title function_">titleSetContent</span>(content)          <span class="hljs-comment">// Set title content</span>
+editor.<span class="hljs-title function_">titleGetContent</span>()                 <span class="hljs-comment">// Get title content</span><span class="hljs-comment">// Copy Operations</span>
+editor.<span class="hljs-title function_">copySource</span>()                      <span class="hljs-comment">// Copy source content</span>
+editor.<span class="hljs-title function_">copyHTML</span>()                        <span class="hljs-comment">// Copy rendered HTML</span><span class="hljs-comment">// Revision History</span>
+editor.<span class="hljs-title function_">revisionUndo</span>()                    <span class="hljs-comment">// Undo last change</span>
+editor.<span class="hljs-title function_">revisionRedo</span>()                    <span class="hljs-comment">// Redo last change</span>
+editor.<span class="hljs-title function_">revisionSet</span>(index)                <span class="hljs-comment">// Set to specific revision</span>
+editor.<span class="hljs-title function_">revisionNumRevsions</span>()             <span class="hljs-comment">// Get number of revisions</span>
+editor.<span class="hljs-title function_">revisionGetCurrentIndex</span>()         <span class="hljs-comment">// Get current revision index</span></code></pre></div><h3>Text Selection API</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Get current selection</span><span class="hljs-keyword">const</span> selection = editor.<span class="hljs-title function_">getCurrentSelection</span>();
+
+<span class="hljs-comment">// Replace selected text</span>
+editor.<span class="hljs-title function_">replaceSelectedText</span>(<span class="hljs-string">'new text'</span>, selection);
+
+<span class="hljs-comment">// Make selection editable/non-editable</span>
+editor.<span class="hljs-title function_">setSelectionEditable</span>(<span class="hljs-literal">true</span>, selection);
+
+<span class="hljs-comment">// Toggle selection lock</span>
+editor.<span class="hljs-title function_">toggleSelectionLock</span>(selection);
+
+<span class="hljs-comment">// Register selection callback</span><span class="hljs-keyword">const</span> unsubscribe = editor.<span class="hljs-title function_">onTextSelected</span>(<span class="hljs-function">(<span class="hljs-params">selectionData</span>) =&gt;</span> {
+  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">'Selected:'</span>, selectionData.<span class="hljs-property">text</span>);
+});
+</code></pre></div><h2>React Integration</h2><h3>Basic Usage</h3><div data-source-type="jsx"><pre><code class="hljs language-jsx" data-source-type="code" data-lang="jsx"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">SquibViewReact</span> } <span class="hljs-keyword">from</span><span class="hljs-string">'squibview/react'</span>;
+
+<span class="hljs-keyword">function</span><span class="hljs-title function_">App</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-keyword">return</span> (
+    <span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">SquibViewReact</span><span class="hljs-attr">initialContent</span>=<span class="hljs-string">"# Hello World"</span><span class="hljs-attr">inputContentType</span>=<span class="hljs-string">"md"</span><span class="hljs-attr">showControls</span>=<span class="hljs-string">{true}</span>
+    /&gt;</span></span>
+  );
+}
+</code></pre></div><h3>Props</h3><div data-source-type="jsx"><pre><code class="hljs language-jsx" data-source-type="code" data-lang="jsx">&lt;<span class="hljs-title class_">SquibViewReact</span><span class="hljs-comment">// Basic props</span>
+  initialContent=<span class="hljs-string">""</span>
+  inputContentType=<span class="hljs-string">"md"</span>
+  showControls={<span class="hljs-literal">true</span>}
+  titleShow={<span class="hljs-literal">false</span>}
+  titleContent=<span class="hljs-string">""</span>
+  initialView=<span class="hljs-string">"split"</span><span class="hljs-comment">// Image handling</span>
+  preserveImageTags={<span class="hljs-literal">true</span>}
+  
+  <span class="hljs-comment">// Event handlers</span>
+  onContentChange={<span class="hljs-function">(<span class="hljs-params">content, type</span>) =&gt;</span> {}}
+  onViewChange={<span class="hljs-function">(<span class="hljs-params">view</span>) =&gt;</span> {}}
+  onTextSelected={<span class="hljs-function">(<span class="hljs-params">selectionData</span>) =&gt;</span> {}}
+/&gt;
+</code></pre></div><h2>Plugin System</h2><h3>Creating a Plugin</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-keyword">const</span> myPlugin = {
+  <span class="hljs-attr">name</span>: <span class="hljs-string">'myPlugin'</span>,
+  <span class="hljs-attr">init</span>: <span class="hljs-function">(<span class="hljs-params">editor</span>) =&gt;</span> {
+    <span class="hljs-comment">// Plugin initialization</span>
+  },
+  <span class="hljs-attr">destroy</span>: <span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-comment">// Cleanup</span>
+  }
+};
+
+<span class="hljs-comment">// Register plugin</span>
+editor.<span class="hljs-title function_">registerPlugin</span>(myPlugin);
+</code></pre></div><h3>Custom Renderers</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript">editor.<span class="hljs-title function_">registerRenderer</span>(<span class="hljs-string">'custom'</span>, {
+  <span class="hljs-attr">render</span>: <span class="hljs-function">(<span class="hljs-params">source</span>) =&gt;</span> {
+    <span class="hljs-comment">// Render source to HTML</span><span class="hljs-keyword">return</span> html;
+  },
+  <span class="hljs-attr">sourceToOutput</span>: <span class="hljs-function">(<span class="hljs-params">source</span>) =&gt;</span> {
+    <span class="hljs-comment">// Convert source to output format</span><span class="hljs-keyword">return</span> output;
+  },
+  <span class="hljs-attr">outputToSource</span>: <span class="hljs-function">(<span class="hljs-params">output</span>) =&gt;</span> {
+    <span class="hljs-comment">// Convert output back to source</span><span class="hljs-keyword">return</span> source;
+  },
+  <span class="hljs-attr">operations</span>: {
+    <span class="hljs-attr">customOp</span>: <span class="hljs-function">(<span class="hljs-params">source</span>) =&gt;</span> {
+      <span class="hljs-comment">// Custom operation</span><span class="hljs-keyword">return</span> modifiedSource;
+    }
+  },
+  <span class="hljs-attr">buttons</span>: [
+    {
+      <span class="hljs-attr">label</span>: <span class="hljs-string">'Custom'</span>,
+      <span class="hljs-attr">action</span>: <span class="hljs-string">'customOp'</span>,
+      <span class="hljs-attr">title</span>: <span class="hljs-string">'Custom operation'</span>
+    }
+  ]
+});
+</code></pre></div><h2>Event System</h2><h3>Available Events</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript">editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'content:change'</span>, <span class="hljs-function">(<span class="hljs-params">content, type</span>) =&gt;</span> {});
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'view:change'</span>, <span class="hljs-function">(<span class="hljs-params">view</span>) =&gt;</span> {});
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'text:selected'</span>, <span class="hljs-function">(<span class="hljs-params">selectionData</span>) =&gt;</span> {});
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'markdown:rendered'</span>, <span class="hljs-function">(<span class="hljs-params">markdown, html</span>) =&gt;</span> {});
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'html:rendered'</span>, <span class="hljs-function">(<span class="hljs-params">html</span>) =&gt;</span> {});
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'revision:undo'</span>, <span class="hljs-function">(<span class="hljs-params">content, type</span>) =&gt;</span> {});
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'revision:redo'</span>, <span class="hljs-function">(<span class="hljs-params">content, type</span>) =&gt;</span> {});
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'revision:set'</span>, <span class="hljs-function">(<span class="hljs-params">index, content, type</span>) =&gt;</span> {});
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'controls:visibility'</span>, <span class="hljs-function">(<span class="hljs-params">show</span>) =&gt;</span> {});
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'title:visibility'</span>, <span class="hljs-function">(<span class="hljs-params">show</span>) =&gt;</span> {});
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'title:content'</span>, <span class="hljs-function">(<span class="hljs-params">content</span>) =&gt;</span> {});
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'layout:change'</span>, <span class="hljs-function">(<span class="hljs-params">view, dimensions</span>) =&gt;</span> {});
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'renderer:registered'</span>, <span class="hljs-function">(<span class="hljs-params">type, config</span>) =&gt;</span> {});
+</code></pre></div><h2>Examples</h2><h3>Basic Markdown Editor</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editor'</span>, {
+  <span class="hljs-attr">initialContent</span>: <span class="hljs-string">'# Hello World\n\nThis is a test.'</span>,
+  <span class="hljs-attr">inputContentType</span>: <span class="hljs-string">'md'</span>,
+  <span class="hljs-attr">showControls</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">initialView</span>: <span class="hljs-string">'split'</span>
+});
+</code></pre></div><h3>CSV Viewer</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editor'</span>, {
+  <span class="hljs-attr">initialContent</span>: <span class="hljs-string">'name,age\nJohn,30\nJane,25'</span>,
+  <span class="hljs-attr">inputContentType</span>: <span class="hljs-string">'csv'</span>,
+  <span class="hljs-attr">showControls</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">initialView</span>: <span class="hljs-string">'html'</span>
+});
+</code></pre></div><h3>RevealJS Presentation</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editor'</span>, {
+  <span class="hljs-attr">initialContent</span>: <span class="hljs-string">'# Slide 1\n\nContent\n\n---\n\n# Slide 2\n\nMore content'</span>,
+  <span class="hljs-attr">inputContentType</span>: <span class="hljs-string">'reveal'</span>,
+  <span class="hljs-attr">showControls</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">initialView</span>: <span class="hljs-string">'html'</span>
+});
+</code></pre></div><h3>React Component with Image Handling</h3><div data-source-type="jsx"><pre><code class="hljs language-jsx" data-source-type="code" data-lang="jsx"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">SquibViewReact</span> } <span class="hljs-keyword">from</span><span class="hljs-string">'squibview/react'</span>;
+
+<span class="hljs-keyword">function</span><span class="hljs-title function_">App</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-keyword">return</span> (
+    <span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">SquibViewReact</span><span class="hljs-attr">initialContent</span>=<span class="hljs-string">"# Image Example\n\n![Test](./test.png)"</span><span class="hljs-attr">inputContentType</span>=<span class="hljs-string">"md"</span><span class="hljs-attr">preserveImageTags</span>=<span class="hljs-string">{true}</span><span class="hljs-attr">onContentChange</span>=<span class="hljs-string">{(content,</span><span class="hljs-attr">type</span>) =&gt;</span> {
+        console.log('Content changed:', content);
+      }}
+    /&gt;</span>
+  );
+}
+</code></pre></div><h2>Development and Testing</h2><p>This section provides information for developers contributing to SquibView or setting up a local development environment.</p><h3>Version Bumping and Testing Script</h3><p>For local development, a convenient script <code>dev-bump-build-test.sh</code> is provided in the root of the repository. This script automates several common tasks:</p><ol><li><strong>Bumps the Patch Version</strong>: It increments the patch version number of the library (e.g., from <code>0.0.38</code> to <code>0.0.39</code>).</li><li><strong>Sets a Prerelease Identifier</strong>: It then sets a development prerelease identifier (e.g., <code>0.0.39-dev.0</code>). This uses <code>npm version prepatch --preid dev</code> internally.</li><li><strong>Updates <code>src/version.js</code></strong>: The script runs <code>tools/updateVersion.js</code> to propagate the new version from <code>package.json</code> to <code>src/version.js</code>, ensuring the library reports the correct version at runtime.</li><li><strong>Builds the Library</strong>: It performs a full build of SquibView.</li><li><strong>Runs Tests</strong>: It executes all unit and integration tests.</li><li><strong>Logs Output</strong>: All output from the script (build and test logs) is displayed in the terminal and also saved to <code>tests/log.out</code> for easier debugging.</li></ol><p><strong>Usage:</strong></p><p>To run the script, navigate to the root of the SquibView repository in your terminal and execute:</p><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash">./dev-bump-build-test.sh
+</code></pre></div><p>This script is particularly useful for quickly testing changes with an updated version number in a development context without creating git tags.</p><p>For more comprehensive information on the development workflow, versioning strategy, running tests, and debugging, please refer to the <a href="CONTRIBUTING.html">CONTRIBUTING.md</a> file.</p><p>For browser environments, you can use a <code>&lt;script&gt;</code> tag pointing to a CDN:</p><div data-source-type="html"><pre><code class="hljs language-html" data-source-type="code" data-lang="html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"https://unpkg.com/squibview/dist/squibview.standalone.umd.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre></div><p>Or, if you have it locally:</p><div data-source-type="html"><pre><code class="hljs language-html" data-source-type="code" data-lang="html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"../dist/squibview.standalone.umd.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre></div><h3>Basic Instantiation</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editorContainer'</span>, {
+  <span class="hljs-comment">// Configuration options</span>
+});
+</code></pre></div></div>
+  <script>
+    // Initialize MathJax after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise().catch(function(err) {
+          console.warn('MathJax typesetting failed:', err);
+        });
+      }
+    });
+  </script>
+  <script>
+    // Initialize Mermaid after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.mermaid) {
+        try {
+          window.mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose',
+            fontFamily: 'inherit'
+          });
+          
+          // Manually render all mermaid diagrams
+          const mermaidElements = document.querySelectorAll('.mermaid');
+          mermaidElements.forEach(function(element, index) {
+            const id = 'mermaid-' + index;
+            element.id = id;
+            try {
+              window.mermaid.render(id + '-svg', element.textContent, function(svgCode) {
+                element.innerHTML = svgCode;
+              });
+            } catch (err) {
+              console.warn('Mermaid rendering failed for element', index, ':', err);
+              // Fallback: show the text content
+              element.innerHTML = '<pre>' + element.textContent + '</pre>';
+            }
+          });
+        } catch (err) {
+          console.warn('Mermaid initialization failed:', err);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

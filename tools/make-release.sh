@@ -148,9 +148,18 @@ fi
 
 log_success "Ready to release version $VERSION"
 
+# Update release notes
+log_info "Updating release notes..."
+if [ -n "$CUSTOM_NOTES" ]; then
+    ./tools/update-release-notes.sh "$VERSION" "$CUSTOM_NOTES"
+else
+    ./tools/update-release-notes.sh "$VERSION"
+fi
+log_success "Release notes updated"
+
 # Commit release files
 log_info "Checking for changes to commit..."
-git add package.json package-lock.json src/version.js dist/ cli/
+git add package.json package-lock.json src/version.js dist/ cli/ release_notes.md
 
 if git diff --cached --quiet; then
     log_info "No changes to commit - files already committed"

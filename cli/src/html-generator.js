@@ -23,7 +23,8 @@ export function generateStandaloneHTML(content, options = {}) {
     css = null,
     customCSS = null,
     includeDefaultCSS = true,
-    bundleOffline = false
+    bundleOffline = false,
+    favicon = null
   } = options;
 
   // Build CSS content
@@ -53,6 +54,7 @@ export function generateStandaloneHTML(content, options = {}) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHTML(title)}</title>
+  ${generateFaviconTags(favicon)}
   <style>
 ${styles}
   </style>
@@ -69,6 +71,40 @@ ${generateMermaidInitScript()}
 }
 
 /**
+ * Generates favicon link tags
+ * @param {string|null} favicon - Custom favicon path/URL or null for default
+ * @returns {string} - Favicon link tags
+ */
+function generateFaviconTags(favicon) {
+  // Default SquibView favicon (SVG data URL)
+  const defaultFavicon = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>`;
+  
+  const faviconUrl = favicon || defaultFavicon;
+  
+  if (favicon && !favicon.startsWith('http') && !favicon.startsWith('data:')) {
+    // It's a local file, determine type from extension
+    const ext = favicon.split('.').pop().toLowerCase();
+    let type = 'image/x-icon'; // default
+    
+    if (ext === 'png') type = 'image/png';
+    else if (ext === 'svg') type = 'image/svg+xml';
+    else if (ext === 'ico') type = 'image/x-icon';
+    
+    return `  <link rel="icon" type="${type}" href="${escapeHTML(faviconUrl)}">`;
+  } else {
+    // URL or data URL, auto-detect type
+    let type = 'image/x-icon';
+    if (faviconUrl.includes('svg') || faviconUrl.includes('image/svg')) {
+      type = 'image/svg+xml';
+    } else if (faviconUrl.includes('png') || faviconUrl.includes('image/png')) {
+      type = 'image/png';
+    }
+    
+    return `  <link rel="icon" type="${type}" href="${escapeHTML(faviconUrl)}">`;
+  }
+}
+
+/**
  * Generates CDN-based script tags
  * @returns {string} - CDN script tags
  */
@@ -76,6 +112,12 @@ function generateCDNScripts() {
   return `  <!-- Highlight.js for syntax highlighting -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <!-- Leaflet for GeoJSON/TopoJSON maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <!-- Three.js for STL 3D models -->
+  <script src="https://unpkg.com/three@0.171.0/build/three.min.js"></script>
   <!-- MathJax for math rendering -->
   <script>
     window.MathJax = {
@@ -107,21 +149,32 @@ function generateCDNScripts() {
  */
 function generateOfflineScripts() {
   try {
-    // Read local library files
-    const mathJaxPath = join(__dirname, '../node_modules/mathjax/es5/tex-svg.js');
-    const mermaidPath = join(__dirname, '../node_modules/mermaid/dist/mermaid.min.js');
-    const highlightPath = join(__dirname, '../node_modules/highlight.js/lib/highlight.js');
-    const highlightCSSPath = join(__dirname, '../node_modules/highlight.js/styles/default.css');
+    // Read local library files from main node_modules (not CLI node_modules)
+    const baseNodeModules = join(__dirname, '../../node_modules');
+    const mathJaxPath = join(baseNodeModules, 'mathjax/es5/tex-svg.js');
+    const mermaidPath = join(baseNodeModules, 'mermaid/dist/mermaid.min.js');
+    const highlightPath = join(baseNodeModules, 'highlight.js/lib/index.js');
+    const highlightCSSPath = join(baseNodeModules, 'highlight.js/styles/default.css');
+    const leafletPath = join(baseNodeModules, 'leaflet/dist/leaflet.js');
+    const leafletCSSPath = join(baseNodeModules, 'leaflet/dist/leaflet.css');
+    const threePath = join(baseNodeModules, 'three/build/three.module.min.js');
+    const topoJsonPath = join(baseNodeModules, 'topojson-client/dist/topojson-client.min.js');
     
     const mathJaxCode = readFileSync(mathJaxPath, 'utf8');
     const mermaidCode = readFileSync(mermaidPath, 'utf8');
     const highlightCode = readFileSync(highlightPath, 'utf8');
     const highlightCSS = readFileSync(highlightCSSPath, 'utf8');
+    const leafletCode = readFileSync(leafletPath, 'utf8');
+    const leafletCSS = readFileSync(leafletCSSPath, 'utf8');
+    const threeCode = readFileSync(threePath, 'utf8');
+    const topoJsonCode = readFileSync(topoJsonPath, 'utf8');
     
     return `  <!-- Bundled libraries for offline use -->
   <style>
     /* Highlight.js CSS bundled */
 ${highlightCSS}
+    /* Leaflet CSS bundled */
+${leafletCSS}
   </style>
   <script>
     // MathJax configuration
@@ -144,6 +197,18 @@ ${highlightCSS}
   <script type="text/javascript">
     // Highlight.js bundled
 ${highlightCode}
+  </script>
+  <script type="text/javascript">
+    // Leaflet bundled
+${leafletCode}
+  </script>
+  <script type="text/javascript">
+    // Three.js bundled
+${threeCode}
+  </script>
+  <script type="text/javascript">
+    // TopoJSON bundled
+${topoJsonCode}
   </script>
   <script type="text/javascript">
     // MathJax bundled

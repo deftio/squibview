@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Installation Guide</title>
+  <style>
+
+
+/* Additional CSS */
+/* SquibView CLI Generated Styles */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  line-height: 1.6;
+  color: #333;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 3rem;
+  background-color: #fff;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+h1 { 
+  font-size: 2rem;
+  
+}
+h2 { 
+  font-size: 1.5rem;
+  
+}
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1rem; }
+h5 { font-size: 0.875rem; }
+h6 { font-size: 0.85rem; color: #666; }
+
+p { margin-bottom: 1rem; }
+
+a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #0066cc;
+  text-decoration: underline;
+}
+
+ul, ol {
+  margin-bottom: 1rem;
+  padding-left: 2rem;
+}
+
+li {
+  margin-bottom: 0.25rem;
+}
+
+blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 4px solid #ddd;
+  background-color: #f9f9f9;
+  color: #666;
+}
+
+code {
+  background-color: #f5f5f5;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.85em;
+}
+
+pre {
+  background-color: #f8f8f8;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  border-radius: 4px;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 1rem;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 2rem 0;
+}
+
+/* Badge images - inline display */
+p img {
+  display: inline;
+  margin: 0 2px;
+  vertical-align: middle;
+}
+
+/* Math styling */
+.MathJax {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  body {
+    padding: 1rem 1.5rem;
+  }
+  
+  table {
+    font-size: 0.875rem;
+  }
+  
+  th, td {
+    padding: 0.25rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    padding: 0;
+    color: #000;
+  }
+  
+  a {
+    color: #000;
+    text-decoration: underline;
+  }
+  
+  pre, blockquote {
+    page-break-inside: avoid;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+}
+  </style>
+    <!-- Highlight.js for syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <!-- Leaflet for GeoJSON/TopoJSON maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <!-- Three.js for STL 3D models -->
+  <script src="https://unpkg.com/three@0.171.0/build/three.min.js"></script>
+  <!-- MathJax for math rendering -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true
+      },
+      options: {
+        ignoreHtmlClass: 'tex2jax_ignore',
+        processHtmlClass: 'tex2jax_process'
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+  </script>
+  <!-- Mermaid for diagram rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+</head>
+<body>
+<div><h1>Installation Guide</h1><p>SquibView provides multiple build types to fit different development environments and use cases.</p><h2>Build Types Overview</h2><table><thead><tr><th>Build Type</th><th>Best For</th><th>Dependencies</th><th>Size</th></tr></thead><tbody><tr><td><strong>ESM</strong></td><td>Modern bundlers (Vite, Webpack)</td><td>External</td><td>Smallest</td></tr><tr><td><strong>UMD</strong></td><td>Legacy browsers, global scripts</td><td>External</td><td>Small</td></tr><tr><td><strong>Standalone</strong></td><td>Quick prototypes, CDN usage</td><td>Bundled</td><td>Largest</td></tr></tbody></table><h2>NPM Installation</h2><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash">npm install squibview
+</code></pre></div><h3>ESM (Recommended for Modern Projects)</h3><p>Use this with modern bundlers that handle dependencies:</p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">SquibView</span> } <span class="hljs-keyword">from</span><span class="hljs-string">'squibview'</span>;
+<span class="hljs-keyword">import</span><span class="hljs-string">'squibview/dist/squibview.min.css'</span>;
+
+<span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>({
+    <span class="hljs-attr">element</span>: <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">getElementById</span>(<span class="hljs-string">'editor'</span>),
+    <span class="hljs-attr">content</span>: <span class="hljs-string">'# Hello World'</span>
+});
+</code></pre></div><p><strong>When to use:</strong> You have a build step with Vite, Webpack, or similar bundlers.</p><h3>UMD (Legacy Browser Support)</h3><p>For projects without modern bundling:</p><div data-source-type="html"><pre><code class="hljs language-html" data-source-type="code" data-lang="html"><span class="hljs-tag">&lt;<span class="hljs-name">link</span><span class="hljs-attr">rel</span>=<span class="hljs-string">"stylesheet"</span><span class="hljs-attr">href</span>=<span class="hljs-string">"node_modules/squibview/dist/squibview.min.css"</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"node_modules/squibview/dist/squibview.umd.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span>&gt;</span><span class="language-javascript"><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>({
+        <span class="hljs-attr">element</span>: <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">getElementById</span>(<span class="hljs-string">'editor'</span>),
+        <span class="hljs-attr">content</span>: <span class="hljs-string">'# Hello World'</span>
+    });
+</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre></div><p><strong>When to use:</strong> Legacy projects or when you want to include SquibView as a simple script tag.</p><h2>CDN Usage</h2><h3>Standalone Build (Easiest)</h3><p>Everything bundled together - perfect for prototypes:</p><div data-source-type="html"><pre><code class="hljs language-html" data-source-type="code" data-lang="html"><span class="hljs-tag">&lt;<span class="hljs-name">link</span><span class="hljs-attr">rel</span>=<span class="hljs-string">"stylesheet"</span><span class="hljs-attr">href</span>=<span class="hljs-string">"https://unpkg.com/squibview/dist/squibview.min.css"</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"https://unpkg.com/squibview/dist/squibview.standalone.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre></div><p><strong>When to use:</strong> CodePen, quick prototypes, or when you want zero configuration.</p><h3>UMD with External Dependencies</h3><p>More control over dependency versions:</p><div data-source-type="html"><pre><code class="hljs language-html" data-source-type="code" data-lang="html"><span class="hljs-comment">&lt;!-- SquibView CSS --&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">link</span><span class="hljs-attr">rel</span>=<span class="hljs-string">"stylesheet"</span><span class="hljs-attr">href</span>=<span class="hljs-string">"https://unpkg.com/squibview/dist/squibview.min.css"</span>&gt;</span><span class="hljs-comment">&lt;!-- External dependencies --&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">link</span><span class="hljs-attr">rel</span>=<span class="hljs-string">"stylesheet"</span><span class="hljs-attr">href</span>=<span class="hljs-string">"https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css"</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-comment">&lt;!-- SquibView --&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"https://unpkg.com/squibview/dist/squibview.umd.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre></div><h2>CLI Installation</h2><h3>Global Installation</h3><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash">npm install -g squibview
+squibv document.md
+</code></pre></div><h3>Local Usage (Recommended)</h3><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash">npx squibv document.md
+</code></pre></div><h3>Project Installation</h3><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash">npm install --save-dev squibview
+npx squibv document.md
+</code></pre></div><h2>Dependency Requirements</h2><p>SquibView uses these external libraries for enhanced functionality:</p><ul><li><strong>Highlight.js</strong> - Syntax highlighting</li><li><strong>MathJax</strong> - Math equation rendering</li><li><strong>Mermaid</strong> - Diagram rendering</li><li><strong>Leaflet</strong> - Map rendering (GeoJSON/TopoJSON)</li><li><strong>Three.js</strong> - 3D model rendering (STL files)</li></ul><h3>Standalone vs Regular Builds</h3><p><strong>Regular builds</strong> (ESM/UMD) expect these dependencies to be loaded separately, giving you:</p><ul><li>Smaller bundle size</li><li>Control over versions</li><li>Ability to exclude unused features</li></ul><p><strong>Standalone builds</strong> include all dependencies, providing:</p><ul><li>Zero configuration</li><li>Guaranteed compatibility</li><li>Larger file size</li></ul><h2>Next Steps</h2><ul><li><strong><a href="./03-basic-usage.html">Basic Usage</a></strong> - Learn how to use SquibView</li><li><strong><a href="./04-cli-usage.html">CLI Usage</a></strong> - Master the command-line interface</li></ul></div>
+  <script>
+    // Initialize MathJax after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise().catch(function(err) {
+          console.warn('MathJax typesetting failed:', err);
+        });
+      }
+    });
+  </script>
+  <script>
+    // Initialize Mermaid after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.mermaid) {
+        try {
+          window.mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose',
+            fontFamily: 'inherit'
+          });
+          
+          // Manually render all mermaid diagrams
+          const mermaidElements = document.querySelectorAll('.mermaid');
+          mermaidElements.forEach(function(element, index) {
+            const id = 'mermaid-' + index;
+            element.id = id;
+            try {
+              window.mermaid.render(id + '-svg', element.textContent, function(svgCode) {
+                element.innerHTML = svgCode;
+              });
+            } catch (err) {
+              console.warn('Mermaid rendering failed for element', index, ':', err);
+              // Fallback: show the text content
+              element.innerHTML = '<pre>' + element.textContent + '</pre>';
+            }
+          });
+        } catch (err) {
+          console.warn('Mermaid initialization failed:', err);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

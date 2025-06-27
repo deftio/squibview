@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UMD Build Configuration for SquibView</title>
+  <style>
+
+
+/* Additional CSS */
+/* SquibView CLI Generated Styles */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  line-height: 1.6;
+  color: #333;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 3rem;
+  background-color: #fff;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+h1 { 
+  font-size: 2rem;
+  
+}
+h2 { 
+  font-size: 1.5rem;
+  
+}
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1rem; }
+h5 { font-size: 0.875rem; }
+h6 { font-size: 0.85rem; color: #666; }
+
+p { margin-bottom: 1rem; }
+
+a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #0066cc;
+  text-decoration: underline;
+}
+
+ul, ol {
+  margin-bottom: 1rem;
+  padding-left: 2rem;
+}
+
+li {
+  margin-bottom: 0.25rem;
+}
+
+blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 4px solid #ddd;
+  background-color: #f9f9f9;
+  color: #666;
+}
+
+code {
+  background-color: #f5f5f5;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.85em;
+}
+
+pre {
+  background-color: #f8f8f8;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  border-radius: 4px;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 1rem;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 2rem 0;
+}
+
+/* Badge images - inline display */
+p img {
+  display: inline;
+  margin: 0 2px;
+  vertical-align: middle;
+}
+
+/* Math styling */
+.MathJax {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  body {
+    padding: 1rem 1.5rem;
+  }
+  
+  table {
+    font-size: 0.875rem;
+  }
+  
+  th, td {
+    padding: 0.25rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    padding: 0;
+    color: #000;
+  }
+  
+  a {
+    color: #000;
+    text-decoration: underline;
+  }
+  
+  pre, blockquote {
+    page-break-inside: avoid;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+}
+  </style>
+    <!-- Highlight.js for syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <!-- Leaflet for GeoJSON/TopoJSON maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <!-- Three.js for STL 3D models -->
+  <script src="https://unpkg.com/three@0.171.0/build/three.min.js"></script>
+  <!-- MathJax for math rendering -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true
+      },
+      options: {
+        ignoreHtmlClass: 'tex2jax_ignore',
+        processHtmlClass: 'tex2jax_process'
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+  </script>
+  <!-- Mermaid for diagram rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+</head>
+<body>
+<div><h1>UMD Build Configuration for SquibView</h1><p>This document explains the UMD (Universal Module Definition) build configuration for SquibView, which ensures proper compatibility across different JavaScript environments.</p><h2>What is UMD?</h2><p>UMD is a module pattern that aims to be compatible with the most popular script loaders (and if no module loader is found, it registers itself as a global variable).</p><p>The UMD build should work in all these contexts:</p><ul><li>As a script tag directly in the browser</li><li>In AMD environments (like RequireJS)</li><li>In CommonJS environments (like Node.js)</li></ul><h2>Rollup Configuration for UMD</h2><p>The key parts of our UMD configuration:</p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript">{
+  <span class="hljs-attr">input</span>: <span class="hljs-string">'src/squibview.js'</span>,
+  <span class="hljs-attr">output</span>: {
+    <span class="hljs-attr">file</span>: <span class="hljs-string">'dist/squibview.umd.js'</span>,
+    <span class="hljs-attr">format</span>: <span class="hljs-string">'umd'</span>,
+    <span class="hljs-attr">name</span>: <span class="hljs-string">'SquibView'</span>,
+    <span class="hljs-attr">sourcemap</span>: <span class="hljs-literal">true</span>,
+    <span class="hljs-attr">inlineDynamicImports</span>: <span class="hljs-literal">true</span>,
+    <span class="hljs-comment">// Explicitly export the default export as the main export</span><span class="hljs-attr">exports</span>: <span class="hljs-string">'auto'</span>,
+    <span class="hljs-comment">// Override the generated UMD wrapper slightly to ensure it works in browsers</span><span class="hljs-attr">banner</span>: <span class="hljs-string">'/* SquibView UMD build */'</span>,
+    <span class="hljs-attr">footer</span>: <span class="hljs-string">'/* Make SquibView directly available as a global */\ntypeof window !== "undefined" &amp;&amp; (window.SquibView = typeof SquibView.default === "function" ? SquibView.default : SquibView);'</span>
+  },
+  <span class="hljs-attr">plugins</span>: [
+    <span class="hljs-title function_">resolve</span>({
+      extensions,
+      <span class="hljs-attr">browser</span>: <span class="hljs-literal">true</span>, <span class="hljs-comment">// Ensure browser-compatible modules are used</span><span class="hljs-attr">preferBuiltins</span>: <span class="hljs-literal">false</span>
+    }),
+    <span class="hljs-title function_">commonjs</span>({
+      <span class="hljs-comment">// Better CommonJS conversion</span><span class="hljs-attr">transformMixedEsModules</span>: <span class="hljs-literal">true</span>,
+      <span class="hljs-comment">// Ensure default exports are properly handled</span><span class="hljs-attr">namedExports</span>: {
+        <span class="hljs-string">'tiny-emitter'</span>: [<span class="hljs-string">'TinyEmitter'</span>],
+        <span class="hljs-string">'diff-match-patch'</span>: [<span class="hljs-string">'diff_match_patch'</span>]
+      }
+    }),
+    <span class="hljs-title function_">babel</span>({
+      extensions,
+      <span class="hljs-attr">exclude</span>: <span class="hljs-string">'node_modules/**'</span>,
+      <span class="hljs-attr">babelHelpers</span>: <span class="hljs-string">'bundled'</span>,
+      <span class="hljs-attr">presets</span>: [<span class="hljs-string">'@babel/preset-env'</span>],
+      <span class="hljs-attr">plugins</span>: [
+        <span class="hljs-string">'@babel/plugin-transform-modules-umd'</span>
+      ]
+    }),
+  ],
+}
+</code></pre></div><h2>Explanation of Key Settings</h2><h3>Output Configuration</h3><ul><li><strong><code>format: 'umd'</code></strong> - Specifies the UMD format.</li><li><strong><code>name: 'SquibView'</code></strong> - The global variable name to use when no module system is found.</li><li><strong><code>exports: 'auto'</code></strong> - Automatically determines the export mode based on the input.</li><li><strong><code>footer</code></strong> - A small piece of code that ensures the class is properly assigned to <code>window.SquibView</code> in browser environments, handling both default and named exports.</li></ul><h3>Plugins</h3><ul><li><strong><code>resolve({browser: true})</code></strong> - Ensures browser-compatible versions of dependencies are used.</li><li><strong><code>commonjs({namedExports})</code></strong> - Properly handles CommonJS dependencies, explicitly specifying exports for libraries that don’t follow standard patterns.</li><li><strong><code>babel({plugins})</code></strong> - Uses Babel to transform ES6+ code to be compatible with older environments, with specific plugins to handle UMD transformations.</li></ul><h2>Why This Approach?</h2><p>ES modules use <code>export default</code> syntax, which can cause issues in UMD builds. When bundling ES modules as UMD, the default export sometimes gets wrapped in an object with <code>{default: actualExport}</code>. Our configuration ensures:</p><ol><li>The appropriate export is exposed as the global variable</li><li>The library works across different module systems</li><li>No manual fixes are needed in HTML when using the UMD build as a script tag</li></ol><h2>Testing UMD Builds</h2><p>To verify the UMD build:</p><ol><li><p>Test as a direct script tag:</p><div data-source-type="html"><pre><code class="hljs language-html" data-source-type="code" data-lang="html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">src</span>=<span class="hljs-string">"../dist/squibview.umd.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span>&gt;</span><span class="language-javascript"><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editor'</span>);
+</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre></div></li><li><p>Check that <code>window.SquibView</code> is properly defined by inspecting the console:</p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-keyword">typeof</span><span class="hljs-title class_">SquibView</span>); <span class="hljs-comment">// Should print "function"</span><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title class_">SquibView</span>.<span class="hljs-property">version</span>); <span class="hljs-comment">// Should access version properly</span></code></pre></div></li></ol><h2>Troubleshooting</h2><p>If the UMD build doesn’t work properly:</p><ol><li>Check the bundled output by examining the <code>dist/squibview.umd.js</code> file to verify exports are handled correctly</li><li>Ensure dependencies are compatible with UMD format</li><li>Try bundling dependencies inline rather than marking them as external</li></ol></div>
+  <script>
+    // Initialize MathJax after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise().catch(function(err) {
+          console.warn('MathJax typesetting failed:', err);
+        });
+      }
+    });
+  </script>
+  <script>
+    // Initialize Mermaid after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.mermaid) {
+        try {
+          window.mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose',
+            fontFamily: 'inherit'
+          });
+          
+          // Manually render all mermaid diagrams
+          const mermaidElements = document.querySelectorAll('.mermaid');
+          mermaidElements.forEach(function(element, index) {
+            const id = 'mermaid-' + index;
+            element.id = id;
+            try {
+              window.mermaid.render(id + '-svg', element.textContent, function(svgCode) {
+                element.innerHTML = svgCode;
+              });
+            } catch (err) {
+              console.warn('Mermaid rendering failed for element', index, ':', err);
+              // Fallback: show the text content
+              element.innerHTML = '<pre>' + element.textContent + '</pre>';
+            }
+          });
+        } catch (err) {
+          console.warn('Mermaid initialization failed:', err);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
