@@ -12,6 +12,7 @@ When a task is completed it is marked as completed and moved to complete-tasks.m
 - ⬜ **Add PDF export to SquibView core** - Built-in PDF generation with optional button in UI (even in headless mode)
 - ⬜ **Add DOCX export to squibv CLI** - Command-line DOCX output support
 - ⬜ **Add HTML Page export to SquibView core** - Complete HTML page export with HEAD elements, separate from copy/getHTML functions (GitHub Issue #1)
+- ⬜ **Create task management CLI tool** - Script to add, get, delete, list, prioritize, and finish tasks in tasks.md (see dev/task-management.md for detailed specification)
 
 ### Core Architecture
 - ⬜ **Create plugin system for rendering engines** - Modular render callback system

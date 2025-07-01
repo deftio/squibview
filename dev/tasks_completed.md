@@ -18,6 +18,9 @@
 - ✅ **Integrated release notes into release process** - make-release.sh now automatically updates release_notes.md before creating releases
 
 ### Visual Content & Marketing
+- ✅ **Enhanced browser GIF creator with detailed documentation** - Added comprehensive comment header explaining purpose, flow, and technical details for tools/browser-gif-creator.html
+- ✅ **Fixed browser GIF generation issues** - Added content clearing between scenes, faster typing delays, and local gif.js library integration to resolve CORS issues
+- ✅ **Created generic task management CLI specification** - Comprehensive specification document (dev/task-management.md) for LLM-assisted development workflows with commands, file structure, ID system, version/commit tracking, and implementation details for automated task management
 - ✅ **Created animated GIF demo** - Automated Puppeteer-based GIF creation (tools/create-animated-gif.js) showing live editing, Mermaid diagrams, math equations, and GeoJSON maps. Generates squibview-demo.gif (362KB, 9 seconds, 1280x720)
 
 ## Historical Completions

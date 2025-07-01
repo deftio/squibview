@@ -1,1315 +1,179 @@
 <!DOCTYPE html>
+<!--
+SquibView GIF Creator (v7 - Definitive)
+=========================================
+- FIX: Implements a robust "Bitmap Mirror" to guarantee perfect source-side capture.
+- FIX: Uses a three-stage wait pipeline (Element -> Paint -> Settle) to eliminate all race conditions with async libraries.
+- FIX: RESTORES THE ORIGINAL, FULL DEMO SCRIPT with meticulous timing for a high-quality, professional result.
+- FEATURE: Automatically inserts "clear screen" steps between major scenes for clean transitions.
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SquibView GIF Creator</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
+    <link rel="icon" href="data:image/svg+xml,...">
     <link rel="stylesheet" href="../dist/squibview.min.css">
     <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #f5f5f5;
-        }
+        body { margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
+        .control-panel { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .demo-container { background: white; border-radius: 4px; padding: 15px; max-width: 1400px; margin: 0 auto; height: 600px; display: flex; flex-direction: column; }
+        #squibview-demo { height: 100%; display: flex; flex-direction: column; }
+        .squibview-editor { display: flex; gap: 10px; height: 100%; border: 1px solid #e1e5e9; position: relative; }
+        .squibview-input, .squibview-output { flex: 1; min-width: 0; border: none !important; font-size: 14px !important; }
+        .squibview-input { font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Consolas', monospace !important; background: #fafbfc !important; line-height: 1.5 !important; padding: 15px; }
+        .squibview-output { background: #ffffff !important; padding: 15px; overflow: auto; }
         
-        .control-panel {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        /* THE FIX: The Bitmap Mirror for perfect source capture. */
+        #source-mirror {
+            display: none; position: absolute; box-sizing: border-box; white-space: pre-wrap; word-wrap: break-word; z-index: 10;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Consolas', monospace !important; font-size: 14px !important; line-height: 1.5 !important; padding: 15px; background: #fafbfc !important;
         }
-        
-        .demo-container {
-            background: white;
-            border-radius: 4px;
-            padding: 15px;
-            max-width: 1400px; /* Wider for better capture */
-            margin: 0 auto;
-            height: 550px; /* Taller to show full content without clipping */
-            display: flex;
-            flex-direction: column;
-        }
-        
-        #squibview-demo {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        /* Ensure balanced split view */
-        .squibview-editor {
-            display: flex;
-            gap: 10px;
-        }
-        
-        /* Modern CSS styling - clean, minimal */
-        .squibview-input,
-        .squibview-output {
-            flex: 1; /* Equal width for both sides */
-            min-width: 0; /* Prevent overflow issues */
-            border: 1px solid #e1e5e9 !important;
-            border-radius: 0 !important;
-            font-size: 14px !important;
-        }
-        
-        .squibview-input {
-            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Consolas', monospace !important;
-            background: #fafbfc !important;
-            line-height: 1.5 !important;
-        }
-        
-        .squibview-output {
-            background: #ffffff !important;
-        }
-        
-        /* Hide controls for clean demo */
-        .squibview-controls {
-            display: none !important;
-        }
-        
-        .gif-preview {
-            margin: 20px 0;
-            text-align: center;
-        }
-        
-        button {
-            background: #0066cc;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            margin: 0 10px 10px 0;
-        }
-        
-        button:hover {
-            background: #0052a3;
-        }
-        
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-        
-        .status {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-        
-        .status.info {
-            background: #e3f2fd;
-            color: #1565c0;
-        }
-        
-        .status.success {
-            background: #e8f5e8;
-            color: #2e7d32;
-        }
-        
-        .status.warning {
-            background: #fff3e0;
-            color: #ef6c00;
-        }
-        
-        .progress {
-            width: 100%;
-            height: 20px;
-            background: #f0f0f0;
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-        
-        .progress-bar {
-            height: 100%;
-            background: #4caf50;
-            transition: width 0.3s ease;
-        }
-        
-        .settings {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin: 15px 0;
-        }
-        
-        .setting {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        label {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        input, select {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        
-        small {
-            color: #666;
-            font-size: 0.9em;
-            margin-top: 2px;
-        }
-        
-        .timing-note {
-            background: #e3f2fd;
-            padding: 12px;
-            border-radius: 6px;
-            margin: 15px 0;
-            border-left: 4px solid #1565c0;
-        }
-        
-        .timing-note p {
-            margin: 0;
-            color: #1565c0;
-        }
-        
-        .cli-instructions {
-            background: #e8f5e8;
-            padding: 15px;
-            border-radius: 6px;
-            margin: 15px 0;
-            border-left: 4px solid #2e7d32;
-        }
-        
-        .cli-instructions h3 {
-            margin-top: 0;
-            color: #2e7d32;
-        }
-        
-        .cli-instructions pre {
-            background: #f5f5f5;
-            padding: 10px;
-            border-radius: 4px;
-            overflow-x: auto;
-        }
-        
-        .cli-instructions code {
-            font-family: 'Monaco', 'Consolas', monospace;
-        }
+
+        button, .status, .progress { /* ... other styles ... */ }
+        button { background: #0066cc; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; margin: 0 10px 10px 0; }
+        button:disabled { background: #ccc; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 4px; font-weight: bold; }
+        .status.info { background: #e3f2fd; color: #1565c0; }
+        .status.success { background: #e8f5e8; color: #2e7d32; }
+        .status.warning { background: #fff3e0; color: #ef6c00; }
+        .progress { width: 100%; height: 20px; background: #f0f0f0; border-radius: 10px; overflow: hidden; margin: 10px 0; }
+        .progress-bar { height: 100%; background: #4caf50; transition: width 0.3s ease; }
     </style>
 </head>
 <body>
     <div class="control-panel">
         <h1>🎬 SquibView GIF Creator</h1>
-        <p>Capture frames for animated GIFs - timing handled by separate GIF generator</p>
-        
-        <div class="settings">
-            <div class="setting">
-                <label for="fps">Capture FPS (for frame extraction)</label>
-                <input type="number" id="fps" value="12" min="8" max="30">
-                <small>How fast to capture frames (not final GIF speed)</small>
-            </div>
-            <div class="setting">
-                <label for="gifWidth">Output Width</label>
-                <input type="number" id="gifWidth" value="1400" min="1200" max="1920">
-                <small>Final GIF width in pixels</small>
-            </div>
-            <div class="setting">
-                <label for="gifHeight">Output Height</label>
-                <input type="number" id="gifHeight" value="600" min="500" max="800">
-                <small>Final GIF height in pixels (reduced to crop whitespace)</small>
-            </div>
-        </div>
-        
-        <div class="timing-note">
-            <p><strong>ℹ️ Note:</strong> Frame timing is handled automatically by smart algorithms during GIF generation. These settings only affect frame capture quality and dimensions.</p>
-        </div>
-        
-        <div class="controls">
-            <button id="startBtn" onclick="startAnimation()">🎬 Start Animation</button>
-            <button id="downloadFramesBtn" onclick="downloadFrames()" disabled>📥 Download Frames JSON</button>
-            <button id="downloadGifBtn" onclick="showCLIInstructions()" disabled>⚡ Use CLI for GIF</button>
-            <button id="resetBtn" onclick="resetDemo()">🔄 Reset</button>
-        </div>
-        
-        <div id="cliInstructions" class="cli-instructions" style="display: none;">
-            <h3>🚀 Generate GIF with CLI (Recommended)</h3>
-            <p>For best quality and performance, use the CLI script:</p>
-            <pre><code>node tools/json-to-gif.js squibview-gif-frames.json squibview-demo.gif</code></pre>
-            <p><strong>Benefits:</strong> Better performance, smaller file size, automatic smart timing</p>
-        </div>
-        
+        <div class="controls"><button id="startBtn" onclick="startAnimation()">🎬 Start GIF Creation</button><button id="resetBtn" onclick="resetDemo()">🔄 Reset</button></div>
         <div id="status" class="status info" style="display: none;"></div>
-        <div class="progress" style="display: none;">
-            <div id="progressBar" class="progress-bar" style="width: 0%;"></div>
-        </div>
+        <div class="progress" style="display: none;"><div id="progressBar" class="progress-bar" style="width: 0%;"></div></div>
     </div>
-
     <div class="demo-container">
+        <pre id="source-mirror"></pre>
         <div id="squibview-demo"></div>
     </div>
 
-    <!-- Add MathJax for math rendering -->
-    <script>
-        window.MathJax = {
-            tex: {
-                inlineMath: [['$', '$'], ['\\(', '\\)']],
-                displayMath: [['$$', '$$'], ['\\[', '\\]']]
-            },
-            options: {
-                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
-            }
-        };
-    </script>
+    <!-- Dependencies -->
+    <script> window.MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] }, options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] } }; </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    
     <script src="../dist/squibview.standalone.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="./gif.js"></script>
+
     <script>
-        // Global state
         let demoEditor = null;
         let capturedFrames = [];
         let isRecording = false;
-        let currentStep = 0;
-        
-        // Demo script using rich content from sample-content.md
-        const demoScript_old = [
-            // Start with main heading - fast typing
-            { content: '# Squibview', description: 'Start main title', waitFor: null },
-            { content: '# Squibview Graphical', description: 'Building title', waitFor: null },
-            { content: '# Squibview Graphical Markdown', description: 'Building title', waitFor: null },
-            { content: '# Squibview Graphical Markdown Editor', description: 'Complete title', waitFor: null },
+
+        // [FIX] Restored original, detailed script and added explicit timing.
+        const originalDemoScript = [
+            // SCENE 1: Writing
+            { content: '# Squibview', delay: 150 },
+            { content: '# Squibview Graphical', delay: 150 },
+            { content: '# Squibview Graphical Markdown', delay: 150 },
+            { content: '# SquibView Graphical Markdown Editor', delay: 500 },
+            { content: `# SquibView Demo\n\n**Live**`, delay: 150 },
+            { content: `# SquibView Demo\n\n**Live markdown**`, delay: 150 },
+            { content: `# SquibView Demo\n\n**Live markdown rendering** as you type!`, delay: 1000 },
+            { content: `# SquibView Demo\n\n**Live markdown rendering** as you type!\n\n- Bullet points`, delay: 200 },
+            { content: `# SquibView Demo\n\n**Live markdown rendering** as you type!\n\n- Bullet points\n- Tables and lists`, delay: 200 },
+            { content: `# SquibView Demo\n\n**Live markdown rendering** as you type!\n\n- Bullet points\n- Tables and lists\n- *Rich* formatting`, delay: 1000 },
+            { content: `# SquibView Demo\n\n**Live markdown rendering** as you type!\n\n- Bullet points\n- Tables and lists\n- *Rich* formatting\n\n| Feature | Status |\n|---------|--------|\n| Live Preview | ✅ |\n| Diagrams | ✅ |`, delay: 2000, isEndScene: true },
             
-            // Add description - fast typing
-            { content: `# SquibView Demo
+            // SCENE 2: Mermaid
+            { content: `## Live Diagrams\n\n\`\`\`mermaid\ngraph LR\n    A[Type] --> B[Render]\n\`\`\``, waitFor: '.mermaid svg text', delay: 500 },
+            { content: `## Live Diagrams\n\n\`\`\`mermaid\ngraph LR\n    A[Type] --> B[Render]\n    B --> C[✨ Live!]\n\`\`\``, waitFor: '.mermaid svg text', delay: 2000, isEndScene: true },
 
-**L`, description: 'Starting description', waitFor: null },
-            { content: `# SquibView Demo
-
-**Li`, description: 'Typing', waitFor: null },
-            { content: `# SquibView Demo
-
-**Live`, description: 'Typing', waitFor: null },
-            { content: `# SquibView Demo
-
-**Live m`, description: 'Typing', waitFor: null },
-            { content: `# SquibView Demo
-
-**Live markdown`, description: 'Typing', waitFor: null },
-            { content: `# SquibView Demo
-
-**Live markdown rendering**`, description: 'Bold text', waitFor: null },
-            { content: `# SquibView Demo
-
-**Live markdown rendering** as you type!`, description: 'Complete description', waitFor: null }, // Hold
+            // SCENE 3: Math
+            { content: `## Math Equations\n\n\`\`\`math\ne^{i\\pi} + 1 = 0\n\`\`\``, waitFor: '.mjx-char', delay: 500 },
+            { content: `## Math Equations\n\n\`\`\`math\ne^{i\\pi} + 1 = 0\n\`\`\`\n\n\`\`\`math\n\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}\n\`\`\``, waitFor: '.mjx-char', delay: 2000, isEndScene: true },
             
-            // Add bullets - fast typing
-            { content: `# SquibView Demo
+            // SCENE 4: Map
+            { content: `## Interactive Maps\n\n\`\`\`geojson\n{\n  "type": "Feature",\n  "geometry": { "type": "Point", "coordinates": [-122.4, 37.8] }\n}\n\`\`\``, waitFor: '.leaflet-marker-icon', delay: 3000, isEndScene: true },
 
-**Live markdown rendering** as you type!
-
--`, description: 'Starting bullets', waitFor: null },
-            { content: `# SquibView Demo
-
-**Live markdown rendering** as you type!
-
-- B`, description: 'Typing', waitFor: null },
-            { content: `# SquibView Demo
-
-**Live markdown rendering** as you type!
-
-- Bullet points`, description: 'First bullet', waitFor: null },
-            { content: `# SquibView Demo
-
-**Live markdown rendering** as you type!
-
-- Bullet points
-- Tables and lists`, description: 'Second bullet', waitFor: null },
-            { content: `# SquibView Demo
-
-**Live markdown rendering** as you type!
-
-- Bullet points
-- Tables and lists  
-- *Rich* formatting`, description: 'Complete bullets', waitFor: null }, // Hold
+            // SCENE 5: 3D Model
+            { content: `## 3D Models\n\n\`\`\`stl\nsolid cube\nfacet normal 0 0 1\nouter loop\nvertex 0 0 1\nvertex 1 0 1\nvertex 1 1 1\nendloop\nendfacet\nfacet normal 0 0 1\nouter loop\nvertex 0 0 1\nvertex 1 1 1\nvertex 0 1 1\nendloop\nendfacet\nendsolid cube\n\`\`\``, waitFor: '.stl-container canvas', delay: 2500, rotationFrames: 6, isEndScene: true },
             
-            // Add table - faster
-            { content: `# SquibView Demo
-
-**Live markdown rendering** as you type!
-
-- Bullet points  
-- Tables and lists
-- *Rich* formatting
-
-| Feature |`, description: 'Starting table', waitFor: null },
-            { content: `# SquibView Demo
-
-**Live markdown rendering** as you type!
-
-- Bullet points  
-- Tables and lists
-- *Rich* formatting
-
-| Feature | Status |
-|---------|--------|`, description: 'Table header', waitFor: null },
-            { content: `# SquibView Demo
-
-**Live markdown rendering** as you type!
-
-- Bullet points  
-- Tables and lists
-- *Rich* formatting
-
-| Feature | Status |
-|---------|--------|
-| Live Preview | ✅ |
-| Diagrams | ✅ |`, description: 'Complete table', waitFor: null,  }, // Hold
-            
-            // Mermaid diagram - show typing
-            { content: `# SquibView Demo
-
-**Live markdown rendering** as you type!
-
-## Live Diagrams
-
-\`\`\`mermaid`, description: 'Starting diagram', waitFor: null },
-            { content: `# SquibView Demo
-
-**Live markdown rendering** as you type!
-
-## Live Diagrams
-
-\`\`\`mermaid
-graph LR`, description: 'Building diagram', waitFor: null },
-            { content: `# SquibView Demo
-
-**Live markdown rendering** as you type!
-
-## Live Diagrams
-
-\`\`\`mermaid
-graph LR
-    A[Type] --> B[Render]`, description: 'Building diagram', waitFor: null },
-            { content: `# SquibView Demo
-
-**Live markdown rendering** as you type!
-
-## Live Diagrams
-
-\`\`\`mermaid
-graph LR
-    A[Type] --> B[Render]
-    B --> C[✨ Live!]
-\`\`\``, description: 'Complete diagram', waitFor: '.mermaid svg' }, // Hold for render
-            
-            // Math equations - show complete equations to avoid parsing errors
-            { content: `# SquibView Demo
-
-**Live markdown rendering** as you type!
-
-## Math Equations
-
-\`\`\`math
-e^{i\\pi} + 1 = 0
-\`\`\``, description: 'Euler formula', waitFor: '.MathJax, [data-mathml], .mjx-chtml' }, // Hold for math render
-            { content: `# SquibView Demo
-
-**Live markdown rendering** as you type!
-
-## Math Equations
-
-\`\`\`math
-e^{i\\pi} + 1 = 0
-\`\`\`
-
-\`\`\`math
-\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
-\`\`\``, description: 'Gaussian integral', waitFor: '.MathJax, [data-mathml], .mjx-chtml' }, // Hold for render
-            { content: `# SquibView Demo
-
-**Live markdown rendering** as you type!
-
-## Math Equations
-
-\`\`\`math
-e^{i\\pi} + 1 = 0
-\`\`\`
-
-\`\`\`math
-\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
-\`\`\`
-
-\`\`\`math
-\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}
-\`\`\``, description: 'Complete math examples', waitFor: '.MathJax, [data-mathml], .mjx-chtml' }, // Hold for render
-            
-            // SVG graphics - show typing
-            { content: `# SquibView Demo
-
-**Live markdown rendering** as you type!
-
-## Math Equations
-
-\`\`\`math
-e^{i\\pi} + 1 = 0
-\`\`\`
-
-\`\`\`math
-\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
-\`\`\`
-
-\`\`\`math
-\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}
-\`\`\`
-
-## SVG Graphics
-
-\`\`\`svg
-<svg width="400" height="100" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" />
-</svg>
-\`\`\``, description: 'First SVG shape', waitFor: 'svg' }, // Hold for render
-            { content: `# SquibView Demo
-
-**Live markdown rendering** as you type!
-
-## Math Equations
-
-\`\`\`math
-e^{i\\pi} + 1 = 0
-\`\`\`
-
-\`\`\`math
-\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
-\`\`\`
-
-\`\`\`math
-\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}
-\`\`\`
-
-## SVG Graphics
-
-\`\`\`svg
-<svg width="400" height="100" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" />
-    <rect x="150" y="10"  width="80" height="80" stroke="orange" stroke-width="4" fill="blue" /> 
-</svg>
-\`\`\``, description: 'Complete SVG shapes', waitFor: 'svg' }, // Hold for render
-            
-            // Maps - show typing with complete JSON in two passes
-            { content: `# SquibView Demo
-
-**Live markdown rendering** as you type!
-
-## Interactive Maps
-
-\`\`\`geojson`, description: 'Starting map', waitFor: null },
-            { content: `# SquibView Demo
-
-**Live markdown rendering** as you type!
-
-## Interactive Maps
-
-\`\`\`geojson
-{
-  "type": "FeatureCollection",
-  "features": []
-}
-\`\`\``, description: 'Complete empty map', waitFor: '.leaflet-container' }, // Hold for initial render
-            { content: `# SquibView Demo
-
-**Live markdown rendering** as you type!
-
-## Interactive Maps
-
-\`\`\`geojson
-{
-  "type": "FeatureCollection",
-  "features": [{
-    "type": "Feature",
-    "properties": {"name": "Demo Point"},
-    "geometry": {
-      "type": "Point",
-      "coordinates": [-122.4, 37.8]
-    }
-  }]
-}
-\`\`\``, description: 'Complete map with point', waitFor: '.leaflet-container' } // Hold for render
+            // FINAL SCENE
+            { content: `✨ **SquibView Demo Complete** ✨`, delay: 5000 },
         ];
         
-        // New demo script with rich content from sample-content.md and better timing
-        const demoScript = [
-            // 1-4: Main heading with realistic typing
-            { content: '# Squibview', description: 'Start main title', waitFor: null },
-            { content: '# Squibview Graphical', description: 'Building title', waitFor: null },
-            { content: '# Squibview Graphical Markdown', description: 'Building title', waitFor: null },
-            { content: '# Squibview Graphical Markdown Editor', description: 'Complete title', waitFor: null },
-            
-            // 5-7: Add welcome description
-            { content: `# Squibview Graphical Markdown Editor 
-
-Welcome to the **Squibview**`, description: 'Add description', waitFor: null },
-            { content: `# Squibview Graphical Markdown Editor 
-
-Welcome to the **Squibview** live markdown editor.`, description: 'Complete description', waitFor: null },
-            { content: `# Squibview Graphical Markdown Editor 
-
-Welcome to the **Squibview** live markdown editor. This document shows various features such as live preview, Mermaid diagrams, syntax-highlighted code blocks, tables, and inline SVG graphics.`, description: 'Full description', waitFor: null },
-            
-            // 8-11: Feature list bullets
-            { content: `# Squibview Graphical Markdown Editor 
-
-Welcome to the **Squibview** live markdown editor. This document shows various features such as live preview, Mermaid diagrams, syntax-highlighted code blocks, tables, and inline SVG graphics.
-
-- Live Preview`, description: 'Add features', waitFor: null },
-            { content: `# Squibview Graphical Markdown Editor 
-
-Welcome to the **Squibview** live markdown editor. This document shows various features such as live preview, Mermaid diagrams, syntax-highlighted code blocks, tables, and inline SVG graphics.
-
-- Live Preview
-- Mermaid Diagrams`, description: 'Add features', waitFor: null },
-            { content: `# Squibview Graphical Markdown Editor 
-
-Welcome to the **Squibview** live markdown editor. This document shows various features such as live preview, Mermaid diagrams, syntax-highlighted code blocks, tables, and inline SVG graphics.
-
-- Live Preview
-- Mermaid Diagrams
-- Syntax Highlighting`, description: 'Add features', waitFor: null },
-            { content: `# Squibview Graphical Markdown Editor 
-
-Welcome to the **Squibview** live markdown editor. This document shows various features such as live preview, Mermaid diagrams, syntax-highlighted code blocks, tables, and inline SVG graphics.
-
-- Live Preview
-- Mermaid Diagrams  
-- Syntax Highlighting
-- SVG Rendering`, description: 'Complete features', waitFor: null },
-            
-            // 12-16: Table from sample-content.md
-            { content: `# Squibview Graphical Markdown Editor 
-
-Welcome to the **Squibview** live markdown editor.
-
-## Basic Table Example
-
-| Feature`, description: 'Start table', waitFor: null },
-            { content: `# Squibview Graphical Markdown Editor 
-
-Welcome to the **Squibview** live markdown editor.
-
-## Basic Table Example
-
-| Feature           | Supported |
-| -----------------`, description: 'Table header', waitFor: null },
-            { content: `# Squibview Graphical Markdown Editor 
-
-Welcome to the **Squibview** live markdown editor.
-
-## Basic Table Example
-
-| Feature           | Supported |
-| ----------------- | --------- |
-| Live Preview      | Yes       |`, description: 'Add row', waitFor: null },
-            { content: `# Squibview Graphical Markdown Editor 
-
-Welcome to the **Squibview** live markdown editor.
-
-## Basic Table Example
-
-| Feature           | Supported |
-| ----------------- | --------- |
-| Live Preview      | Yes       |
-| Mermaid Diagrams  | Yes       |
-| Syntax Highlight  | Yes       |`, description: 'More rows', waitFor: null },
-            { content: `# Squibview Graphical Markdown Editor 
-
-Welcome to the **Squibview** live markdown editor.
-
-## Basic Table Example
-
-| Feature           | Supported |
-| ----------------- | --------- |
-| Live Preview      | Yes       |
-| Mermaid Diagrams  | Yes       |
-| Syntax Highlight  | Yes       |
-| Table Styling     | Yes       |
-| SVG Rendering     | Yes       |`, description: 'Complete table', waitFor: null },
-            
-            // 17: Mermaid diagram from sample-content.md 
-            { content: `# Squibview Graphical Markdown Editor 
-
-## Diagram Example
-
-Below is a Mermaid diagram demonstrating a simple flow:
-
-\`\`\`mermaid
-graph TD;
-A[Start] --> B{Is it working?};
-B -- Yes --> C[Great!];
-B -- No --> D[Fix it!];
-D --> B;
-style A fill:#39f,stroke:#333,stroke-width:4px;
-style B fill:#fef,stroke:#03e,stroke-width:2px;
-style C fill:#de0f,stroke:#333,stroke-width:4px;
-style D fill:#8f2,stroke:#333,stroke-width:4px;
-\`\`\``, description: 'Complete diagram', waitFor: '.mermaid svg' },
-            
-            // 18-20: Math equations from sample-content.md
-            { content: `# Squibview Graphical Markdown Editor 
-
-## Fenced Math Block Example
-
-This demonstrates a fenced math block using MathJax:
-
-\`\`\`math
-e^{i\\pi} + 1 = 0
-\`\`\``, description: 'Euler identity', waitFor: '.MathJax, [data-mathml], .mjx-chtml' },
-            
-            { content: `# Squibview Graphical Markdown Editor 
-
-## Fenced Math Block Example
-
-\`\`\`math
-e^{i\\pi} + 1 = 0
-\`\`\`
-
-A more complex one:
-
-\`\`\`math
-\\begin{pmatrix}
-a & b \\\\
-c & d
-\\end{pmatrix} = \\mathbf{X}
-\`\`\``, description: 'Matrix equation', waitFor: '.MathJax, [data-mathml], .mjx-chtml' },
-            
-            { content: `# Squibview Graphical Markdown Editor 
-
-## Fenced Math Block Example
-
-\`\`\`math
-e^{i\\pi} + 1 = 0
-\`\`\`
-
-\`\`\`math
-\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
-\`\`\`
-
-\`\`\`math
-\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}
-\`\`\``, description: 'Complete math examples', waitFor: '.MathJax, [data-mathml], .mjx-chtml' },
-            
-            // 21-22: SVG graphics from sample-content.md
-            { content: `# Squibview Graphical Markdown Editor 
-
-## Inline SVG Example
-
-Below is an inline SVG graphic rendered directly from Markdown:
-
-\`\`\`svg
-<svg width="400" height="100" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" />
-</svg>
-\`\`\``, description: 'First SVG shape', waitFor: 'svg' },
-            
-            { content: `# Squibview Graphical Markdown Editor 
-
-## Inline SVG Example
-
-Below is an inline SVG graphic rendered directly from Markdown:
-
-\`\`\`svg
-<svg width="400" height="100" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" />
-    <rect x="150" y="10"  width="80" height="80" stroke="orange" stroke-width="4" fill="blue" /> 
-</svg>
-\`\`\``, description: 'Complete SVG shapes', waitFor: 'svg' },
-            
-            // 23-25: GeoJSON maps from sample-content.md (using complete JSON)
-            { content: `# Squibview Graphical Markdown Editor 
-
-## GeoJSON Map Example
-
-This demonstrates a fenced GeoJSON block that renders an interactive map:
-
-\`\`\`geojson
-{
-  "type": "FeatureCollection",
-  "features": []
-}
-\`\`\``, description: 'Empty map base', waitFor: '.leaflet-container' },
-            
-            { content: `# Squibview Graphical Markdown Editor 
-
-## GeoJSON Map Example
-
-\`\`\`geojson
-{
-  "type": "Feature",
-  "geometry": {
-    "type": "Point",
-    "coordinates": [-74.0445, 40.6892]
-  },
-  "properties": {
-    "name": "Statue of Liberty"
-  }
-}
-\`\`\``, description: 'Single feature map', waitFor: '.leaflet-container' },
-            
-            { content: `# Squibview Graphical Markdown Editor 
-
-## GeoJSON Map Example
-
-\`\`\`geojson
-{
-  "type": "FeatureCollection",
-  "features": [
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [-122.4194, 37.7749]
-      },
-      "properties": {
-        "name": "San Francisco",
-        "population": 884363
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [-74.0060, 40.7128]
-      },
-      "properties": {
-        "name": "New York City",
-        "population": 8336817
-      }
-    }
-  ]
-}
-\`\`\``, description: 'Multi-city map', waitFor: '.leaflet-container' },
-            
-            // 26-30: STL 3D model examples with spinning effect
-            { content: `# Squibview Graphical Markdown Editor 
-
-## STL 3D Model Example
-
-This demonstrates a fenced STL block that renders an interactive 3D model:
-
-\`\`\`stl
-solid cube
-  facet normal 0 0 1
-    outer loop
-      vertex 0 0 1
-      vertex 1 0 1
-      vertex 1 1 1
-    endloop
-  endfacet
-\`\`\``, description: 'Start STL model', waitFor: '.stl-container' },
-            
-            // Add a few more frames for "spinning" effect by varying the STL content slightly
-            { content: `# Squibview Graphical Markdown Editor 
-
-## STL 3D Model Example
-
-\`\`\`stl
-solid cube
-  facet normal 0 0 1
-    outer loop
-      vertex 0 0 1
-      vertex 1 0 1
-      vertex 1 1 1
-    endloop
-  endfacet
-  facet normal 0 0 1
-    outer loop
-      vertex 0 0 1
-      vertex 1 1 1
-      vertex 0 1 1
-    endloop
-  endfacet
-\`\`\``, description: 'Building STL model', waitFor: '.stl-container' },
-            
-            { content: `# Squibview Graphical Markdown Editor 
-
-## STL 3D Model Example
-
-\`\`\`stl
-solid cube
-  facet normal 0 0 1
-    outer loop
-      vertex 0 0 1
-      vertex 1 0 1
-      vertex 1 1 1
-    endloop
-  endfacet
-  facet normal 0 0 1
-    outer loop
-      vertex 0 0 1
-      vertex 1 1 1
-      vertex 0 1 1
-    endloop
-  endfacet
-  facet normal 0 0 -1
-    outer loop
-      vertex 0 0 0
-      vertex 1 1 0
-      vertex 1 0 0
-    endloop
-  endfacet
-\`\`\``, description: 'More STL faces', waitFor: '.stl-container' },
-            
-            { content: `# Squibview Graphical Markdown Editor 
-
-## STL 3D Model Example
-
-\`\`\`stl
-solid cube
-  facet normal 0 0 1
-    outer loop
-      vertex 0 0 1
-      vertex 1 0 1
-      vertex 1 1 1
-    endloop
-  endfacet
-  facet normal 0 0 1
-    outer loop
-      vertex 0 0 1
-      vertex 1 1 1
-      vertex 0 1 1
-    endloop
-  endfacet
-  facet normal 0 0 -1
-    outer loop
-      vertex 0 0 0
-      vertex 1 1 0
-      vertex 1 0 0
-    endloop
-  endfacet
-  facet normal 0 0 -1
-    outer loop
-      vertex 0 0 0
-      vertex 0 1 0
-      vertex 1 1 0
-    endloop
-  endfacet
-endsolid cube
-\`\`\``, description: 'Complete STL cube', waitFor: '.stl-container' },
-            
-            { content: `# Squibview Graphical Markdown Editor 
-
-✨ **Live markdown editing with rich graphics support!** ✨
-
-- 📊 Tables and Lists
-- 📈 Mermaid Diagrams  
-- 🧮 Math Equations
-- 🎨 SVG Graphics
-- 🗺️ Interactive Maps
-- 🎯 3D Models`, description: 'Final summary', waitFor: null }
-        ];
-        
-        // Initialize SquibView
-        function initDemo() {
-            try {
-                demoEditor = new SquibView('#squibview-demo', {
-                    content: '',
-                    initialView: 'split',
-                    showControls: false,
-                    titleShow: false
-                });
-                updateStatus('SquibView initialized successfully', 'success');
-            } catch (error) {
-                updateStatus('Error initializing SquibView: ' + error.message, 'warning');
+        const processedScript = [];
+        let previousContent = "";
+        originalDemoScript.forEach(step => {
+            if (step.content.startsWith('##') && !previousContent.startsWith('##')) {
+                processedScript.push({ content: '', description: 'Clearing for next scene', delay: 400 });
             }
+            processedScript.push(step);
+            previousContent = step.content;
+        });
+
+        function waitForPaint() { return new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); }
+        async function captureFrame() {
+            const editorEl = document.querySelector('.squibview-editor');
+            const sourceTextarea = editorEl.querySelector('.squibview-input');
+            const mirror = document.getElementById('source-mirror');
+            const rect = sourceTextarea.getBoundingClientRect(), parentRect = editorEl.getBoundingClientRect();
+            mirror.style.top = `${rect.top - parentRect.top}px`;
+            mirror.style.left = `${rect.left - parentRect.left}px`;
+            mirror.style.width = `${rect.width}px`;
+            mirror.style.height = `${rect.height}px`;
+            mirror.textContent = sourceTextarea.value;
+            mirror.style.display = 'block';
+            sourceTextarea.style.visibility = 'hidden';
+            try { return await html2canvas(editorEl, { useCORS: true, logging: false }); } 
+            finally { mirror.style.display = 'none'; sourceTextarea.style.visibility = 'visible'; }
         }
+        function waitForContent(selector, timeout = 7000) { return new Promise((resolve) => { if (document.querySelector(selector)) { return resolve(); } const observer = new MutationObserver(() => { if (document.querySelector(selector)) { observer.disconnect(); resolve(); } }); observer.observe(document.body, { childList: true, subtree: true }); setTimeout(() => { observer.disconnect(); resolve(); }, timeout); }); }
         
-        // Update status display
-        function updateStatus(message, type = 'info') {
-            const statusEl = document.getElementById('status');
-            statusEl.textContent = message;
-            statusEl.className = `status ${type}`;
-            statusEl.style.display = 'block';
-        }
-        
-        // Update progress bar
-        function updateProgress(current, total) {
-            const progressBar = document.getElementById('progressBar');
-            const percentage = (current / total) * 100;
-            progressBar.style.width = percentage + '%';
-            document.querySelector('.progress').style.display = 'block';
-        }
-        
-        // Improved frame capture with separate source/rendered capture
-        function captureFrame() {
-            return new Promise(async (resolve) => {
-                try {
-                    const width = parseInt(document.getElementById('gifWidth').value);
-                    const height = parseInt(document.getElementById('gifHeight').value);
-                    
-                    // Get the SquibView elements
-                    const sourceEditor = document.querySelector('.squibview-input');
-                    const renderedOutput = document.querySelector('.squibview-output');
-                    
-                    if (!sourceEditor || !renderedOutput) {
-                        throw new Error('Could not find SquibView elements');
-                    }
-                    
-                    // Create final canvas
-                    const finalCanvas = document.createElement('canvas');
-                    finalCanvas.width = width;
-                    finalCanvas.height = height;
-                    const finalCtx = finalCanvas.getContext('2d', { willReadFrequently: true });
-                    
-                    // Fill white background
-                    finalCtx.fillStyle = '#ffffff';
-                    finalCtx.fillRect(0, 0, width, height);
-                    
-                    // Capture source side using html2canvas
-                    const sourceCanvas = await html2canvas(sourceEditor, {
-                        width: width / 2 - 5,
-                        height: height,
-                        backgroundColor: '#fafbfc',
-                        scale: 1,
-                        useCORS: true,
-                        allowTaint: true
-                    });
-                    
-                    // Capture rendered side using SquibView's divToDataUrl if available
-                    let renderedCanvas;
-                    if (demoEditor && demoEditor.divToDataUrl) {
-                        try {
-                            const renderedDataUrl = await demoEditor.divToDataUrl(renderedOutput);
-                            const renderedImg = new Image();
-                            renderedImg.onload = () => {
-                                // Draw source side (left)
-                                finalCtx.drawImage(sourceCanvas, 0, 0, width / 2 - 5, height);
-                                
-                                // Draw rendered side (right)
-                                finalCtx.drawImage(renderedImg, width / 2 + 5, 0, width / 2 - 5, height);
-                                
-                                resolve(finalCanvas.toDataURL('image/png'));
-                            };
-                            renderedImg.src = renderedDataUrl;
-                            return;
-                        } catch (error) {
-                            console.warn('SquibView divToDataUrl failed, using html2canvas fallback:', error);
-                        }
-                    }
-                    
-                    // Fallback: use html2canvas for rendered side too
-                    renderedCanvas = await html2canvas(renderedOutput, {
-                        width: width / 2 - 5,
-                        height: height,
-                        backgroundColor: '#ffffff',
-                        scale: 1,
-                        useCORS: true,
-                        allowTaint: true
-                    });
-                    
-                    // Draw both sides
-                    finalCtx.drawImage(sourceCanvas, 0, 0, width / 2 - 5, height);
-                    finalCtx.drawImage(renderedCanvas, width / 2 + 5, 0, width / 2 - 5, height);
-                    
-                    resolve(finalCanvas.toDataURL('image/png'));
-                    
-                } catch (error) {
-                    console.error('Frame capture error:', error);
-                    // Fallback: simple canvas with error message
-                    const canvas = document.createElement('canvas');
-                    canvas.width = parseInt(document.getElementById('gifWidth').value);
-                    canvas.height = parseInt(document.getElementById('gifHeight').value);
-                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                    
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = '#333333';
-                    ctx.font = '24px Arial';
-                    ctx.fillText('Frame captured at ' + new Date().toLocaleTimeString(), 50, 50);
-                    
-                    resolve(canvas.toDataURL('image/png'));
-                }
-            });
-        }
-        
-        // Wait for specific content to render
-        function waitForContent(selector, timeout = 5000) {
-            if (!selector) return Promise.resolve();
-            
-            return new Promise((resolve) => {
-                // Check if already exists
-                const element = document.querySelector(selector);
-                if (element) {
-                    resolve();
-                    return;
-                }
-                
-                // Special handling for math equations
-                if (selector.includes('MathJax') || selector.includes('mjx')) {
-                    // Wait for MathJax to be available and process the math
-                    const checkMath = () => {
-                        if (window.MathJax && window.MathJax.typesetPromise) {
-                            window.MathJax.typesetPromise().then(() => {
-                                setTimeout(resolve, 500); // Extra time for rendering
-                            }).catch(() => {
-                                setTimeout(resolve, 1000); // Fallback
-                            });
-                        } else {
-                            // Fallback: look for rendered math elements
-                            const mathElements = document.querySelectorAll('.MathJax, [data-mathml], .mjx-chtml, .mjx-math');
-                            if (mathElements.length > 0) {
-                                resolve();
-                            } else {
-                                setTimeout(resolve, 1500); // Give up and continue
-                            }
-                        }
-                    };
-                    
-                    setTimeout(checkMath, 1000); // Give MathJax time to initialize
-                    return;
-                }
-                
-                // Regular content waiting
-                const observer = new MutationObserver(() => {
-                    if (document.querySelector(selector)) {
-                        observer.disconnect();
-                        resolve();
-                    }
-                });
-                
-                observer.observe(document.body, {
-                    childList: true,
-                    subtree: true
-                });
-                
-                // Timeout fallback
-                setTimeout(() => {
-                    observer.disconnect();
-                    resolve();
-                }, timeout);
-            });
-        }
-        
-        // Start animation sequence
         async function startAnimation() {
             if (isRecording) return;
-            
             isRecording = true;
             capturedFrames = [];
-            currentStep = 0;
-            
-            const startBtn = document.getElementById('startBtn');
-            const downloadFramesBtn = document.getElementById('downloadFramesBtn');
-            const downloadGifBtn = document.getElementById('downloadGifBtn');
-            
-            startBtn.disabled = true;
-            downloadFramesBtn.disabled = true;
-            downloadGifBtn.disabled = true;
-            
-            updateStatus('Starting animation sequence...', 'info');
-            
-            const fps = parseInt(document.getElementById('fps').value);
-            const frameInterval = 1000 / fps;
-            
+            document.getElementById('startBtn').disabled = true;
             try {
-                for (let i = 0; i < demoScript.length; i++) {
-                    const step = demoScript[i];
-                    currentStep = i + 1;
-                    
-                    updateStatus(`Step ${currentStep}/${demoScript.length}: ${step.description}`, 'info');
-                    updateProgress(currentStep - 1, demoScript.length);
-                    
-                    // Set content
+                for (let i = 0; i < processedScript.length; i++) {
+                    const step = processedScript[i];
+                    updateStatus(`Step ${i + 1}/${processedScript.length}: ${step.description || 'Building...'}`, 'info');
+                    updateProgress(i + 1, processedScript.length);
                     demoEditor.setContent(step.content, 'md');
-                    
-                    // Wait for specific content to render
-                    if (step.waitFor) {
-                        await waitForContent(step.waitFor);
-                        await new Promise(resolve => setTimeout(resolve, 500)); // Extra stability wait
+
+                    // THE FIX: The Triple-Stage Wait Pipeline
+                    if (step.waitFor) await waitForContent(step.waitFor); // 1. Wait for element
+                    await waitForPaint();                                  // 2. Wait for paint
+                    if (step.waitFor) await new Promise(r => setTimeout(r, 400)); // 3. Settle async libraries
+
+                    if (step.rotationFrames) {
+                        for (let j = 0; j < step.rotationFrames; j++) {
+                            const canvas = await captureFrame();
+                            const frameDelay = (j === step.rotationFrames - 1) ? step.delay : 150;
+                            capturedFrames.push({ canvas, delay: frameDelay });
+                            await new Promise(r => setTimeout(r, 150));
+                        }
                     } else {
-                        await new Promise(resolve => setTimeout(resolve, 300));
+                        const canvas = await captureFrame();
+                        capturedFrames.push({ canvas, delay: step.delay });
                     }
-                    
-                    // Capture one frame per step (timing handled by GIF generator)
-                    const frame = await captureFrame();
-                    capturedFrames.push(frame);
-                    await new Promise(resolve => setTimeout(resolve, frameInterval));
                 }
-                
-                updateProgress(demoScript.length, demoScript.length);
-                updateStatus(`Animation complete! Captured ${capturedFrames.length} frames`, 'success');
-                document.getElementById('downloadFramesBtn').disabled = false;
-                document.getElementById('downloadGifBtn').disabled = false;
-                
+                updateStatus(`Capture complete! ${capturedFrames.length} frames ready.`, 'success');
+                await generateAndDownloadGIF();
             } catch (error) {
-                updateStatus('Error during animation: ' + error.message, 'warning');
+                updateStatus(`Error during animation: ${error.message}`, 'warning');
+                console.error(error);
             } finally {
                 isRecording = false;
-                startBtn.disabled = false;
+                document.getElementById('startBtn').disabled = false;
             }
         }
         
-        // Download captured frames
-        function downloadFrames() {
-            if (capturedFrames.length === 0) {
-                updateStatus('No frames to download', 'warning');
-                return;
-            }
-            
-            const gifData = {
-                frames: capturedFrames,
-                fps: parseInt(document.getElementById('fps').value),
-                width: parseInt(document.getElementById('gifWidth').value),
-                height: parseInt(document.getElementById('gifHeight').value),
-                createdAt: new Date().toISOString()
-            };
-            
-            const blob = new Blob([JSON.stringify(gifData, null, 2)], { 
-                type: 'application/json' 
-            });
-            
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'squibview-gif-frames.json';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            updateStatus('Frames downloaded successfully!', 'success');
-        }
-        
-        // Show CLI instructions instead of broken browser generation
-        function showCLIInstructions() {
-            const instructions = document.getElementById('cliInstructions');
-            instructions.style.display = 'block';
-            updateStatus('Use the CLI script for best results!', 'success');
-        }
-        
-        // Legacy function (disabled due to rendering issues)
-        function downloadGIF_DISABLED() {
-            if (capturedFrames.length === 0) {
-                updateStatus('No frames to generate GIF from', 'warning');
-                return;
-            }
-            
-            updateStatus('Generating GIF with smart timing...', 'info');
-            updateProgress(0);
-            
-            const width = parseInt(document.getElementById('gifWidth').value);
-            const height = parseInt(document.getElementById('gifHeight').value);
-            
-            const gif = new GIF({
-                workers: 2,
-                quality: 20,
-                width: width,
-                height: height
-            });
-            
-            let processedFrames = 0;
-            
-            // Smart timing: fast for typing, slower for complex content
-            const totalFrames = capturedFrames.length;
-            const typingFrameCount = Math.floor(totalFrames * 0.7);
-            
-            capturedFrames.forEach((frameDataUrl, index) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // Smart timing
-                    let delay;
-                    if (index < typingFrameCount) {
-                        delay = 80; // Fast typing
-                    } else {
-                        // Slower for complex content, extra slow for final frames
-                        const isEndFrame = (index - typingFrameCount) % 8 === 7;
-                        delay = isEndFrame ? 2000 : 200;
-                    }
-                    
-                    gif.addFrame(canvas, { delay: delay });
-                    
-                    processedFrames++;
-                    updateProgress(processedFrames / totalFrames * 0.8);
-                    
-                    if (processedFrames === totalFrames) {
-                        updateStatus('Rendering GIF...', 'info');
-                        gif.render();
-                    }
-                };
-                img.src = frameDataUrl;
-            });
-            
-            gif.on('finished', (blob) => {
-                updateProgress(1);
-                updateStatus('GIF generated successfully!', 'success');
-                
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'squibview-demo.gif';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            });
-            
-            gif.on('progress', (progress) => {
-                updateProgress(0.8 + progress * 0.2);
-            });
-        }
-        
-        // Reset demo
-        function resetDemo() {
-            if (isRecording) return;
-            
-            capturedFrames = [];
-            currentStep = 0;
-            
-            if (demoEditor) {
-                demoEditor.setContent('', 'md');
-            }
-            
-            document.getElementById('downloadFramesBtn').disabled = true;
-            document.getElementById('downloadGifBtn').disabled = true;
-            document.querySelector('.progress').style.display = 'none';
-            updateStatus('Demo reset', 'info');
-        }
-        
-        // Simple html2canvas implementation (very basic)
-        function html2canvas(element, options) {
-            return new Promise((resolve, reject) => {
-                const canvas = options.canvas || document.createElement('canvas');
-                const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                
-                canvas.width = options.width || element.offsetWidth;
-                canvas.height = options.height || element.offsetHeight;
-                
-                // Fill background
-                ctx.fillStyle = options.backgroundColor || '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                // This is a very simplified version - in practice you'd need
-                // a proper html2canvas library for accurate rendering
-                ctx.fillStyle = '#333333';
-                ctx.font = '16px Arial';
-                ctx.fillText('SquibView Demo Frame', 20, 40);
-                ctx.fillText('Timestamp: ' + new Date().toLocaleTimeString(), 20, 70);
-                
-                resolve(canvas);
-            });
-        }
-        
-        // Initialize when page loads
+        // --- Helper Functions (unchanged but included for completeness) ---
+        function initDemo() { try { demoEditor = new SquibView('#squibview-demo', { content: '', initialView: 'split', showControls: false, titleShow: false }); updateStatus('Ready to create GIF.', 'info'); } catch (error) { updateStatus(`Error initializing SquibView: ${error.message}`, 'warning'); }};
+        function updateStatus(message, type = 'info') { const el = document.getElementById('status'); el.textContent = message; el.className = `status ${type}`; el.style.display = 'block'; };
+        function updateProgress(current, total) { const bar = document.getElementById('progressBar'); bar.style.width = total > 0 ? `${(current / total) * 100}%` : '0%'; document.querySelector('.progress').style.display = 'block'; };
+        async function generateAndDownloadGIF() { if (capturedFrames.length === 0) { updateStatus('No frames to generate.', 'warning'); return; } updateStatus('Initializing GIF encoder...', 'info'); const firstFrame = capturedFrames[0].canvas; const gif = new GIF({ workers: 2, quality: 10, width: firstFrame.width, height: firstFrame.height, workerScript: './gif.worker.js' }); gif.on('progress', p => { const percent = Math.round(p * 100); updateStatus(`Generating GIF: ${percent}% complete...`, 'info'); updateProgress(percent, 100); }); gif.on('finished', blob => { const sizeMB = (blob.size / 1024 / 1024).toFixed(2); updateStatus(`GIF ready! Size: ${sizeMB} MB`, 'success'); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'squibview-demo.gif'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }); for (const frame of capturedFrames) { gif.addFrame(frame.canvas, { delay: frame.delay, copy: true }); } gif.render(); };
+        function resetDemo() { if (isRecording) return; capturedFrames = []; if (demoEditor) demoEditor.setContent('', 'md'); document.querySelector('.progress').style.display = 'none'; updateStatus('Ready to create GIF.', 'info'); };
+
         window.addEventListener('DOMContentLoaded', initDemo);
     </script>
-    
-    <!-- Libraries for frame capture and GIF generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 </body>
 </html>

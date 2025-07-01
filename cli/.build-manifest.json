@@ -1,7 +1,7 @@
 {
   "name": "squibv",
   "version": "1.0.11-dev.0",
-  "buildTime": "2025-06-26T21:16:07.223Z",
+  "buildTime": "2025-07-01T22:02:57.315Z",
   "dependencies": {
     "commander": "^14.0.0",
     "jsdom": "^26.1.0",

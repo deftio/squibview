@@ -7360,7 +7360,7 @@ var SquibView = /*#__PURE__*/function () {
               _iterator4 = _createForOfIteratorHelper(images);
               _context9.prev = 10;
               _loop3 = /*#__PURE__*/_regeneratorRuntime().mark(function _loop3() {
-                var img, canvas, ctx, tempImg;
+                var img, canvas, ctx, tempImg, width, height;
                 return _regeneratorRuntime().wrap(function _loop3$(_context7) {
                   while (1) switch (_context7.prev = _context7.next) {
                     case 0:
@@ -7417,13 +7417,22 @@ var SquibView = /*#__PURE__*/function () {
                         tempImg.src = img.src;
                       });
                     case 8:
-                      _context7.next = 13;
+                      _context7.next = 14;
                       break;
                     case 10:
                       _context7.prev = 10;
                       _context7.t0 = _context7["catch"](1);
                       console.error('Failed to convert image for copying:', _context7.t0);
-                    case 13:
+                      // Preserve the original image source if conversion fails (e.g., for external badges)
+                      // This ensures badges from services like shields.io still work when copied
+                      if (img.src) {
+                        // Keep the original src and any existing dimensions
+                        width = img.getAttribute('width');
+                        height = img.getAttribute('height');
+                        if (width) img.style.width = width + (width.match(/\d+$/) ? 'px' : '');
+                        if (height) img.style.height = height + (height.match(/\d+$/) ? 'px' : '');
+                      }
+                    case 14:
                     case "end":
                       return _context7.stop();
                   }

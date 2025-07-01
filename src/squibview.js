@@ -2038,6 +2038,15 @@ class SquibView {
           });
         } catch (error) {
           console.error('Failed to convert image for copying:', error);
+          // Preserve the original image source if conversion fails (e.g., for external badges)
+          // This ensures badges from services like shields.io still work when copied
+          if (img.src) {
+            // Keep the original src and any existing dimensions
+            const width = img.getAttribute('width');
+            const height = img.getAttribute('height');
+            if (width) img.style.width = width + (width.match(/\d+$/) ? 'px' : '');
+            if (height) img.style.height = height + (height.match(/\d+$/) ? 'px' : '');
+          }
         }
       }
 
