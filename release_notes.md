@@ -22,6 +22,23 @@
 - Integrated navigation between all documentation sections
 
 ---
+## v1.0.11 (July 01, 2025)
+*Release Date: July 01, 2025*
+
+### ✨ Improvements
+- **Simplify regex patterns to avoid bash syntax errors
+- **Regex syntax error in update-release-notes.sh
+- **Fixed release script
+- **Making release for enhanced docs
+- **Enhanced docs
+- **Updatd gif maker
+- **Working updated frame generator
+- **Fixing demo frame capture
+- **Incremental build fixed CORS errors on markdown badges being rendered
+- **Making more updates to docs
+
+---
+
 
 ## v1.0.10 (June 24, 2025)
 *Release Date: June 24, 2025*
