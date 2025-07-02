@@ -787,86 +787,20 @@ endsolid cube
             document.querySelector('.progress').style.display = 'block';
         }
 
-        // Improved frame capture with separate source/rendered capture
+        // Improved frame capture using htmlToImage library
         function captureFrame() {
             return new Promise(async (resolve) => {
                 try {
-                    const width = parseInt(document.getElementById('gifWidth').value);
-                    const height = parseInt(document.getElementById('gifHeight').value);
-
-                    // Get the SquibView elements
-                    const sourceEditor = document.querySelector('.squibview-input');
-                    const renderedOutput = document.querySelector('.squibview-output');
-
-                    if (!sourceEditor || !renderedOutput) {
-                        throw new Error('Could not find SquibView elements');
-                    }
-
-                    // Create final canvas
-                    const finalCanvas = document.createElement('canvas');
-                    finalCanvas.width = width;
-                    finalCanvas.height = height;
-                    const finalCtx = finalCanvas.getContext('2d', { willReadFrequently: true });
-
-                    // Fill white background
-                    finalCtx.fillStyle = '#ffffff';
-                    finalCtx.fillRect(0, 0, width, height);
-
-                    // Capture source side using html2canvas
-                    const sourceCanvas = await html2canvas(sourceEditor, {
-                        width: width / 2 - 5,
-                        height: height,
-                        backgroundColor: '#fafbfc',
-                        scale: 1,
-                        useCORS: true,
-                        allowTaint: true
-                    });
-
-                    // Capture rendered side using SquibView's divToDataUrl if available
-                    let renderedCanvas;
-                    if (demoEditor && demoEditor.divToDataUrl) {
-                        try {
-                            const renderedDataUrl = await demoEditor.divToDataUrl(renderedOutput);
-                            const renderedImg = new Image();
-                            renderedImg.onload = () => {
-                                // Draw source side (left)
-                                finalCtx.drawImage(sourceCanvas, 0, 0, width / 2 - 5, height);
-
-                                // Draw rendered side (right)
-                                finalCtx.drawImage(renderedImg, width / 2 + 5, 0, width / 2 - 5, height);
-
-                                resolve(finalCanvas.toDataURL('image/png'));
-                            };
-                            renderedImg.src = renderedDataUrl;
-                            return;
-                        } catch (error) {
-                            console.warn('SquibView divToDataUrl failed, using html2canvas fallback:', error);
-                        }
-                    }
-
-                    // Fallback: use html2canvas for rendered side too
-                    renderedCanvas = await html2canvas(renderedOutput, {
-                        width: width / 2 - 5,
-                        height: height,
-                        backgroundColor: '#ffffff',
-                        scale: 1,
-                        useCORS: true,
-                        allowTaint: true
-                    });
-
-                    // Draw both sides
-                    finalCtx.drawImage(sourceCanvas, 0, 0, width / 2 - 5, height);
-                    finalCtx.drawImage(renderedCanvas, width / 2 + 5, 0, width / 2 - 5, height);
-
-                    resolve(finalCanvas.toDataURL('image/png'));
-
+                    const element = demoEditor.container;
+                    const dataUrl = await htmlToImage.toPng(element);
+                    resolve(dataUrl);
                 } catch (error) {
                     console.error('Frame capture error:', error);
-                    // Fallback: simple canvas with error message
+                    // Fallback: create a simple error frame
                     const canvas = document.createElement('canvas');
                     canvas.width = parseInt(document.getElementById('gifWidth').value);
                     canvas.height = parseInt(document.getElementById('gifHeight').value);
-                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                    const ctx = canvas.getContext('2d');
 
                     ctx.fillStyle = '#ffffff';
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -978,19 +912,32 @@ endsolid cube
                         await new Promise(resolve => setTimeout(resolve, 100));
                     }
 
-                    // Capture frame(s) - multiple for rotation if specified
-                    if (step.rotationFrames) {
-                        // Capture multiple frames for rotation effect (STL models)
-                        for (let j = 0; j < step.rotationFrames; j++) {
-                            const frame = await captureFrame();
-                            capturedFrames.push(frame);
-                            await new Promise(resolve => setTimeout(resolve, 500)); // 500ms between rotation frames
+                    // Capture initial frame for this step
+                    const frame = await captureFrame();
+                    capturedFrames.push(frame);
+
+                    // Dwell time logic:
+                    // - For typing scenes (no waitFor): brief pause (100ms)
+                    // - For complex content scenes (with waitFor): 2 second dwell to appreciate content
+                    if (step.waitFor) {
+                        // Complex content - dwell for 2 seconds with multiple frames for smoothness
+                        for (let dwellFrame = 0; dwellFrame < 8; dwellFrame++) {
+                            const dwellFrameData = await captureFrame();
+                            capturedFrames.push(dwellFrameData);
+                            await new Promise(resolve => setTimeout(resolve, 250)); // 250ms * 8 = 2 seconds
                         }
                     } else {
-                        // Single frame capture
-                        const frame = await captureFrame();
-                        capturedFrames.push(frame);
-                        await new Promise(resolve => setTimeout(resolve, frameInterval));
+                        // Fast typing - just a brief pause
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+
+                    // Additional frames for rotation if specified (STL models)
+                    if (step.rotationFrames) {
+                        for (let j = 0; j < step.rotationFrames; j++) {
+                            const rotFrame = await captureFrame();
+                            capturedFrames.push(rotFrame);
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                        }
                     }
 
                     // Clear content between scenes for next capture
