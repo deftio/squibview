@@ -65,7 +65,7 @@ Welcome to the **Squibview** live markdown editor. This document shows various f
         renderWait: 100,
         dwellTime: 500
     },
-
+    
     // 8-11: Feature list bullets
     {
         content: `# Squibview Graphical Markdown Editor 
@@ -108,10 +108,17 @@ Welcome to the **Squibview** live markdown editor. This document shows various f
 
 Welcome to the **Squibview** live markdown editor. This document shows various features such as live preview, Mermaid diagrams, syntax-highlighted code blocks, tables, and inline SVG graphics.
 
-- Live Preview
-- Mermaid Diagrams  
-- Syntax Highlighting
-- SVG Rendering`, 
+- Live Preview  
+- Mermaid Diagrams   
+- Syntax Highlighting  
+- SVG Rendering  
+- ESM, UMD, React, Vue  
+- Copy & Paste  
+- Headless or Built-in Controls  
+- On-select selection and more  
+- ESM / UMD with CDN via unpkg  
+- Standalone Builds (all dependancies included) for offline use  
+`, 
         description: 'Complete features', 
         waitFor: null,
         renderWait: 100,
@@ -144,7 +151,7 @@ Welcome to the **Squibview** live markdown editor.
         description: 'Table header', 
         waitFor: null,
         renderWait: 100,
-        dwellTime: 200
+        dwellTime: 100
     },
     {
         content: `# Squibview Graphical Markdown Editor 
@@ -191,6 +198,11 @@ Welcome to the **Squibview** live markdown editor.
 | Mermaid Diagrams  | Yes       |
 | Syntax Highlight  | Yes       |
 | Table Styling     | Yes       |
+| GeoJSON           | Yes       |
+| Math Equations    | Yes       |
+| Images            | Yes       |
+| 3D Models         | Yes       |
+| Interactive Maps  | Yes       |
 | SVG Rendering     | Yes       |`, 
         description: 'Complete table', 
         waitFor: null,
@@ -214,8 +226,8 @@ style B fill:#fef,stroke:#03e,stroke-width:2px;
 \`\`\``, 
         description: 'Mermaid diagram', 
         waitFor: '.mermaid svg',
-        renderWait: 1000,
-        dwellTime: 2000
+        renderWait: 500,
+        dwellTime: 500
     },
 
     {
@@ -239,7 +251,7 @@ style D fill:#8f2,stroke:#333,stroke-width:4px;
         description: 'Complete diagram', 
         waitFor: '.mermaid svg',
         renderWait: 1000,
-        dwellTime: 3000
+        dwellTime: 1000
     },
 
     // 18-20: Math equations from sample-content.md
@@ -248,21 +260,23 @@ style D fill:#8f2,stroke:#333,stroke-width:4px;
 
 ## Fenced Math Block Example
 
-This demonstrates a fenced math block using MathJax:
+This demonstrates a fenced math block:
 
 \`\`\`math
 e^{i\\pi} + 1 = 0
 \`\`\``, 
         description: 'Euler identity', 
         waitFor: '.MathJax, [data-mathml], .mjx-chtml',
-        renderWait: 1500,
-        dwellTime: 2000
+        renderWait: 500,
+        dwellTime: 500
     },
 
     {
         content: `# Squibview Graphical Markdown Editor 
 
 ## Fenced Math Block Example
+
+This demonstrates a fenced math block:  
 
 \`\`\`math
 e^{i\\pi} + 1 = 0
@@ -278,8 +292,8 @@ c & d
 \`\`\``, 
         description: 'Matrix equation', 
         waitFor: '.MathJax, [data-mathml], .mjx-chtml',
-        renderWait: 1500,
-        dwellTime: 2500
+        renderWait: 500,
+        dwellTime: 500
     },
 
     {
@@ -287,21 +301,31 @@ c & d
 
 ## Fenced Math Block Example
 
+This demonstrates a fenced math block:  
+
+
 \`\`\`math
 e^{i\\pi} + 1 = 0
 \`\`\`
 
+A more complex one:  
+
+
 \`\`\`math
 \\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
 \`\`\`
+
+
+Summations and Fractions:  
+
 
 \`\`\`math
 \\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}
 \`\`\``, 
         description: 'Complete math examples', 
         waitFor: '.MathJax, [data-mathml], .mjx-chtml',
-        renderWait: 2000,
-        dwellTime: 3000
+        renderWait: 500,
+        dwellTime: 500
     },
 
     // 21-22: SVG graphics from sample-content.md
@@ -320,7 +344,7 @@ Below is an inline SVG graphic rendered directly from Markdown:
         description: 'First SVG shape', 
         waitFor: 'svg',
         renderWait: 500,
-        dwellTime: 2000
+        dwellTime: 500
     },
 
     {
@@ -339,11 +363,11 @@ Below is an inline SVG graphic rendered directly from Markdown:
         description: 'Complete SVG shapes', 
         waitFor: 'svg',
         renderWait: 500,
-        dwellTime: 2500
+        dwellTime: 500
     },
 
     // 23-25: GeoJSON maps from sample-content.md (commented out 3D for now)
-    /*
+    
     {
         content: `# Squibview Graphical Markdown Editor 
 
@@ -360,7 +384,7 @@ This demonstrates a fenced GeoJSON block that renders an interactive map:
         description: 'Empty map base', 
         waitFor: '.leaflet-container',
         renderWait: 1000,
-        dwellTime: 1500
+        dwellTime: 500
     },
 
     {
@@ -383,7 +407,7 @@ This demonstrates a fenced GeoJSON block that renders an interactive map:
         description: 'Single feature map', 
         waitFor: '.leaflet-container',
         renderWait: 1000,
-        dwellTime: 2000
+        dwellTime: 500
     },
 
     {
@@ -422,10 +446,10 @@ This demonstrates a fenced GeoJSON block that renders an interactive map:
 \`\`\``, 
         description: 'Multi-city map', 
         waitFor: '.leaflet-container',
-        renderWait: 1500,
-        dwellTime: 3000
+        renderWait: 500,
+        dwellTime: 500
     },
-    */
+    
 
     // Final summary
     {
@@ -452,6 +476,6 @@ This demonstrates a fenced GeoJSON block that renders an interactive map:
         description: 'Final summary', 
         waitFor: null,
         renderWait: 200,
-        dwellTime: 4000
+        dwellTime: 2000
     }
 ];
