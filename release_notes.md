@@ -22,6 +22,14 @@
 - Integrated navigation between all documentation sections
 
 ---
+## v1.0.12 (July 01, 2025)
+*Release Date: July 01, 2025*
+
+### ✨ Improvements
+- **V1.0.12 enhanced docs, fixed badge copy errors for README.md generation
+
+---
+
 ## v1.0.11 (July 01, 2025)
 *Release Date: July 01, 2025*
 
