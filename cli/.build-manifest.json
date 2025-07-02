@@ -1,7 +1,7 @@
 {
   "name": "squibv",
-  "version": "1.0.11",
-  "buildTime": "2025-07-02T05:30:19.410Z",
+  "version": "1.0.12",
+  "buildTime": "2025-07-02T05:53:37.164Z",
   "dependencies": {
     "commander": "^14.0.0",
     "jsdom": "^26.1.0",
@@ -9,6 +9,6 @@
     "mermaid": "^11.6.0",
     "highlight.js": "^11.11.1"
   },
-  "libraryVersion": "1.0.11",
+  "libraryVersion": "1.0.12",
   "node": "v22.5.1"
 }
