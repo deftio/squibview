@@ -117,15 +117,15 @@ while IFS= read -r commit; do
     fi
     
     # Categorize based on conventional commit format or keywords
-    if [[ "$commit_msg" =~ ^feat(\(.+\))?:\ |NEW:|^add\ |^implement\ ]]; then
+    if [[ "$commit_msg" =~ ^feat(\([^)]+\))?:\ |NEW:|^add\ |^implement\ ]]; then
         NEW_FEATURES+=("$commit_msg")
-    elif [[ "$commit_msg" =~ ^fix(\(.+\))?:\ |FIXED:|^fix\ |^resolve\ ]]; then
+    elif [[ "$commit_msg" =~ ^fix(\([^)]+\))?:\ |FIXED:|^fix\ |^resolve\ ]]; then
         FIXES+=("$commit_msg")
-    elif [[ "$commit_msg" =~ ^docs(\(.+\))?:\ |DOCS:|^update.*doc|^add.*doc ]]; then
+    elif [[ "$commit_msg" =~ ^docs(\([^)]+\))?:\ |DOCS:|^update.*doc|^add.*doc ]]; then
         DOCS+=("$commit_msg")
-    elif [[ "$commit_msg" =~ ^build(\(.+\))?:\ |^chore(\(.+\))?:\ |BUILD:|^update.*build ]]; then
+    elif [[ "$commit_msg" =~ ^build(\([^)]+\))?:\ |^chore(\([^)]+\))?:\ |BUILD:|^update.*build ]]; then
         BUILD+=("$commit_msg")
-    elif [[ "$commit_msg" =~ BREAKING\ CHANGE|^perf(\(.+\))?!:\ |^feat(\(.+\))?!:\ ]]; then
+    elif [[ "$commit_msg" =~ BREAKING\ CHANGE|^perf(\([^)]+\))?!:\ |^feat(\([^)]+\))?!:\ ]]; then
         BREAKING+=("$commit_msg")
     else
         # Default to improvements for other changes
