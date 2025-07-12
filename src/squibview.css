@@ -246,3 +246,188 @@
     height: 100% !important;
     border-radius: 3px; /* Slightly less than container to avoid border overlap */
 }
+
+/*
+  Diff View Styles
+  For displaying source diffs between revisions
+*/
+
+/* Diff container */
+.squibview-diff {
+    font-family: var(--squibview-font-family-monospace);
+    font-size: 0.9em;
+    line-height: 1.4;
+    border: 1px solid var(--squibview-border-color);
+    border-radius: var(--squibview-border-radius-button);
+    background-color: var(--squibview-background-color);
+    overflow: auto;
+    max-height: 600px;
+    margin: 1em 0;
+}
+
+/* Diff header with metadata */
+.squibview-diff .diff-header {
+    background-color: var(--squibview-table-header-bg);
+    padding: 0.5em 1em;
+    border-bottom: 1px solid var(--squibview-border-color);
+    font-size: 0.9em;
+    color: #666;
+}
+
+.squibview-diff .diff-stats {
+    display: flex;
+    gap: 1em;
+    margin-top: 0.25em;
+    font-size: 0.8em;
+}
+
+.squibview-diff .diff-stats .stat {
+    display: flex;
+    align-items: center;
+    gap: 0.25em;
+}
+
+.squibview-diff .diff-stats .stat.additions {
+    color: #28a745;
+}
+
+.squibview-diff .diff-stats .stat.deletions {
+    color: #dc3545;
+}
+
+.squibview-diff .diff-stats .stat.modifications {
+    color: #ffc107;
+}
+
+/* Diff content area */
+.squibview-diff .diff-content {
+    padding: 0;
+}
+
+/* Individual diff lines */
+.squibview-diff .diff-line {
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    padding: 0;
+    min-height: 1.4em;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Line numbers */
+.squibview-diff .diff-line-number {
+    display: inline-block;
+    width: 3.5em;
+    padding: 0.1em 0.5em;
+    text-align: right;
+    background-color: var(--squibview-table-header-bg);
+    border-right: 1px solid var(--squibview-border-color);
+    color: #666;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+/* Line content */
+.squibview-diff .diff-content-text {
+    padding: 0.1em 0.5em;
+    flex: 1;
+    min-width: 0; /* Allow content to shrink */
+}
+
+/* Diff line types */
+.squibview-diff .diff-line.diff-added {
+    background-color: #e6ffed;
+}
+
+.squibview-diff .diff-line.diff-added .diff-line-number {
+    background-color: #c3e6cd;
+    color: #28a745;
+}
+
+.squibview-diff .diff-line.diff-added .diff-content-text {
+    border-left: 3px solid #28a745;
+}
+
+.squibview-diff .diff-line.diff-removed {
+    background-color: #ffeef0;
+}
+
+.squibview-diff .diff-line.diff-removed .diff-line-number {
+    background-color: #f8c6cc;
+    color: #dc3545;
+}
+
+.squibview-diff .diff-line.diff-removed .diff-content-text {
+    border-left: 3px solid #dc3545;
+}
+
+.squibview-diff .diff-line.diff-unchanged {
+    background-color: transparent;
+}
+
+.squibview-diff .diff-line.diff-unchanged .diff-line-number {
+    background-color: var(--squibview-table-header-bg);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .squibview-diff {
+        font-size: 0.8em;
+        max-height: 400px;
+    }
+    
+    .squibview-diff .diff-line-number {
+        width: 2.5em;
+        padding: 0.1em 0.25em;
+    }
+    
+    .squibview-diff .diff-stats {
+        flex-direction: column;
+        gap: 0.25em;
+    }
+}
+
+/* Dark mode support (when parent has dark theme) */
+.squibview.dark .squibview-diff,
+.squibview[data-theme="dark"] .squibview-diff {
+    background-color: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
+}
+
+.squibview.dark .squibview-diff .diff-header,
+.squibview[data-theme="dark"] .squibview-diff .diff-header {
+    background-color: #4a5568;
+    border-color: #718096;
+    color: #cbd5e0;
+}
+
+.squibview.dark .squibview-diff .diff-line-number,
+.squibview[data-theme="dark"] .squibview-diff .diff-line-number {
+    background-color: #4a5568;
+    border-color: #718096;
+    color: #a0aec0;
+}
+
+.squibview.dark .squibview-diff .diff-line.diff-added,
+.squibview[data-theme="dark"] .squibview-diff .diff-line.diff-added {
+    background-color: #22543d;
+}
+
+.squibview.dark .squibview-diff .diff-line.diff-added .diff-line-number,
+.squibview[data-theme="dark"] .squibview-diff .diff-line.diff-added .diff-line-number {
+    background-color: #2f855a;
+    color: #68d391;
+}
+
+.squibview.dark .squibview-diff .diff-line.diff-removed,
+.squibview[data-theme="dark"] .squibview-diff .diff-line.diff-removed {
+    background-color: #742a2a;
+}
+
+.squibview.dark .squibview-diff .diff-line.diff-removed .diff-line-number,
+.squibview[data-theme="dark"] .squibview-diff .diff-line.diff-removed .diff-line-number {
+    background-color: #e53e3e;
+    color: #feb2b2;
+}

@@ -1622,6 +1622,154 @@ class SquibView {
     
     return '';
   }
+
+  /**
+   * Gets source diff as a programmatic object
+   * 
+   * @param {Object} options - Diff options
+   * @param {number} options.fromIndex - Starting revision index (defaults to current - 1)
+   * @param {number} options.toIndex - Ending revision index (defaults to current)
+   * @returns {Object} Diff data object with metadata and line diffs
+   */
+  getSourceDiff(options = {}) {
+    const { fromIndex = null, toIndex = null } = options;
+    
+    // Get the line diff
+    const lineDiff = this.revisionManager.computeLineDiff(fromIndex, toIndex);
+    
+    // Get metadata about the revisions being compared
+    const actualFromIndex = fromIndex === null ? this.revisionManager.getCurrentIndex() - 1 : fromIndex;
+    const actualToIndex = toIndex === null ? this.revisionManager.getCurrentIndex() : toIndex;
+    
+    // Build the diff object
+    const diffData = {
+      fromIndex: actualFromIndex,
+      toIndex: actualToIndex,
+      lineDiff: lineDiff,
+      stats: this.revisionManager.getDiffStats(actualFromIndex, actualToIndex)
+    };
+    
+    // Add revision info if indices are valid
+    try {
+      diffData.fromRevision = this.revisionManager.getRevisionInfo(actualFromIndex);
+      diffData.toRevision = this.revisionManager.getRevisionInfo(actualToIndex);
+    } catch (e) {
+      // Invalid indices, return partial data
+      diffData.error = e.message;
+    }
+    
+    // Emit diff computed event
+    this.events.emit('diff:computed', {
+      fromIndex: diffData.fromIndex,
+      toIndex: diffData.toIndex,
+      stats: diffData.stats,
+      hasChanges: diffData.stats.totalChanges > 0
+    });
+    
+    return diffData;
+  }
+
+  /**
+   * Gets source diff as display-ready HTML
+   * 
+   * @param {Object} options - Diff and styling options
+   * @param {number} options.fromIndex - Starting revision index (defaults to current - 1)
+   * @param {number} options.toIndex - Ending revision index (defaults to current)
+   * @param {boolean} options.showLineNumbers - Whether to show line numbers (default: true)
+   * @param {Object} options.cssClasses - Custom CSS classes for styling
+   * @returns {string} HTML string
+   */
+  getSourceDiffHTML(options = {}) {
+    const {
+      fromIndex = null,
+      toIndex = null,
+      showLineNumbers = true,
+      cssClasses = {}
+    } = options;
+    
+    // Get the diff data
+    const diffData = this.getSourceDiff({ fromIndex, toIndex });
+    
+    // Default CSS classes
+    const classes = {
+      container: cssClasses.container || 'squibview-diff',
+      line: cssClasses.line || 'diff-line',
+      added: cssClasses.added || 'diff-added',
+      removed: cssClasses.removed || 'diff-removed',
+      unchanged: cssClasses.unchanged || 'diff-unchanged',
+      lineNumber: cssClasses.lineNumber || 'diff-line-number',
+      content: cssClasses.content || 'diff-content'
+    };
+    
+    // Build HTML
+    let html = `<div class="${classes.container}" contenteditable="false">`;
+    
+    // Add header with revision info and stats
+    html += `<div class="diff-header">`;
+    html += `<div>Comparing revision ${diffData.fromIndex} to ${diffData.toIndex}</div>`;
+    
+    // Add statistics
+    if (diffData.stats && diffData.stats.totalChanges > 0) {
+      html += `<div class="diff-stats">`;
+      if (diffData.stats.additions > 0) {
+        html += `<span class="stat additions">+${diffData.stats.additions} additions</span>`;
+      }
+      if (diffData.stats.deletions > 0) {
+        html += `<span class="stat deletions">-${diffData.stats.deletions} deletions</span>`;
+      }
+      if (diffData.stats.modifications > 0) {
+        html += `<span class="stat modifications">~${diffData.stats.modifications} modifications</span>`;
+      }
+      html += `<span class="stat">${diffData.stats.totalChanges} total changes</span>`;
+      html += `</div>`;
+    } else {
+      html += `<div class="diff-stats"><span class="stat">No changes</span></div>`;
+    }
+    html += `</div>`;
+    
+    // Add diff content
+    html += `<div class="diff-content">`;
+    
+    for (const line of diffData.lineDiff) {
+      const lineClass = `${classes.line} ${classes[line.type]}`;
+      html += `<div class="${lineClass}">`;
+      
+      if (showLineNumbers) {
+        const displayNum = line.type === 'removed' ? (line.oldLineNum || '') : (line.newLineNum || '');
+        html += `<span class="${classes.lineNumber}">${displayNum}</span>`;
+      }
+      
+      // Escape HTML in content
+      const escapedContent = this._escapeHtml(line.content);
+      html += `<span class="diff-content-text">${escapedContent}</span>`;
+      
+      html += `</div>`;
+    }
+    
+    html += `</div>`; // diff-content
+    html += `</div>`; // container
+    
+    // Emit diff displayed event
+    this.events.emit('diff:displayed', {
+      fromIndex: diffData.fromIndex,
+      toIndex: diffData.toIndex,
+      stats: diffData.stats,
+      htmlLength: html.length,
+      showLineNumbers: showLineNumbers
+    });
+    
+    return html;
+  }
+
+  /**
+   * Escapes HTML special characters
+   * @private
+   */
+  _escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
   
   /**
    * Registers a callback function to be called when text is selected

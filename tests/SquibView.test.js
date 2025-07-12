@@ -555,6 +555,644 @@ describe('SquibView Tests', () => {
       squibView.revisionRedo(); // Should be 'New Content 4' (index 1)
       expect(squibView.getContent()).toBe('New Content 4');
     });
+
+    test('should get content at specific revision', () => {
+      // Test getting initial content (index -1)
+      const initialRevision = squibView.revisionManager.getContentAtRevision(-1);
+      expect(initialRevision.content).toBe('Content 1');
+      expect(initialRevision.contentType).toBe('md');
+
+      // Test getting content at revision 0
+      const revision0 = squibView.revisionManager.getContentAtRevision(0);
+      expect(revision0.content).toBe('Content 2');
+      expect(revision0.contentType).toBe('md');
+
+      // Test getting content at revision 1
+      const revision1 = squibView.revisionManager.getContentAtRevision(1);
+      expect(revision1.content).toBe('Content 3');
+      expect(revision1.contentType).toBe('md');
+    });
+
+    test('should handle invalid revision indices in getContentAtRevision', () => {
+      // Test invalid index below range
+      expect(() => {
+        squibView.revisionManager.getContentAtRevision(-2);
+      }).toThrow('Invalid revision index: -2');
+
+      // Test invalid index above range
+      expect(() => {
+        squibView.revisionManager.getContentAtRevision(2);
+      }).toThrow('Invalid revision index: 2');
+
+      // Test invalid index way above range
+      expect(() => {
+        squibView.revisionManager.getContentAtRevision(100);
+      }).toThrow('Invalid revision index: 100');
+    });
+
+    test('should get content at revision with content type changes', () => {
+      // Initially we have 2 revisions (Content 2 at index 0, Content 3 at index 1)
+      // Now add a new revision with different content type
+      squibView.setContent('<h1>HTML Content</h1>', 'html');
+      
+      // Now we should have 3 revisions (0, 1, 2)
+      expect(squibView.revisionManager.getRevisionCount()).toBe(3);
+      
+      // Check that we can get the revision with changed content type
+      const htmlRevision = squibView.revisionManager.getContentAtRevision(2);
+      expect(htmlRevision.content).toBe('<h1>HTML Content</h1>');
+      expect(htmlRevision.contentType).toBe('html');
+
+      // Check that previous revisions still have original content type
+      const mdRevision0 = squibView.revisionManager.getContentAtRevision(0);
+      expect(mdRevision0.content).toBe('Content 2');
+      expect(mdRevision0.contentType).toBe('md');
+      
+      const mdRevision1 = squibView.revisionManager.getContentAtRevision(1);
+      expect(mdRevision1.content).toBe('Content 3');
+      expect(mdRevision1.contentType).toBe('md');
+    });
+
+    test('should compute diff between revisions', () => {
+      // Compute diff between initial and first revision
+      const diff1 = squibView.revisionManager.computeDiff(-1, 0);
+      expect(Array.isArray(diff1)).toBe(true);
+      expect(diff1.length).toBeGreaterThan(0);
+      
+      // The diff structure is an array of [operation, text] tuples
+      // where operation is -1 (delete), 0 (equal), or 1 (insert)
+      // Let's look for the specific change from "1" to "2"
+      const hasDelete = diff1.some(d => d[0] === -1 && d[1].includes('1'));
+      const hasAdd = diff1.some(d => d[0] === 1 && d[1].includes('2'));
+      expect(hasDelete).toBe(true);
+      expect(hasAdd).toBe(true);
+
+      // Compute diff between revision 0 and 1
+      const diff2 = squibView.revisionManager.computeDiff(0, 1);
+      expect(Array.isArray(diff2)).toBe(true);
+      
+      // Should have changes from Content 2 to Content 3
+      const hasDelete2 = diff2.some(d => d[0] === -1 && d[1].includes('2'));
+      const hasAdd2 = diff2.some(d => d[0] === 1 && d[1].includes('3'));
+      expect(hasDelete2).toBe(true);
+      expect(hasAdd2).toBe(true);
+    });
+
+    test('should compute diff with default parameters', () => {
+      // Move to a specific revision
+      squibView.revisionSet(1);
+      
+      // computeDiff with no params should compare previous to current
+      const diff = squibView.revisionManager.computeDiff();
+      expect(Array.isArray(diff)).toBe(true);
+      
+      // Should show changes from Content 2 to Content 3
+      const hasChanges = diff.some(d => d[0] !== 0);
+      expect(hasChanges).toBe(true);
+    });
+
+    test('should handle invalid indices in computeDiff', () => {
+      // Test invalid fromIndex
+      expect(() => {
+        squibView.revisionManager.computeDiff(-2, 0);
+      }).toThrow('Invalid fromIndex: -2');
+
+      // Test invalid toIndex
+      expect(() => {
+        squibView.revisionManager.computeDiff(0, 5);
+      }).toThrow('Invalid toIndex: 5');
+
+      // Test fromIndex > toIndex
+      expect(() => {
+        squibView.revisionManager.computeDiff(1, 0);
+      }).toThrow('fromIndex (1) cannot be greater than toIndex (0)');
+    });
+
+    test('should compute diff with no changes', () => {
+      // Compare a revision to itself
+      const diff = squibView.revisionManager.computeDiff(0, 0);
+      expect(Array.isArray(diff)).toBe(true);
+      
+      // Should have only one element showing no changes
+      expect(diff.length).toBe(1);
+      expect(diff[0][0]).toBe(0); // 0 means no change
+      expect(diff[0][1]).toBe('Content 2');
+    });
+
+    test('should compute line diff between revisions', () => {
+      // Add more complex content for better line diff testing
+      // Using content that will force line-level changes
+      squibView.setContent('Line 1\nLine 2\nLine 3');
+      squibView.setContent('Line 1\nLine 2 Modified\nLine 3\nLine 4');
+      
+      // Compute line diff between the two revisions
+      const lineDiff = squibView.revisionManager.computeLineDiff(2, 3);
+      expect(Array.isArray(lineDiff)).toBe(true);
+      
+      // Verify we have the expected line diff structure
+      // Due to how DiffMatchPatch works, "Line 2" -> "Line 2 Modified" might be treated as
+      // an unchanged "Line 2" with an added " Modified" on the same line
+      
+      // Let's check the actual line diff length and content
+      expect(lineDiff.length).toBeGreaterThanOrEqual(4); // At least 4 lines total
+      
+      // First line should be unchanged
+      expect(lineDiff[0]).toEqual({
+        type: 'unchanged',
+        content: 'Line 1',
+        oldLineNum: 1,
+        newLineNum: 1
+      });
+      
+      // Find the line that contains "Line 2"
+      const line2Entry = lineDiff.find(l => l.content.includes('Line 2'));
+      expect(line2Entry).toBeDefined();
+      
+      // Last line should be the added "Line 4"
+      const line4Entry = lineDiff.find(l => l.content === 'Line 4' && l.type === 'added');
+      expect(line4Entry).toBeDefined();
+      expect(line4Entry.oldLineNum).toBe(null);
+      expect(line4Entry.newLineNum).toBeGreaterThanOrEqual(4);
+    });
+
+    test('should compute line diff with default parameters', () => {
+      // Add content that will create a clear diff
+      squibView.setContent('First line\nSecond line\nThird line');
+      squibView.setContent('First line\nModified second line\nThird line\nFourth line');
+      
+      // Make sure we're at the last revision
+      const currentIndex = squibView.revisionManager.getCurrentIndex();
+      expect(currentIndex).toBe(3);
+      
+      // computeLineDiff with no params should compare previous to current
+      const lineDiff = squibView.revisionManager.computeLineDiff();
+      expect(Array.isArray(lineDiff)).toBe(true);
+      
+      // We should have some diff entries
+      expect(lineDiff.length).toBeGreaterThan(0);
+      
+      // Check that the diff was computed (we changed second line and added fourth)
+      const types = lineDiff.map(l => l.type);
+      expect(types).toContain('unchanged'); // First and third lines
+      expect(types.some(t => t === 'removed' || t === 'added')).toBe(true); // Some changes
+    });
+
+    test('should compute line diff for empty content', () => {
+      // Create revisions with empty content
+      squibView.setContent('');
+      squibView.setContent('New Line');
+      
+      const lineDiff = squibView.revisionManager.computeLineDiff(2, 3);
+      expect(lineDiff.length).toBe(1);
+      expect(lineDiff[0]).toEqual({
+        type: 'added',
+        content: 'New Line',
+        oldLineNum: null,
+        newLineNum: 1
+      });
+    });
+
+    test('should compute line diff for content becoming empty', () => {
+      squibView.setContent('Old Line');
+      squibView.setContent('');
+      
+      const lineDiff = squibView.revisionManager.computeLineDiff(2, 3);
+      expect(lineDiff.length).toBe(1);
+      expect(lineDiff[0]).toEqual({
+        type: 'removed',
+        content: 'Old Line',
+        oldLineNum: 1,
+        newLineNum: null
+      });
+    });
+
+    test('should compute line diff with multi-line additions and deletions', () => {
+      squibView.setContent('A\nB\nC');
+      squibView.setContent('A\nX\nY\nZ');
+      
+      const lineDiff = squibView.revisionManager.computeLineDiff(2, 3);
+      
+      // First line unchanged
+      expect(lineDiff[0].type).toBe('unchanged');
+      expect(lineDiff[0].content).toBe('A');
+      
+      // B and C removed
+      const removed = lineDiff.filter(l => l.type === 'removed');
+      expect(removed.map(l => l.content)).toEqual(['B', 'C']);
+      
+      // X, Y, Z added
+      const added = lineDiff.filter(l => l.type === 'added');
+      expect(added.map(l => l.content)).toEqual(['X', 'Y', 'Z']);
+    });
+
+    test('should handle invalid indices in computeLineDiff', () => {
+      // Test invalid fromIndex
+      expect(() => {
+        squibView.revisionManager.computeLineDiff(-2, 0);
+      }).toThrow('Invalid fromIndex: -2');
+
+      // Test invalid toIndex
+      expect(() => {
+        squibView.revisionManager.computeLineDiff(0, 5);
+      }).toThrow('Invalid toIndex: 5');
+
+      // Test fromIndex > toIndex
+      expect(() => {
+        squibView.revisionManager.computeLineDiff(1, 0);
+      }).toThrow('fromIndex (1) cannot be greater than toIndex (0)');
+    });
+
+    test('should compute line diff with identical content', () => {
+      // Compare a revision to itself
+      const lineDiff = squibView.revisionManager.computeLineDiff(0, 0);
+      expect(Array.isArray(lineDiff)).toBe(true);
+      
+      // Should have one unchanged line
+      expect(lineDiff.length).toBe(1);
+      expect(lineDiff[0].type).toBe('unchanged');
+      expect(lineDiff[0].content).toBe('Content 2');
+    });
+
+    test('should get diff statistics', () => {
+      // Create revisions with clear changes
+      squibView.setContent('Line 1\nLine 2\nLine 3');
+      squibView.setContent('Line 1\nLine 2 Modified\nLine 3\nLine 4');
+      
+      const stats = squibView.revisionManager.getDiffStats(2, 3);
+      
+      expect(stats).toHaveProperty('additions');
+      expect(stats).toHaveProperty('deletions');
+      expect(stats).toHaveProperty('modifications');
+      expect(stats).toHaveProperty('totalChanges');
+      
+      // We should have additions and possibly deletions
+      expect(stats.additions).toBeGreaterThan(0);
+      expect(stats.totalChanges).toBeGreaterThan(0);
+    });
+
+    test('should get diff statistics with default parameters', () => {
+      // Make sure we're at the last revision
+      squibView.revisionSet(1);
+      
+      const stats = squibView.revisionManager.getDiffStats();
+      
+      expect(stats).toHaveProperty('additions');
+      expect(stats).toHaveProperty('deletions');
+      expect(stats).toHaveProperty('modifications');
+      expect(stats).toHaveProperty('totalChanges');
+    });
+
+    test('should get diff statistics for no changes', () => {
+      const stats = squibView.revisionManager.getDiffStats(0, 0);
+      
+      expect(stats.additions).toBe(0);
+      expect(stats.deletions).toBe(0);
+      expect(stats.modifications).toBe(0);
+      expect(stats.totalChanges).toBe(0);
+    });
+
+    test('should get diff statistics for pure additions', () => {
+      squibView.setContent('Line 1');
+      squibView.setContent('Line 1\nLine 2\nLine 3');
+      
+      const stats = squibView.revisionManager.getDiffStats(2, 3);
+      
+      expect(stats.additions).toBe(2); // Line 2 and Line 3
+      expect(stats.deletions).toBe(0);
+      expect(stats.modifications).toBe(0);
+      expect(stats.totalChanges).toBe(2);
+    });
+
+    test('should get diff statistics for pure deletions', () => {
+      squibView.setContent('Line 1\nLine 2\nLine 3');
+      squibView.setContent('Line 1');
+      
+      const stats = squibView.revisionManager.getDiffStats(2, 3);
+      
+      expect(stats.additions).toBe(0);
+      expect(stats.deletions).toBe(2); // Line 2 and Line 3
+      expect(stats.modifications).toBe(0);
+      expect(stats.totalChanges).toBe(2);
+    });
+
+    test('should get diff statistics for modifications', () => {
+      squibView.setContent('Line 1\nLine 2\nLine 3');
+      squibView.setContent('Line 1\nLine TWO\nLine 3');
+      
+      const stats = squibView.revisionManager.getDiffStats(2, 3);
+      
+      // Due to how diff works, this might show as 1 deletion + 1 addition
+      // which our heuristic should detect as a modification
+      expect(stats.totalChanges).toBeGreaterThan(0);
+      
+      // The sum of individual changes should be consistent
+      const sumOfChanges = stats.additions + stats.deletions - stats.modifications;
+      expect(sumOfChanges).toBe(stats.totalChanges);
+    });
+
+    test('should handle invalid indices in getDiffStats', () => {
+      // Test invalid fromIndex
+      expect(() => {
+        squibView.revisionManager.getDiffStats(-2, 0);
+      }).toThrow('Invalid fromIndex: -2');
+
+      // Test invalid toIndex
+      expect(() => {
+        squibView.revisionManager.getDiffStats(0, 5);
+      }).toThrow('Invalid toIndex: 5');
+    });
+
+    test('should get revision info for initial revision', () => {
+      const info = squibView.revisionManager.getRevisionInfo(-1);
+      
+      expect(info).toHaveProperty('index', -1);
+      expect(info).toHaveProperty('contentType', 'md');
+      expect(info).toHaveProperty('contentSize');
+      expect(info).toHaveProperty('lineCount', 1); // "Content 1" is single line
+      expect(info).toHaveProperty('isCurrent', false);
+      expect(info).toHaveProperty('diffSize', 0);
+      expect(info).toHaveProperty('hasContentTypeChange', false);
+      expect(info).toHaveProperty('changeStats');
+      expect(info.changeStats).toEqual({
+        additions: 0,
+        deletions: 0,
+        modifications: 0,
+        totalChanges: 0
+      });
+    });
+
+    test('should get revision info for non-initial revision', () => {
+      const info = squibView.revisionManager.getRevisionInfo(0);
+      
+      expect(info).toHaveProperty('index', 0);
+      expect(info).toHaveProperty('contentType', 'md');
+      expect(info).toHaveProperty('contentSize');
+      expect(info).toHaveProperty('lineCount', 1);
+      expect(info).toHaveProperty('isCurrent', false);
+      expect(info).toHaveProperty('diffSize');
+      expect(info.diffSize).toBeGreaterThan(0); // Should have diff data
+      expect(info).toHaveProperty('hasContentTypeChange', false);
+      expect(info).toHaveProperty('changeStats');
+      // Check that changeStats has the expected properties
+      expect(info.changeStats).toHaveProperty('additions');
+      expect(info.changeStats).toHaveProperty('deletions');
+      expect(info.changeStats).toHaveProperty('modifications');
+      expect(info.changeStats).toHaveProperty('totalChanges');
+    });
+
+    test('should identify current revision', () => {
+      // Current revision should be index 1
+      const currentIndex = squibView.revisionManager.getCurrentIndex();
+      const info = squibView.revisionManager.getRevisionInfo(currentIndex);
+      
+      expect(info.isCurrent).toBe(true);
+      
+      // Non-current revision
+      const otherInfo = squibView.revisionManager.getRevisionInfo(0);
+      expect(otherInfo.isCurrent).toBe(false);
+    });
+
+    test('should detect content type changes', () => {
+      // Add a revision with a different content type
+      squibView.setContent('<h1>HTML Content</h1>', 'html');
+      
+      const info = squibView.revisionManager.getRevisionInfo(2);
+      expect(info.contentType).toBe('html');
+      expect(info.hasContentTypeChange).toBe(true);
+      
+      // Previous revisions should still have original content type
+      const prevInfo = squibView.revisionManager.getRevisionInfo(1);
+      expect(prevInfo.contentType).toBe('md');
+      expect(prevInfo.hasContentTypeChange).toBe(false);
+    });
+
+    test('should calculate line count correctly', () => {
+      squibView.setContent('Line 1\nLine 2\nLine 3');
+      
+      const info = squibView.revisionManager.getRevisionInfo(2);
+      expect(info.lineCount).toBe(3);
+    });
+
+    test('should handle invalid revision index', () => {
+      expect(() => {
+        squibView.revisionManager.getRevisionInfo(-2);
+      }).toThrow('Invalid revision index: -2');
+
+      expect(() => {
+        squibView.revisionManager.getRevisionInfo(10);
+      }).toThrow('Invalid revision index: 10');
+    });
+
+    test('should include change stats in revision info', () => {
+      squibView.setContent('Modified content\nNew line');
+      
+      const info = squibView.revisionManager.getRevisionInfo(2);
+      expect(info.changeStats).toBeDefined();
+      expect(info.changeStats).toHaveProperty('additions');
+      expect(info.changeStats).toHaveProperty('deletions');
+      expect(info.changeStats).toHaveProperty('modifications');
+      expect(info.changeStats).toHaveProperty('totalChanges');
+    });
+    test('should get source diff with getSourceDiff()', () => {
+      // Add some content to create a clear diff
+      squibView.setContent('Line 1\nLine 2\nLine 3');
+      squibView.setContent('Line 1\nLine 2 Modified\nLine 3\nLine 4');
+      
+      // Get diff with default parameters (previous to current)
+      const diffData = squibView.getSourceDiff();
+      
+      // Check the structure
+      expect(diffData).toHaveProperty('fromIndex', 2);
+      expect(diffData).toHaveProperty('toIndex', 3);
+      expect(diffData).toHaveProperty('lineDiff');
+      expect(diffData).toHaveProperty('stats');
+      expect(diffData).toHaveProperty('fromRevision');
+      expect(diffData).toHaveProperty('toRevision');
+      
+      // Check lineDiff is an array
+      expect(Array.isArray(diffData.lineDiff)).toBe(true);
+      expect(diffData.lineDiff.length).toBeGreaterThan(0);
+      
+      // Check stats structure
+      expect(diffData.stats).toHaveProperty('additions');
+      expect(diffData.stats).toHaveProperty('deletions');
+      expect(diffData.stats).toHaveProperty('modifications');
+      expect(diffData.stats).toHaveProperty('totalChanges');
+      
+      // Check revision info
+      expect(diffData.fromRevision).toHaveProperty('index', 2);
+      expect(diffData.toRevision).toHaveProperty('index', 3);
+    });
+
+    test('should get source diff with specific revisions', () => {
+      const diffData = squibView.getSourceDiff({ fromIndex: 0, toIndex: 1 });
+      
+      expect(diffData.fromIndex).toBe(0);
+      expect(diffData.toIndex).toBe(1);
+      
+      // Should show changes from Content 2 to Content 3
+      const hasChanges = diffData.lineDiff.some(l => l.type !== 'unchanged');
+      expect(hasChanges).toBe(true);
+    });
+
+    test('should handle source diff with invalid indices', () => {
+      expect(() => {
+        squibView.getSourceDiff({ fromIndex: -2, toIndex: 0 });
+      }).toThrow('Invalid fromIndex: -2');
+      
+      expect(() => {
+        squibView.getSourceDiff({ fromIndex: 0, toIndex: 10 });
+      }).toThrow('Invalid toIndex: 10');
+    });
+
+    test('should handle source diff with no revisions', () => {
+      // Create a new instance with no changes
+      const emptySquibView = new SquibView(container, { initialContent: 'Test' });
+      
+      // Should handle gracefully when trying to diff with no revisions
+      const diffData = emptySquibView.getSourceDiff();
+      
+      expect(diffData.fromIndex).toBe(-1);
+      expect(diffData.toIndex).toBe(-1);
+      expect(diffData.lineDiff.length).toBe(1);
+      expect(diffData.lineDiff[0].type).toBe('unchanged');
+    });
+
+    test('should generate HTML diff with getSourceDiffHTML()', () => {
+      // Add content for diff
+      squibView.setContent('Line 1\nLine 2\nLine 3');
+      squibView.setContent('Line 1\nLine 2 Modified\nLine 3\nLine 4');
+      
+      // Get HTML diff with default options
+      const htmlDiff = squibView.getSourceDiffHTML();
+      
+      // Check it's a string
+      expect(typeof htmlDiff).toBe('string');
+      
+      // Check it contains expected elements
+      expect(htmlDiff).toContain('<div class="squibview-diff"');
+      expect(htmlDiff).toContain('contenteditable="false"');
+      expect(htmlDiff).toContain('diff-line');
+      expect(htmlDiff).toContain('diff-added');
+      expect(htmlDiff).toContain('diff-removed');
+      expect(htmlDiff).toContain('diff-unchanged');
+      
+      // Check for line numbers
+      expect(htmlDiff).toContain('diff-line-number');
+      
+      // Check for header with stats
+      expect(htmlDiff).toContain('diff-header');
+      expect(htmlDiff).toContain('Comparing revision');
+    });
+
+    test('should generate HTML diff without line numbers', () => {
+      squibView.setContent('Old content');
+      squibView.setContent('New content');
+      
+      const htmlDiff = squibView.getSourceDiffHTML({ showLineNumbers: false });
+      
+      // Should not contain line number elements
+      expect(htmlDiff).not.toContain('diff-line-number');
+      
+      // Should still contain diff content
+      expect(htmlDiff).toContain('diff-line');
+      expect(htmlDiff).toContain('Old content');
+      expect(htmlDiff).toContain('New content');
+    });
+
+    test('should generate HTML diff with custom CSS classes', () => {
+      squibView.setContent('Content A');
+      squibView.setContent('Content B');
+      
+      const customClasses = {
+        container: 'my-diff-container',
+        line: 'my-line',
+        added: 'my-added',
+        removed: 'my-removed',
+        unchanged: 'my-unchanged',
+        lineNumber: 'my-line-num',
+        content: 'my-content'
+      };
+      
+      const htmlDiff = squibView.getSourceDiffHTML({ cssClasses: customClasses });
+      
+      // Check custom classes are used
+      expect(htmlDiff).toContain('class="my-diff-container"');
+      expect(htmlDiff).toContain('class="my-line my-added"');
+      expect(htmlDiff).toContain('class="my-line my-removed"');
+      expect(htmlDiff).toContain('class="my-line-num"');
+      expect(htmlDiff).toContain('class="my-content"');
+      
+      // Default classes should not be present
+      expect(htmlDiff).not.toContain('class="squibview-diff"');
+      expect(htmlDiff).not.toContain('class="diff-line diff-added"');
+    });
+
+    test('should escape HTML in diff content', () => {
+      squibView.setContent('<script>alert("old")</script>');
+      squibView.setContent('<script>alert("new")</script>');
+      
+      const htmlDiff = squibView.getSourceDiffHTML();
+      
+      // Should escape HTML entities
+      expect(htmlDiff).toContain('&lt;script&gt;');
+      expect(htmlDiff).toContain('&lt;/script&gt;');
+      expect(htmlDiff).not.toContain('<script>');
+      expect(htmlDiff).not.toContain('</script>');
+    });
+
+    test('should handle HTML diff with specific revisions', () => {
+      const htmlDiff = squibView.getSourceDiffHTML({ fromIndex: -1, toIndex: 0 });
+      
+      // Should show comparison from initial to first revision
+      expect(htmlDiff).toContain('Comparing revision -1 to 0');
+      expect(htmlDiff).toContain('Content 1');
+      expect(htmlDiff).toContain('Content 2');
+    });
+
+    test('should handle empty content in HTML diff', () => {
+      squibView.setContent('');
+      squibView.setContent('New content');
+      
+      const htmlDiff = squibView.getSourceDiffHTML();
+      
+      // Should handle empty content gracefully
+      expect(htmlDiff).toContain('diff-added');
+      expect(htmlDiff).toContain('New content');
+    });
+
+    test('should show diff statistics in HTML', () => {
+      squibView.setContent('Line 1\nLine 2');
+      squibView.setContent('Line 1\nLine 2 Modified\nLine 3');
+      
+      const htmlDiff = squibView.getSourceDiffHTML();
+      
+      // Should include statistics
+      expect(htmlDiff).toContain('additions');
+      expect(htmlDiff).toContain('deletions');
+      expect(htmlDiff).toContain('changes');
+    });
+
+    test('should handle multi-line content in HTML diff', () => {
+      const multiLine1 = 'First line\nSecond line\nThird line';
+      const multiLine2 = 'First line\nModified second\nThird line\nFourth line';
+      
+      squibView.setContent(multiLine1);
+      squibView.setContent(multiLine2);
+      
+      const htmlDiff = squibView.getSourceDiffHTML();
+      
+      // Check that all lines are represented
+      expect(htmlDiff).toContain('First line');
+      expect(htmlDiff).toContain('Second line');
+      expect(htmlDiff).toContain('Modified second');
+      expect(htmlDiff).toContain('Third line');
+      expect(htmlDiff).toContain('Fourth line');
+      
+      // Should have proper line structure
+      const lineCount = (htmlDiff.match(/diff-line/g) || []).length;
+      expect(lineCount).toBeGreaterThanOrEqual(4);
+    });
   });
 
   // Test rendering
