@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SquibView - Inline Diff Demo</title>  
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14a14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0a7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
+
+  <link rel="stylesheet" href="../dist/squibview.css">
+
+  <!-- External libraries for the lean UMD build -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f8f9fa;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    
+    h2 {
+      color: #495057;
+      border-bottom: 2px solid #e9ecef;
+      padding-bottom: 8px;
+      margin-top: 40px;
+    }
+    
+    .version-info {
+      background: #e8edff;
+      padding: 12px;
+      border-radius: 6px;
+      margin: 15px 0;
+      font-size: 14px;
+      color: #333;
+      border-left: 4px solid #2a57d3;
+    }
+    
+    .version-info a {
+      color: #2a57d3;
+      text-decoration: none;
+    }
+    
+    .version-info a:hover {
+      text-decoration: underline;
+    }
+    
+    .intro {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 6px;
+      margin: 20px 0;
+      border: 1px solid #e9ecef;
+    }
+    
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin: 30px 0;
+    }
+    
+    @media (max-width: 768px) {
+      .comparison-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+    }
+    
+    .diff-section {
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      padding: 20px;
+      background: #fafafa;
+    }
+    
+    .diff-section h3 {
+      margin-top: 0;
+      color: #495057;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .badge {
+      background: #2a57d3;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .badge.new {
+      background: #28a745;
+    }
+    
+    .editor-section {
+      margin: 30px 0;
+    }
+    
+    .editor-container {
+      height: 300px;
+      margin: 20px 0;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    
+    .controls {
+      margin: 20px 0;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .controls button {
+      background: #2a57d3;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+    
+    .controls button:hover:not(:disabled) {
+      background: #1e3f8f;
+    }
+    
+    .controls button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .controls .secondary {
+      background: #6c757d;
+    }
+    
+    .controls .secondary:hover:not(:disabled) {
+      background: #545b62;
+    }
+    
+    .controls .success {
+      background: #28a745;
+    }
+    
+    .controls .success:hover:not(:disabled) {
+      background: #1e7e34;
+    }
+    
+    .status {
+      padding: 10px 15px;
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #495057;
+      margin: 15px 0;
+    }
+    
+    .diff-container {
+      margin: 15px 0;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: white;
+      max-height: 400px;
+      overflow: hidden; /* Changed from auto to hidden to prevent double scrollbar */
+      min-height: 80px;
+    }
+    
+    /* Override the internal diff container max-height to fit parent */
+    .diff-container .squibview-diff,
+    .diff-container .squibview-diff-inline {
+      max-height: 100%;
+      margin: 0;
+      border: none;
+      border-radius: 0;
+    }
+    
+    /* Ensure inline diff colors are visible */
+    .squibview-diff-inline .diff-inline-added {
+      background-color: #cfe2ff !important;
+      color: #004085 !important;
+      padding: 0.1em 0.2em;
+      border-radius: 3px;
+      font-weight: 500;
+    }
+    
+    .squibview-diff-inline .diff-inline-removed {
+      background-color: #f8d7da !important;
+      color: #721c24 !important;
+      padding: 0.1em 0.2em;
+      border-radius: 3px;
+      text-decoration: line-through;
+      font-weight: 500;
+    }
+    
+    .diff-container:empty::before {
+      content: "Diff will appear here";
+      display: block;
+      padding: 30px 20px;
+      text-align: center;
+      color: #6c757d;
+      font-style: italic;
+    }
+    
+    .feature-highlight {
+      background: #d1ecf1;
+      border: 1px solid #bee5eb;
+      border-radius: 6px;
+      padding: 15px;
+      margin: 20px 0;
+      color: #0c5460;
+    }
+    
+    .feature-highlight h4 {
+      margin-top: 0;
+      color: #0c5460;
+    }
+    
+    .feature-highlight ul {
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>SquibView Inline Diff Demo</h1>
+    
+    <div id="version-info" class="version-info">
+      Loading version info...
+    </div>
+    
+    <div class="intro">
+      <p><strong>Compare Two Diff Styles:</strong> This demo shows both the new inline diff view (with blue additions and red deletions) alongside the traditional side-by-side view.</p>
+    </div>
+    
+    <div class="feature-highlight">
+      <h4>✨ New Inline Diff Features:</h4>
+      <ul>
+        <li><strong style="color: #007bff;">Blue highlighting</strong> shows added content</li>
+        <li><strong style="color: #dc3545;">Red strikethrough</strong> shows deleted content</li>
+        <li>Changes appear inline within the original text flow</li>
+        <li>Great for reading the final result with changes marked</li>
+      </ul>
+    </div>
+    
+    <div class="editor-section">
+      <h2>📝 Editor</h2>
+      <div class="editor-container">
+        <div id="editor"></div>
+      </div>
+      
+      <div class="controls">
+        <button id="showBothDiffs" class="success">Show Both Diff Views</button>
+        <button id="clearDiffs" class="secondary">Clear All Diffs</button>
+        <button id="makeTextEdit" class="secondary">Edit Some Text</button>
+        <button id="addParagraph" class="secondary">Add New Paragraph</button>
+        <button id="deleteSection" class="secondary">Delete a Section</button>
+        <button id="testInlineOnly" class="secondary">Test Inline Diff Only</button>
+      </div>
+      
+      <div id="status" class="status">
+        Ready - Make some changes to see both diff styles in action
+      </div>
+    </div>
+    
+    <div class="comparison-grid">
+      <div class="diff-section">
+        <h3>🆕 Inline Diff View <span class="badge new">NEW</span></h3>
+        <p>Shows changes within the text flow. Blue additions, red deletions with strikethrough.</p>
+        <div id="inlineDiffContainer" class="diff-container"></div>
+      </div>
+      
+      <div class="diff-section">
+        <h3>📋 Side-by-Side Diff View <span class="badge">STANDARD</span></h3>
+        <p>Traditional line-by-line comparison with color-coded backgrounds.</p>
+        <div id="sideBySideDiffContainer" class="diff-container"></div>
+      </div>
+    </div>
+    
+    <div class="feature-highlight">
+      <h4>💡 When to use each style:</h4>
+      <ul>
+        <li><strong>Inline Diff:</strong> Best for reading the final content with changes highlighted. Good for reviewing edits in context.</li>
+        <li><strong>Side-by-Side Diff:</strong> Best for understanding exact line changes. Good for code reviews and structural changes.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script type="module">
+    // Fix global variable name mapping for lean UMD build
+    if (typeof window.markdownit !== 'undefined') {
+      window.MarkdownIt = window.markdownit;
+    }
+    
+    // Load SquibView UMD build
+    const script = document.createElement('script');
+    script.src = '../dist/squibview.umd.min.js';
+    script.onload = function() {
+      initializeDemo();
+    };
+    document.head.appendChild(script);
+    
+    function initializeDemo() {
+      // Display version info
+      document.getElementById('version-info').innerHTML = 
+        `SquibView Version: ${SquibView.version.version} | Repository: <a href="${SquibView.version.url}" target="_blank">${SquibView.version.url}</a>`;
+      
+      // Create the editor
+      const editor = new SquibView('#editor', {
+        initialContent: `# SquibView Diff Comparison Demo
+
+Welcome to the **inline diff demonstration**! This text will be used to show different types of changes.
+
+## Original Content
+
+This paragraph contains some original text that we'll modify to demonstrate the diff functionality. You can see how different types of changes appear in each view.
+
+### Features to Test
+- Text modifications
+- New additions
+- Content deletions
+- Line changes
+
+## Conclusion
+
+Try the buttons below to make different types of changes and see how they appear in both diff views!`,
+        initialView: 'split'
+      });
+
+      function updateStatus() {
+        const revCount = editor.revisionManager.getRevisionCount();
+        const currentIndex = editor.revisionManager.getCurrentIndex();
+        document.getElementById('status').innerHTML = 
+          `Current revision: ${currentIndex} | Total revisions: ${revCount} | <strong>Ready to compare diffs</strong>`;
+      }
+
+      // Initial status update
+      updateStatus();
+      
+      // Listen for content changes to update status
+      editor.events.on('contentChanged', updateStatus);
+      
+      // Show both diffs button
+      document.getElementById('showBothDiffs').addEventListener('click', () => {
+        try {
+          // Show inline diff
+          const inlineDiffHTML = editor.getSourceDiffInline();
+          document.getElementById('inlineDiffContainer').innerHTML = inlineDiffHTML;
+          
+          // Debug: Log what we're getting
+          console.log('Inline diff HTML sample:', inlineDiffHTML.substring(0, 500));
+          
+          // Show side-by-side diff
+          const sideBySideDiffHTML = editor.getSourceDiffHTML();
+          document.getElementById('sideBySideDiffContainer').innerHTML = sideBySideDiffHTML;
+          
+          const revCount = editor.revisionManager.getRevisionCount();
+          const currentIndex = editor.revisionManager.getCurrentIndex();
+          document.getElementById('status').innerHTML = 
+            `📊 Showing comparison between revisions ${currentIndex - 1} and ${currentIndex}`;
+        } catch (e) {
+          const errorHTML = `<div style="padding: 20px; color: #dc3545; background: #f8d7da; border-radius: 4px; margin: 10px;">
+            <strong>Error:</strong> ${e.message}
+          </div>`;
+          document.getElementById('inlineDiffContainer').innerHTML = errorHTML;
+          document.getElementById('sideBySideDiffContainer').innerHTML = errorHTML;
+        }
+      });
+      
+      // Clear diffs button
+      document.getElementById('clearDiffs').addEventListener('click', () => {
+        document.getElementById('inlineDiffContainer').innerHTML = '';
+        document.getElementById('sideBySideDiffContainer').innerHTML = '';
+        updateStatus();
+      });
+      
+      // Make text edit button
+      document.getElementById('makeTextEdit').addEventListener('click', () => {
+        let content = editor.getContent();
+        content = content.replace(
+          'This paragraph contains some original text',
+          'This paragraph contains some **modified and enhanced** text'
+        );
+        content = content.replace(
+          'You can see how different types of changes appear',
+          'You can clearly observe how various types of modifications appear'
+        );
+        editor.setContent(content);
+        updateStatus();
+      });
+      
+      // Add paragraph button
+      document.getElementById('addParagraph').addEventListener('click', () => {
+        const timestamp = new Date().toLocaleTimeString();
+        const newParagraph = `\\n\\n## ✨ New Section Added at ${timestamp}\\n\\nThis is a completely new section that demonstrates how **additions** appear in both diff views. Notice how the inline view shows this in blue highlighting, while the side-by-side view shows it as green-highlighted lines.\\n\\n- New bullet point\\n- Another fresh item\\n- Third addition for variety`;
+        editor.setContent(editor.getContent() + newParagraph);
+        updateStatus();
+      });
+      
+      // Delete section button
+      document.getElementById('deleteSection').addEventListener('click', () => {
+        let content = editor.getContent();
+        // Remove the Features to Test section
+        content = content.replace(/### Features to Test[\\s\\S]*?(?=\\n##|$)/g, '');
+        editor.setContent(content);
+        updateStatus();
+      });
+      
+      // Listen for diff events
+      editor.events.on('diff:computed', (data) => {
+        console.log('Diff computed:', data);
+      });
+      
+      editor.events.on('diff:displayed', (data) => {
+        console.log('Diff displayed:', data);
+      });
+      
+      // Test inline diff only button
+      document.getElementById('testInlineOnly').addEventListener('click', () => {
+        // First, make a simple change
+        editor.setContent('This is the original text.');
+        setTimeout(() => {
+          editor.setContent('This is the modified and enhanced text with additions.');
+          
+          // Now show only the inline diff
+          setTimeout(() => {
+            try {
+              const inlineDiffHTML = editor.getSourceDiffInline();
+              document.getElementById('inlineDiffContainer').innerHTML = inlineDiffHTML;
+              document.getElementById('sideBySideDiffContainer').innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">Side-by-side view cleared for testing</div>';
+              
+              // Also create a simple test div to verify colors
+              const testHTML = `
+                <div style="padding: 20px; background: #f8f9fa; border: 1px solid #ddd; margin-top: 10px;">
+                  <h4>Color Test:</h4>
+                  <p>This text has <span class="diff-inline-added">blue additions</span> and <span class="diff-inline-removed">red deletions</span>.</p>
+                  <p>Raw inline diff classes test:</p>
+                  <p><span style="background-color: #cfe2ff; color: #004085; padding: 0.1em 0.2em;">Blue addition style</span></p>
+                  <p><span style="background-color: #f8d7da; color: #721c24; padding: 0.1em 0.2em; text-decoration: line-through;">Red deletion style</span></p>
+                </div>
+              `;
+              document.getElementById('inlineDiffContainer').innerHTML += testHTML;
+            } catch (e) {
+              console.error('Error:', e);
+              alert('Error: ' + e.message);
+            }
+          }, 100);
+        }, 100);
+      });
+    }
+  </script>
+</body>
+</html>

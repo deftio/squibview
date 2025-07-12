@@ -1762,6 +1762,93 @@ class SquibView {
   }
 
   /**
+   * Gets source diff as inline HTML with additions and deletions marked within the text
+   * 
+   * @param {Object} options - Diff and styling options
+   * @param {number} options.fromIndex - Starting revision index (defaults to current - 1)
+   * @param {number} options.toIndex - Ending revision index (defaults to current)
+   * @param {Object} options.cssClasses - Custom CSS classes for styling
+   * @returns {string} HTML string with inline diff markup
+   */
+  getSourceDiffInline(options = {}) {
+    const {
+      fromIndex = null,
+      toIndex = null,
+      cssClasses = {}
+    } = options;
+    
+    // Get the raw diff data
+    const diffData = this.getSourceDiff({ fromIndex, toIndex });
+    
+    // Default CSS classes for inline diff
+    const classes = {
+      container: cssClasses.container || 'squibview-diff-inline',
+      added: cssClasses.added || 'diff-inline-added',
+      removed: cssClasses.removed || 'diff-inline-removed'
+    };
+    
+    // Get the actual content from the revisions
+    const actualFromIndex = fromIndex === null ? this.revisionManager.getCurrentIndex() - 1 : fromIndex;
+    const actualToIndex = toIndex === null ? this.revisionManager.getCurrentIndex() : toIndex;
+    
+    let fromContent, toContent;
+    try {
+      fromContent = this.revisionManager.getContentAtRevision(actualFromIndex).content;
+      toContent = this.revisionManager.getContentAtRevision(actualToIndex).content;
+    } catch (e) {
+      return `<div class="${classes.container}"><p>Error: ${e.message}</p></div>`;
+    }
+    
+    // Get character-level diff
+    const diff = this.revisionManager.diffEngine.diff_main(fromContent, toContent);
+    this.revisionManager.diffEngine.diff_cleanupSemantic(diff);
+    
+    // Convert diff to inline HTML
+    let html = `<div class="${classes.container}" contenteditable="false">`;
+    
+    // Add header
+    html += `<div class="diff-inline-header">`;
+    html += `<div>Comparing revision ${actualFromIndex} to ${actualToIndex}</div>`;
+    if (diffData.stats && diffData.stats.totalChanges > 0) {
+      html += `<div class="diff-inline-stats">`;
+      html += `<span style="color: #007bff;">+${diffData.stats.additions}</span> `;
+      html += `<span style="color: #dc3545;">-${diffData.stats.deletions}</span>`;
+      if (diffData.stats.modifications > 0) {
+        html += ` <span style="color: #ffc107;">~${diffData.stats.modifications}</span>`;
+      }
+      html += `</div>`;
+    }
+    html += `</div>`;
+    
+    // Add content with inline diffs
+    html += `<div class="diff-inline-content">`;
+    
+    for (const [op, text] of diff) {
+      const escapedText = this._escapeHtml(text);
+      if (op === 1) { // Addition
+        html += `<span class="${classes.added}">${escapedText}</span>`;
+      } else if (op === -1) { // Deletion
+        html += `<span class="${classes.removed}">${escapedText}</span>`;
+      } else { // Unchanged
+        html += escapedText;
+      }
+    }
+    
+    html += `</div></div>`;
+    
+    // Emit diff displayed event
+    this.events.emit('diff:displayed', {
+      fromIndex: actualFromIndex,
+      toIndex: actualToIndex,
+      stats: diffData.stats,
+      htmlLength: html.length,
+      type: 'inline'
+    });
+    
+    return html;
+  }
+
+  /**
    * Escapes HTML special characters
    * @private
    */

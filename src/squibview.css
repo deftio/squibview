@@ -431,3 +431,106 @@
     background-color: #e53e3e;
     color: #feb2b2;
 }
+
+/*
+  Inline Diff Styles
+  For displaying diffs inline with additions and deletions marked within the text
+*/
+
+.squibview-diff-inline {
+    font-family: var(--squibview-font-family-monospace);
+    font-size: 0.9em;
+    line-height: 1.6;
+    border: 1px solid var(--squibview-border-color);
+    border-radius: var(--squibview-border-radius-button);
+    background-color: var(--squibview-background-color);
+    margin: 1em 0;
+    max-height: 600px;
+    overflow: auto;
+}
+
+.squibview-diff-inline .diff-inline-header {
+    background-color: var(--squibview-table-header-bg);
+    padding: 0.75em 1em;
+    border-bottom: 1px solid var(--squibview-border-color);
+    font-size: 0.9em;
+    color: #666;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5em;
+}
+
+.squibview-diff-inline .diff-inline-stats {
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.squibview-diff-inline .diff-inline-content {
+    padding: 1em;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Inline diff highlighting */
+.squibview-diff-inline .diff-inline-added {
+    background-color: #cfe2ff;
+    color: #004085;
+    padding: 0.1em 0.2em;
+    border-radius: 3px;
+    font-weight: 500;
+}
+
+.squibview-diff-inline .diff-inline-removed {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 0.1em 0.2em;
+    border-radius: 3px;
+    text-decoration: line-through;
+    font-weight: 500;
+}
+
+/* Responsive adjustments for inline diff */
+@media (max-width: 768px) {
+    .squibview-diff-inline {
+        font-size: 0.8em;
+        max-height: 400px;
+    }
+    
+    .squibview-diff-inline .diff-inline-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .squibview-diff-inline .diff-inline-content {
+        padding: 0.75em;
+    }
+}
+
+/* Dark mode support for inline diff */
+.squibview.dark .squibview-diff-inline,
+.squibview[data-theme="dark"] .squibview-diff-inline {
+    background-color: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
+}
+
+.squibview.dark .squibview-diff-inline .diff-inline-header,
+.squibview[data-theme="dark"] .squibview-diff-inline .diff-inline-header {
+    background-color: #4a5568;
+    border-color: #718096;
+    color: #cbd5e0;
+}
+
+.squibview.dark .squibview-diff-inline .diff-inline-added,
+.squibview[data-theme="dark"] .squibview-diff-inline .diff-inline-added {
+    background-color: #2b6cb0;
+    color: #bee3f8;
+}
+
+.squibview.dark .squibview-diff-inline .diff-inline-removed,
+.squibview[data-theme="dark"] .squibview-diff-inline .diff-inline-removed {
+    background-color: #c53030;
+    color: #fed7d7;
+}

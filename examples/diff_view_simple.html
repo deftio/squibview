@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SquibView - Simple Diff Demo</title>  
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14a14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0a7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
+
+  <link rel="stylesheet" href="../dist/squibview.css">
+
+  <!-- External libraries for the lean UMD build -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f8f9fa;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    
+    .version-info {
+      background: #e8edff;
+      padding: 12px;
+      border-radius: 6px;
+      margin: 15px 0;
+      font-size: 14px;
+      color: #333;
+      border-left: 4px solid #2a57d3;
+    }
+    
+    .version-info a {
+      color: #2a57d3;
+      text-decoration: none;
+    }
+    
+    .version-info a:hover {
+      text-decoration: underline;
+    }
+    
+    .intro {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 6px;
+      margin: 20px 0;
+      border: 1px solid #e9ecef;
+    }
+    
+    .editor-section {
+      margin: 30px 0;
+    }
+    
+    .editor-container {
+      height: 350px;
+      margin: 20px 0;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    
+    .controls {
+      margin: 20px 0;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .controls button {
+      background: #2a57d3;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+    
+    .controls button:hover:not(:disabled) {
+      background: #1e3f8f;
+    }
+    
+    .controls button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .controls .secondary {
+      background: #6c757d;
+    }
+    
+    .controls .secondary:hover:not(:disabled) {
+      background: #545b62;
+    }
+    
+    .status {
+      padding: 10px 15px;
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #495057;
+      margin: 15px 0;
+    }
+    
+    .diff-container {
+      margin: 20px 0;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: white;
+      max-height: 400px;
+      overflow: hidden;
+      min-height: 100px;
+    }
+    
+    /* Override the internal diff container to prevent double scrollbar */
+    .diff-container .squibview-diff {
+      max-height: 100%;
+      margin: 0;
+      border: none;
+      border-radius: 0;
+    }
+    
+    .diff-container:empty::before {
+      content: "Diff will appear here when you make changes and click 'Show Diff'";
+      display: block;
+      padding: 40px 20px;
+      text-align: center;
+      color: #6c757d;
+      font-style: italic;
+    }
+    
+    .instructions {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      border-radius: 6px;
+      padding: 15px;
+      margin: 20px 0;
+      color: #856404;
+    }
+    
+    .instructions ol {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    
+    .instructions li {
+      margin: 8px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>SquibView Diff View - Simple Demo</h1>
+    
+    <div id="version-info" class="version-info">
+      Loading version info...
+    </div>
+    
+    <div class="intro">
+      <p><strong>Welcome to the SquibView Diff View Demo!</strong></p>
+      <p>This demonstrates how to compare different versions of your content. Make some edits in the editor below and see the differences highlighted.</p>
+    </div>
+    
+    <div class="instructions">
+      <strong>How to use this demo:</strong>
+      <ol>
+        <li>Edit the content in the editor below</li>
+        <li>Click "Show Diff" to see changes from the previous version</li>
+        <li>Try the "Add Sample Content" button to quickly create changes</li>
+        <li>Use "Clear Diff" to hide the comparison</li>
+      </ol>
+    </div>
+    
+    <div class="editor-section">
+      <h2>Editor</h2>
+      <div class="editor-container">
+        <div id="editor"></div>
+      </div>
+      
+      <div class="controls">
+        <button id="showDiff">Show Diff</button>
+        <button id="clearDiff" class="secondary">Clear Diff</button>
+        <button id="addContent" class="secondary">Add Sample Content</button>
+        <button id="makeEdit" class="secondary">Make Sample Edit</button>
+      </div>
+      
+      <div id="status" class="status">
+        Ready - Make some changes to see the diff functionality
+      </div>
+    </div>
+    
+    <div class="editor-section">
+      <h2>Diff View</h2>
+      <div id="diffContainer" class="diff-container"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Fix global variable name mapping for lean UMD build
+    if (typeof window.markdownit !== 'undefined') {
+      window.MarkdownIt = window.markdownit;
+    }
+    
+    // Load SquibView UMD build
+    const script = document.createElement('script');
+    script.src = '../dist/squibview.umd.min.js';
+    script.onload = function() {
+      initializeDemo();
+    };
+    document.head.appendChild(script);
+    
+    function initializeDemo() {
+      // Display version info
+      document.getElementById('version-info').innerHTML = 
+        `SquibView Version: ${SquibView.version.version} | Repository: <a href="${SquibView.version.url}" target="_blank">${SquibView.version.url}</a>`;
+      
+      // Create the editor
+      const editor = new SquibView('#editor', {
+        initialContent: `# Welcome to SquibView
+
+This is a simple demonstration of the diff view functionality.
+
+## Getting Started
+
+Try editing this content to see how the diff view works:
+- Add new lines
+- Modify existing text  
+- Delete content
+
+The diff will show:
+- **Green** for additions
+- **Red** for deletions
+- **Unchanged** lines remain normal
+
+## Features
+
+- Live editing with instant preview
+- Revision history tracking
+- Source-only diffs (no rendered view complexity)
+- Customizable styling
+
+Make some changes and click "Show Diff" to see it in action!`,
+        initialView: 'split'
+      });
+
+      function updateStatus() {
+        const revCount = editor.revisionManager.getRevisionCount();
+        const currentIndex = editor.revisionManager.getCurrentIndex();
+        document.getElementById('status').innerHTML = 
+          `Current revision: ${currentIndex} | Total revisions: ${revCount} | <strong>Ready to show diff</strong>`;
+      }
+
+      // Initial status update
+      updateStatus();
+      
+      // Listen for content changes to update status
+      editor.events.on('contentChanged', updateStatus);
+      
+      // Show diff button
+      document.getElementById('showDiff').addEventListener('click', () => {
+        try {
+          const diffHTML = editor.getSourceDiffHTML();
+          document.getElementById('diffContainer').innerHTML = diffHTML;
+          document.getElementById('status').innerHTML = 
+            `Showing diff between revisions ${editor.revisionManager.getCurrentIndex() - 1} and ${editor.revisionManager.getCurrentIndex()}`;
+        } catch (e) {
+          document.getElementById('diffContainer').innerHTML = 
+            `<div style="padding: 20px; color: #dc3545; background: #f8d7da; border-radius: 4px; margin: 10px;">
+              <strong>Error:</strong> ${e.message}
+            </div>`;
+        }
+      });
+      
+      // Clear diff button
+      document.getElementById('clearDiff').addEventListener('click', () => {
+        document.getElementById('diffContainer').innerHTML = '';
+        updateStatus();
+      });
+      
+      // Add sample content button
+      document.getElementById('addContent').addEventListener('click', () => {
+        const timestamp = new Date().toLocaleTimeString();
+        editor.setContent(editor.getContent() + `\\n\\n## New Section Added at ${timestamp}\\n\\nThis is new content added automatically to demonstrate the diff functionality.\\n\\n- New bullet point\\n- Another new item`);
+        updateStatus();
+      });
+      
+      // Make sample edit button
+      document.getElementById('makeEdit').addEventListener('click', () => {
+        const currentContent = editor.getContent();
+        const timestamp = new Date().toLocaleTimeString();
+        
+        // Replace "Welcome to SquibView" with a modified version
+        const modifiedContent = currentContent.replace(
+          '# Welcome to SquibView',
+          `# Welcome to SquibView - Modified at ${timestamp}`
+        );
+        
+        editor.setContent(modifiedContent);
+        updateStatus();
+      });
+      
+      // Listen for diff events
+      editor.events.on('diff:computed', (data) => {
+        console.log('Diff computed:', data);
+      });
+      
+      editor.events.on('diff:displayed', (data) => {
+        console.log('Diff displayed:', data);
+      });
+    }
+  </script>
+</body>
+</html>
