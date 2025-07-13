@@ -47,6 +47,8 @@
     "build:fast": "npm run updateVersion && rollup -c --environment BUILD:esm && npm run minifyCSS",
     "build:umd": "npm run updateVersion && rollup -c --environment BUILD:umd && npm run minifyCSS",
     "build:esm": "npm run updateVersion && rollup -c --environment BUILD:esm && npm run minifyCSS",
+    "build:esm-lean": "npm run updateVersion && rollup -c --environment BUILD:esm-lean && npm run minifyCSS",
+    "build:umd-lean": "npm run updateVersion && rollup -c --environment BUILD:umd-lean && npm run minifyCSS",
     "build:standalone": "npm run updateVersion && rollup -c --environment BUILD:standalone && npm run minifyCSS",
     "build:react": "rollup -c --environment BUILD:react",
     "prerelease": "npm run build:all && npm run test:all",

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Bundled ESM Build</title>
+  <link rel="stylesheet" href="../dist/squibview.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    #editor {
+      height: 400px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Testing Bundled ESM Build (No Import Maps!)</h1>
+  <div id="editor"></div>
+
+  <script type="module">
+    // Import ONLY SquibView - no import maps or external markdown-it needed!
+    import SquibView from '../dist/squibview.esm.min.js';
+    
+    const editor = new SquibView('#editor');
+    editor.setContent(`# Bundled Build Test
+
+This should work without any import maps or external dependencies!
+
+## Markdown Features
+- **Bold text**
+- *Italic text*
+- Lists work
+
+\`\`\`javascript
+// Code blocks should work
+console.log('Hello from bundled build!');
+\`\`\`
+
+If you can see this rendered properly, the bundled build is working!
+`, 'md');
+  </script>
+</body>
+</html>

@@ -12,13 +12,13 @@ import polyfillNode from 'rollup-plugin-polyfill-node';
 const extensions = ['.js'];
 
 /* ------------------------------------------------------------------
-   1) "Regular" UMD Build: (lean)
-   Leaves mermaid, highlight.js, etc. as external. The user or dev
-   loads them separately (e.g. <script src="...mermaid.js"></script>)
+   1) "Regular" UMD Build: (NOW BUNDLED WITH CORE DEPS)
+   Bundles markdown-it, diff-match-patch, tiny-emitter
+   Still leaves heavy deps (mermaid, highlight.js) as external
 ------------------------------------------------------------------ */
 const umdConfig = {
   input: 'src/squibview.umd-entry.js',
-  external: ['mermaid', 'highlight.js', 'markdown-it'],
+  external: ['mermaid', 'highlight.js'], // markdown-it removed from externals
   output: [
     {
       file: 'dist/squibview.umd.js',
@@ -28,8 +28,8 @@ const umdConfig = {
       inlineDynamicImports: true,
       globals: {
         mermaid: 'mermaid',
-        'highlight.js': 'hljs',
-        'markdown-it': 'markdownit'
+        'highlight.js': 'hljs'
+        // markdown-it removed from globals
       },
       exports: 'default',
     },
@@ -41,8 +41,8 @@ const umdConfig = {
       inlineDynamicImports: true,
       globals: {
         mermaid: 'mermaid',
-        'highlight.js': 'hljs',
-        'markdown-it': 'markdownit'
+        'highlight.js': 'hljs'
+        // markdown-it removed from globals
       },
       exports: 'default',
       plugins: [terser()],
@@ -50,7 +50,7 @@ const umdConfig = {
   ],
   plugins: [
     // json(), // if needed
-    resolve({ extensions }),
+    resolve({ extensions, browser: true }), // Added browser: true
     commonjs(),
     postcss({
       extract: 'squibview.css',
@@ -136,12 +136,12 @@ const umdStandaloneConfig = {
 
 /* ------------------------------------------------------------------
    3) ESM Builds (regular & standalone)
-   - The "regular" ESM externalizes mermaid/highlight/etc.
+   - The "regular" ESM NOW BUNDLES core deps (markdown-it, diff-match-patch, tiny-emitter)
    - The "standalone" ESM includes everything.
 ------------------------------------------------------------------ */
 const esmRegularConfig = {
   input: 'src/squibview.js',
-  external: ['mermaid', 'highlight.js', 'markdown-it'],
+  external: ['mermaid', 'highlight.js'], // markdown-it removed from externals
   output: [
     {
       file: 'dist/squibview.esm.js',
@@ -318,6 +318,96 @@ const htmlToMarkdownConfig = {
   ],
 };
 
+/* ------------------------------------------------------------------
+   7) LEAN Builds - The original behavior with all deps external
+   These are for advanced users who want to manage dependencies
+------------------------------------------------------------------ */
+const umdLeanConfig = {
+  input: 'src/squibview.umd-entry.js',
+  external: ['mermaid', 'highlight.js', 'markdown-it', 'diff-match-patch', 'tiny-emitter'],
+  output: [
+    {
+      file: 'dist/squibview.umd-lean.js',
+      format: 'umd',
+      name: 'SquibView',
+      sourcemap: true,
+      inlineDynamicImports: true,
+      globals: {
+        mermaid: 'mermaid',
+        'highlight.js': 'hljs',
+        'markdown-it': 'markdownit',
+        'diff-match-patch': 'DiffMatchPatch',
+        'tiny-emitter': 'TinyEmitter'
+      },
+      exports: 'default',
+    },
+    {
+      file: 'dist/squibview.umd-lean.min.js',
+      format: 'umd',
+      name: 'SquibView',
+      sourcemap: true,
+      inlineDynamicImports: true,
+      globals: {
+        mermaid: 'mermaid',
+        'highlight.js': 'hljs',
+        'markdown-it': 'markdownit',
+        'diff-match-patch': 'DiffMatchPatch',
+        'tiny-emitter': 'TinyEmitter'
+      },
+      exports: 'default',
+      plugins: [terser()],
+    },
+  ],
+  plugins: [
+    resolve({ extensions }),
+    commonjs(),
+    postcss({
+      extract: 'squibview.css',
+      minimize: false
+    }),
+    babel({
+      babelHelpers: 'bundled',
+      extensions,
+      presets: ['@babel/preset-env'],
+    }),
+  ],
+};
+
+const esmLeanConfig = {
+  input: 'src/squibview.js',
+  external: ['mermaid', 'highlight.js', 'markdown-it', 'diff-match-patch', 'tiny-emitter'],
+  output: [
+    {
+      file: 'dist/squibview.esm-lean.js',
+      format: 'es',
+      sourcemap: true,
+      inlineDynamicImports: true,
+    },
+    {
+      file: 'dist/squibview.esm-lean.min.js',
+      format: 'es',
+      sourcemap: true,
+      inlineDynamicImports: true,
+      plugins: [terser()],
+    },
+  ],
+  plugins: [
+    polyfillNode(),
+    resolve({ extensions, browser: true }),
+    commonjs(),
+    postcss({
+      extract: 'squibview.css',
+      minimize: false
+    }),
+    babel({
+      babelHelpers: 'bundled',
+      extensions,
+      exclude: 'node_modules/**',
+      presets: ['@babel/preset-env'],
+    }),
+  ],
+};
+
 /* 
    Finally, export an array of configuration objects so Rollup 
    will build them all in one go.
@@ -325,6 +415,8 @@ const htmlToMarkdownConfig = {
 export default process.env.BUILD === 'react' ? reactConfig :
        process.env.BUILD === 'umd' ? umdConfig :
        process.env.BUILD === 'esm' ? esmRegularConfig :
+       process.env.BUILD === 'umd-lean' ? umdLeanConfig :
+       process.env.BUILD === 'esm-lean' ? esmLeanConfig :
        process.env.BUILD === 'standalone' ? umdStandaloneConfig :
        process.env.BUILD === 'standalone-basic' ? umdStandaloneBasicConfig :
-       [umdConfig, umdStandaloneBasicConfig, umdStandaloneConfig, esmRegularConfig, esmStandaloneConfig, reactConfig, vueConfig, htmlToMarkdownConfig];
+       [umdConfig, umdStandaloneBasicConfig, umdStandaloneConfig, esmRegularConfig, esmStandaloneConfig, umdLeanConfig, esmLeanConfig, reactConfig, vueConfig, htmlToMarkdownConfig];
