@@ -4,71 +4,152 @@
 [![License](https://img.shields.io/badge/License-BSD_2--Clause-orange.svg)](LICENSE)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/deftio/squibview/ci.yml?branch=main&style=flat&logo=github&label=Build&color=blue)](https://github.com/deftio/squibview/actions/workflows/ci.yml)
 
-[Live Demo](https://deftio.github.io/squibview/examples/example_ESM.html)
+JavaScript editor/viewer for Markdown and HTML with live preview, bidirectional editing, and rich content support.
 
-**SquibView is a headless JavaScript embeddable editor/viewer that renders GitHub-Flavored Markdown (or full HTML pages) on the fly.**
-
-For Markdown inputs, it supports rendering Mermaid diagrams, GeoJSON/TopoJSON maps, STL 3D models, math equations, syntax-highlighted code blocks, tables, CSV data, and inline SVG graphics. This provides a powerful and interactive way to view and export Markdown content as HTML.  Squibview live-updates bidirectionally when possible (source a rendered views).
-
-SquibView supports full cut-and-paste functionality and allows edits made in the rendered view to be reflected back in the source.
+[**Live Demo**](https://deftio.github.io/squibview/examples/example_ESM.html) | [**Documentation**](https://deftio.github.io/squibview/docs/home.html) | [**API Reference**](https://deftio.github.io/squibview/docs/programmers-guide.html) | [**Local Demo**](./examples/index.html)
 
 <img src="./squibview-demo.gif" alt="SquibView Live Demo - Progressive markdown rendering showing headings, bullets, tables, diagrams, math, and maps" width="100%">
 
+## What It Does
+
+SquibView renders Markdown (or HTML) with live preview and allows editing in both source and rendered views. Changes sync automatically between views.
+
+**Key Capabilities:**
+- Edit markdown and see live HTML preview
+- Edit in the rendered view - changes reflect back to markdown
+- Full revision history with undo/redo
+- Visual diff comparison between any revisions
+- Export/copy as HTML with embedded images
+- Works as CLI tool or JavaScript component
+
+**Supported Content:**
+- 📊 Mermaid diagrams, flowcharts, sequence diagrams
+- 🗺️ GeoJSON/TopoJSON interactive maps
+- 🧮 LaTeX math equations
+- 📐 STL 3D models
+- 📈 CSV/TSV tables
+- 🎨 SVG graphics
+- 🖼️ Images with base64 conversion
+- 💻 Syntax-highlighted code
+
 ## Quick Start
-Squibview also has a command line cli (also aliased as squibv) that can be used to turn markdown / texts / csv / tsv / psv or  html snippets in to full web pages.
 
-### CLI Usage (Fastest Way)
-```bash
-npx squibv document.md
-```
-
-### Component Usage (Easiest for Web)
+### Browser (ESM)
 ```html
-<script src="https://unpkg.com/squibview/dist/squibview.standalone.min.js"></script>
+<!-- Required dependencies -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+
+<!-- SquibView -->
 <link rel="stylesheet" href="https://unpkg.com/squibview/dist/squibview.min.css">
+<script type="module">
+  import SquibView from 'https://unpkg.com/squibview/dist/squibview.esm.min.js';
+  
+  const editor = new SquibView('#editor', {
+    initialContent: '# Hello\nStart typing **markdown**...'
+  });
+</script>
 
 <div id="editor"></div>
-<script>
-    const editor = new SquibView({
-        element: document.getElementById('editor'),
-        content: '# Hello World\n\nThis is **SquibView** in action!'
-    });
-</script>
 ```
 
-## Key Features
+For standalone build (no dependencies needed), see [installation options](./docs/guides/02-installation.html).
 
-- 🚀 **Live Preview** - Real-time rendering as you edit
-- 📊 **Rich Content** - Mermaid diagrams, GeoJSON maps, STL 3D models, math equations
-- 📝 **GitHub-Flavored Markdown** - Full GFM support with tables and syntax highlighting  
-- 🔄 **Bidirectional Editing** - Edit in source or rendered view
-- 🔍 **Diff View** - Compare revisions with inline or side-by-side diffs
-- ↩️ **Revision History** - Full undo/redo with diff visualization
-- 📋 **Easy Export** - Copy HTML or export to files
-- ⚡ **Multiple Views** - Source, HTML, or split view
-- 🎨 **Customizable** - Plugin system and custom CSS support
-- 📱 **Responsive** - Works on desktop and mobile
+### NPM Install
+```bash
+npm install squibview
+```
 
-## Documentation & Resources
+```javascript
+import SquibView from 'squibview';
+const editor = new SquibView('#editor');
+```
 
-### 📚 **Complete Documentation**
-- [📖 **Documentation Home**](./docs/home.html) - Start here for comprehensive guides
-- [⚡ **Quick Start Guide**](./docs/guides/01-quick-start.html) - Get running in minutes
-- [🔧 **Installation Options**](./docs/guides/02-installation.html) - Choose the right build
-- [💻 **CLI Reference**](./docs/guides/04-cli-usage.html) - Master the command line
+### CLI Tool
 
-### 🎯 **By Use Case**
-- [🧩 **Component Integration**](./docs/guides/03-basic-usage.html) - Embed in your app
-- [📄 **Documentation Generation**](./docs/guides/04-cli-usage.html) - Build docs with CLI
-- [➡️ **Want to Contribute?**](./CONTRIBUTING.md) - Help improve SquibView
+SquibView includes a command line tool (`squibv`) for converting markdown/HTML files to standalone HTML pages.
 
-### 🌟 **Examples & Demos**
-- [🚀 **Live Demo**](https://deftio.github.io/squibview/examples/example_ESM.html) - Try all features
-- [📁 **ESM Example**](./examples/example_ESM.html) - Modern ES modules usage
-- [📄 **Standalone Example**](./examples/example_standalone.html) - Simple CDN usage
-- [🔍 **Diff Comparison**](./examples/diff_view_inline.html) - Compare any two revisions
-- [📈 **Live Diff**](./examples/diff_view_live.html) - Real-time change tracking
+```bash
+# Convert markdown to HTML page
+npx squibv document.md
+
+# Watch mode - rebuilds on file changes
+npx squibv document.md --watch
+
+# Bundle for offline use (embeds all assets)
+npx squibv document.md --bundle-offline
+```
+
+## Core Features
+
+### View Modes
+```javascript
+editor.setView('split');  // Side-by-side editing (default)
+editor.setView('src');    // Source only
+editor.setView('html');   // Rendered only
+```
+
+### Working with Content
+```javascript
+// Set markdown content
+editor.setContent('# My Document\n\nEdit this text...', 'md');
+
+// Get current content
+const markdown = editor.getContent();
+const html = editor.getRenderedHTML();
+```
+
+### Revision History & Diffs
+```javascript
+editor.revisionUndo();
+editor.revisionRedo();
+
+// Compare revisions (v1.0.13+)
+const diffHTML = editor.getSourceDiffHTML({ fromIndex: 0, toIndex: 2 });
+const inlineDiff = editor.getSourceDiffInline(); // Blue additions, red deletions
+```
+
+### Export & Copy
+```javascript
+editor.copySource();   // Copy markdown to clipboard
+editor.copyHTML();     // Copy rendered HTML
+editor.exportHTML();   // Download as file
+```
+
+## Examples
+
+**Live Examples** (GitHub Pages)
+- [Basic Usage](https://deftio.github.io/squibview/examples/example_ESM.html) - Simple editor setup
+- [Diff Viewer](https://deftio.github.io/squibview/examples/diff_view_inline.html) - Compare revisions
+- [Live Diff](https://deftio.github.io/squibview/examples/diff_view_live.html) - Track changes in real-time
+- [React Integration](https://deftio.github.io/squibview/examples/example_react.html) - Use with React
+
+**Local Examples** (after cloning repo)
+- [Basic Usage](./examples/example_ESM.html)
+- [Diff Viewer](./examples/diff_view_inline.html) 
+- [Live Diff](./examples/diff_view_live.html)
+- [All Examples](./examples/index.html)
+
+## Documentation
+
+**Online Documentation**
+- [Quick Start Guide](https://deftio.github.io/squibview/docs/guides/01-quick-start.html) - Get running in 5 minutes
+- [API Reference](https://deftio.github.io/squibview/docs/programmers-guide.html) - Methods, options, events
+- [CLI Documentation](https://deftio.github.io/squibview/docs/guides/04-cli-usage.html) - Command line usage
+
+**Local Documentation** (after cloning)
+- [Documentation Home](./docs/home.html)
+- [API Reference](./docs/programmers-guide.html)
+
+## Build Options
+
+| Build | When to Use | Size |
+|-------|-------------|------|
+| `squibview.esm.js` | Modern bundlers (webpack, vite) | ~90KB |
+| `squibview.umd.js` | Script tags with dependencies | ~90KB |
+| `squibview.standalone.js` | No dependencies needed | ~2.5MB |
 
 ## License
 
-BSD-2-Clause License. See [LICENSE](LICENSE) for details.
+BSD-2-Clause. See [LICENSE](LICENSE).
