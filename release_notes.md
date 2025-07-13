@@ -34,6 +34,17 @@
 - **V1.0.12 enhanced docs, fixed badge copy errors for README.md generation
 
 ---
+## v1.0.13 (July 13, 2025)
+*Release Date: July 13, 2025*
+
+### ✨ Improvements
+- **V1.0.14 upgraded diff support completed
+- **Working diff view viewers
+- **Updated diff example view
+- **V1.0.13-dev.0 add diff view support as api
+
+---
+
 
 ## v1.0.11 (July 01, 2025)
 *Release Date: July 01, 2025*
