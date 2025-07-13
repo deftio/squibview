@@ -1126,7 +1126,7 @@ class SquibView {
       container.setAttribute('data-original-source', originalData);
       
       if (typeof L === 'undefined') {
-        console.warn('Leaflet not loaded, cannot render GeoJSON');
+        // No console warning - placeholder message is sufficient
         container.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">Leaflet library not loaded</p>';
         return;
       }
@@ -1181,13 +1181,13 @@ class SquibView {
       container.setAttribute('data-original-source', originalData);
       
       if (typeof L === 'undefined') {
-        console.warn('Leaflet not loaded, cannot render TopoJSON');
+        // No console warning - placeholder message is sufficient
         container.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">Leaflet library not loaded</p>';
         return;
       }
 
       if (typeof topojson === 'undefined') {
-        console.warn('TopoJSON client not loaded, cannot render TopoJSON');
+        // No console warning - placeholder message is sufficient
         container.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">TopoJSON client library not loaded</p>';
         return;
       }
@@ -1242,7 +1242,7 @@ class SquibView {
       container.setAttribute('data-original-source', originalData);
       
       if (typeof THREE === 'undefined') {
-        console.warn('Three.js not loaded, cannot render STL');
+        // No console warning - placeholder message is sufficient
         container.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">Three.js library not loaded</p>';
         return;
       }
