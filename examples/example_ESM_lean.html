@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SquibView Lean ESM Build Example</title>
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
+
+  <!-- Required external dependencies for lean ESM build -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
+  <script src="https://unpkg.com/tiny-emitter@2.1.0/dist/tinyemitter.min.js"></script>
+  <script src="https://unpkg.com/diff-match-patch@1.0.5/diff_match_patch.js"></script>
+  
+  <!-- Optional dependencies -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
+  <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/default.min.css">
+  <link rel="stylesheet" href="../dist/squibview.css">
+
+  <!-- Import map for lean build dependencies -->
+  <script type="importmap">
+  {
+    "imports": {
+      "markdown-it": "https://esm.sh/markdown-it@12.3.2",
+      "tiny-emitter": "https://esm.sh/tiny-emitter@2.1.0",
+      "diff-match-patch": "https://esm.sh/diff-match-patch@1.0.5"
+    }
+  }
+  </script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .info {
+      background: #f0f0f0;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    .info h2 {
+      margin-top: 0;
+    }
+    #editorContainer {
+      height: 500px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="info">
+    <h2>SquibView Lean ESM Build Example</h2>
+    <p>
+      This example demonstrates the lean ESM build (<code>squibview.esm-lean.min.js</code>) which requires 
+      you to manage dependencies yourself. This build is smaller (122KB vs 241KB) but requires:
+    </p>
+    <ul>
+      <li>markdown-it - For Markdown parsing</li>
+      <li>diff-match-patch - For revision history</li>
+      <li>tiny-emitter - For event handling</li>
+    </ul>
+    <p>
+      This approach is useful when you're already using these libraries in your project or when you need 
+      fine control over dependency versions.
+    </p>
+  </div>
+
+  <div id="editorContainer"></div>
+
+  <script type="module">
+    import SquibView from '../dist/squibview.esm-lean.min.js';
+    
+    const editor = new SquibView('#editorContainer', {
+      titleShow: true,
+      titleContent: "Lean Build Example - " + SquibView.version.version
+    });
+
+    editor.setContent(`# Lean Build Example
+
+This editor is using the **lean ESM build** which requires external dependencies.
+
+## Why Use Lean Builds?
+
+- **Smaller size**: 122KB instead of 241KB
+- **Version control**: You manage dependency versions
+- **Shared dependencies**: Reuse libraries already in your project
+- **Bundle optimization**: Your bundler can optimize shared code
+
+## Code Example
+
+\`\`\`javascript
+// Using the lean build
+import SquibView from 'squibview/dist/squibview.esm-lean.min.js';
+
+// Make sure these are available:
+// - markdown-it
+// - diff-match-patch  
+// - tiny-emitter
+\`\`\`
+
+## Trade-offs
+
+While the lean build is smaller, it requires more setup. For most users, 
+the default bundled build is recommended for its simplicity.
+`, 'md');
+  </script>
+</body>
+</html>

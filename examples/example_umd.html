@@ -8,11 +8,10 @@
 
   <link rel="stylesheet" href="../dist/squibview.css">
 
-  <!-- External libraries for the lean UMD build -->
+  <!-- External libraries (markdown-it now bundled in UMD build) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -22,10 +21,7 @@
     import * as THREE from 'https://unpkg.com/three@0.171.0/build/three.module.js';
     window.THREE = THREE;
     
-    // Fix global variable name mapping for lean UMD build
-    if (typeof window.markdownit !== 'undefined') {
-      window.MarkdownIt = window.markdownit;
-    }
+    // No need to map markdown-it - it's bundled now
     
     // Now dynamically load SquibView after THREE is available
     const script = document.createElement('script');
