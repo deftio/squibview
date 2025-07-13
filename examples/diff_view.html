@@ -127,9 +127,6 @@
 <body>
   <div class="demo-container">
     <h1>SquibView Diff View Demo</h1>
-    <div id="version-info" style="background: #f0f0f0; padding: 10px; border-radius: 4px; margin: 10px 0; font-size: 14px; color: #666;">
-      Loading version info...
-    </div>
     <p>This demo showcases the diff view functionality that allows you to compare different revisions of your content.</p>
     
     <!-- Basic Example -->
@@ -251,12 +248,10 @@
     document.head.appendChild(script);
     
     function initializeDemos() {
-      // Display version info
-      document.getElementById('version-info').innerHTML = 
-        `SquibView Version: ${SquibView.version.version} | Repository: <a href="${SquibView.version.url}" target="_blank">${SquibView.version.url}</a>`;
-      
       // Demo 1: Basic Diff View
       const editor1 = new SquibView('#editor1', {
+        titleShow: true,
+        titleContent: "SquibView Diff Demo " + SquibView.version.version,
         initialContent: `# Welcome to SquibView Diff Demo
 
 This is the initial content. Try editing this text to see the diff functionality in action.

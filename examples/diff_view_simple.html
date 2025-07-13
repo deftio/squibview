@@ -175,10 +175,6 @@
   <div class="container">
     <h1>SquibView Diff View - Simple Demo</h1>
     
-    <div id="version-info" class="version-info">
-      Loading version info...
-    </div>
-    
     <div class="intro">
       <p><strong>Welcome to the SquibView Diff View Demo!</strong></p>
       <p>This demonstrates how to compare different versions of your content. Make some edits in the editor below and see the differences highlighted.</p>
@@ -203,6 +199,7 @@
       <div class="controls">
         <button id="showDiff">Show Diff</button>
         <button id="clearDiff" class="secondary">Clear Diff</button>
+        <button id="liveDiffToggle" class="secondary">Enable Live Diff</button>
         <button id="addContent" class="secondary">Add Sample Content</button>
         <button id="makeEdit" class="secondary">Make Sample Edit</button>
       </div>
@@ -233,12 +230,10 @@
     document.head.appendChild(script);
     
     function initializeDemo() {
-      // Display version info
-      document.getElementById('version-info').innerHTML = 
-        `SquibView Version: ${SquibView.version.version} | Repository: <a href="${SquibView.version.url}" target="_blank">${SquibView.version.url}</a>`;
-      
-      // Create the editor
+      // Create the editor with version in title
       const editor = new SquibView('#editor', {
+        titleShow: true,
+        titleContent: "SquibView Diff Demo " + SquibView.version.version,
         initialContent: `# Welcome to SquibView
 
 This is a simple demonstration of the diff view functionality.
@@ -276,27 +271,69 @@ Make some changes and click "Show Diff" to see it in action!`,
       // Initial status update
       updateStatus();
       
-      // Listen for content changes to update status
-      editor.events.on('contentChanged', updateStatus);
+      // Live diff state
+      let liveDiffEnabled = false;
       
-      // Show diff button
-      document.getElementById('showDiff').addEventListener('click', () => {
+      // Function to show diff
+      function showDiff() {
         try {
+          const currentIndex = editor.revisionManager.getCurrentIndex();
+          if (currentIndex < 0) {
+            document.getElementById('diffContainer').innerHTML = 
+              `<div style="padding: 20px; color: #856404; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; margin: 10px;">
+                <strong>No changes to show:</strong> Make some edits to the content first to see the diff.
+              </div>`;
+            return;
+          }
+          
           const diffHTML = editor.getSourceDiffHTML();
           document.getElementById('diffContainer').innerHTML = diffHTML;
           document.getElementById('status').innerHTML = 
-            `Showing diff between revisions ${editor.revisionManager.getCurrentIndex() - 1} and ${editor.revisionManager.getCurrentIndex()}`;
+            `Showing diff between revisions ${currentIndex - 1} and ${currentIndex}` +
+            (liveDiffEnabled ? ' | <strong style="color: #28a745;">Live Diff Enabled</strong>' : '');
         } catch (e) {
           document.getElementById('diffContainer').innerHTML = 
             `<div style="padding: 20px; color: #dc3545; background: #f8d7da; border-radius: 4px; margin: 10px;">
               <strong>Error:</strong> ${e.message}
             </div>`;
         }
+      }
+      
+      // Listen for content changes
+      editor.events.on('contentChanged', () => {
+        updateStatus();
+        if (liveDiffEnabled) {
+          showDiff();
+        }
       });
+      
+      // Show diff button
+      document.getElementById('showDiff').addEventListener('click', showDiff);
       
       // Clear diff button
       document.getElementById('clearDiff').addEventListener('click', () => {
         document.getElementById('diffContainer').innerHTML = '';
+        updateStatus();
+      });
+      
+      // Live diff toggle button
+      document.getElementById('liveDiffToggle').addEventListener('click', () => {
+        liveDiffEnabled = !liveDiffEnabled;
+        const button = document.getElementById('liveDiffToggle');
+        
+        if (liveDiffEnabled) {
+          button.textContent = 'Disable Live Diff';
+          button.style.background = '#28a745';
+          
+          // Show diff immediately if we have changes
+          if (editor.revisionManager.getCurrentIndex() >= 0) {
+            showDiff();
+          }
+        } else {
+          button.textContent = 'Enable Live Diff';
+          button.style.background = '#6c757d';
+        }
+        
         updateStatus();
       });
       

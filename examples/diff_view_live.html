@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>SquibView - Inline Diff Demo</title>  
+  <title>SquibView - Live Diff Demo</title>  
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14a14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0a7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
 
@@ -55,6 +55,14 @@
       color: #495057;
       padding-bottom: 8px;
       margin-top: 40px;
+    }
+    
+    .intro {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 6px;
+      margin: 20px 0;
+      border: 1px solid #e9ecef;
     }
     
     .comparison-grid {
@@ -130,6 +138,11 @@
       background: #1e3f8f;
     }
     
+    .controls button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
     .controls .secondary {
       background: #6c757d;
     }
@@ -138,13 +151,21 @@
       background: #545b62;
     }
     
+    .controls .success {
+      background: #28a745;
+    }
+    
+    .controls .success:hover:not(:disabled) {
+      background: #1e7e34;
+    }
+    
     .status {
       padding: 10px 15px;
-      background: #f8f9fa;
-      border: 1px solid #e9ecef;
+      background: #d1ffda;
+      border: 1px solid #28a745;
       border-radius: 4px;
       font-size: 14px;
-      color: #495057;
+      color: #155724;
       margin: 15px 0;
     }
     
@@ -168,7 +189,7 @@
     }
     
     .diff-container:empty::before {
-      content: "Diff will appear here";
+      content: "Start editing to see live diffs";
       display: block;
       padding: 30px 20px;
       text-align: center;
@@ -180,8 +201,8 @@
 
 <body>
   <div class="container">
-    <h1>SquibView Inline Diff Demo</h1>
-    <p><strong>Compare Two Diff Styles:</strong> Select revisions from the dropdowns to see both diff views update automatically.</p>
+    <h1>SquibView Live Diff Demo</h1>
+    <p><strong>Live Diff Mode:</strong> This demo shows cumulative changes as you edit. All changes are compared against your selected baseline revision.</p>
     
     <div class="editor-section">
       <div class="editor-container">
@@ -189,22 +210,13 @@
       </div>
       
       <div class="controls">
-        <span style="margin-right: 10px;">From:</span>
-        <select id="fromRevision" style="margin-right: 15px; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px;">
+        <span style="margin-right: 10px;">Baseline:</span>
+        <select id="baselineRevision" style="margin-right: 15px; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px;">
         </select>
-        <span style="margin-right: 10px;">To:</span>
-        <select id="toRevision" style="margin-right: 15px; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px;">
-        </select>
-      </div>
-      
-      <div class="controls">
-        <button id="makeTextEdit" class="secondary">Edit Some Text</button>
-        <button id="addParagraph" class="secondary">Add New Paragraph</button>
-        <button id="deleteSection" class="secondary">Delete a Section</button>
       </div>
       
       <div id="status" class="status">
-        Ready - Make some changes to see both diff styles in action
+        Initializing...
       </div>
     </div>
     
@@ -231,103 +243,92 @@
       // Create the editor
       const editor = new SquibView('#editor', {
         titleShow: true,
-        titleContent: "SquibView Inline Diff Demo " + SquibView.version.version,
-        initialContent: `# SquibView Diff Comparison Demo
+        titleContent: "SquibView Live Diff Demo " + SquibView.version.version,
+        initialContent: `# Live Diff Demo
 
-Welcome to the **inline diff demonstration**! This text will be used to show different types of changes.
+Start editing this content to see live diffs appear automatically below.
 
-## Original Content
+## How it works
 
-This paragraph contains some original text that we'll modify to demonstrate the diff functionality. You can see how different types of changes appear in each view.
+As you type, the diffs update in real-time, showing all changes since your selected baseline revision.
 
-### Features to Test
-- Text modifications
-- New additions
-- Content deletions
-- Line changes
+### Try these actions:
+- Edit this text
+- Add new sections
+- Delete content
+- Change formatting
 
-## Conclusion
-
-Try the buttons below to make different types of changes and see how they appear in both diff views!`,
+The diff views below will update automatically to show your cumulative changes!`,
         initialView: 'split'
       });
       
-      // Update dropdowns based on current revision state
-      function updateRevisionSelects() {
+      // State
+      let baselineRevision = -1;
+
+      // Update status
+      function updateStatus() {
+        const currentIndex = editor.revisionManager.getCurrentIndex();
+        
+        if (baselineRevision === currentIndex) {
+          document.getElementById('status').innerHTML = 
+            '⚪ <strong>No changes yet</strong> - Start editing to see live diffs';
+        } else {
+          const baselineLabel = baselineRevision === -1 ? 'Initial' : `Revision ${baselineRevision + 1}`;
+          const currentLabel = currentIndex === -1 ? 'Initial' : `Revision ${currentIndex + 1}`;
+          document.getElementById('status').innerHTML = 
+            `🟢 <strong>Live diff active</strong> - Comparing ${baselineLabel} → ${currentLabel}`;
+        }
+      }
+      
+      // Populate baseline selector
+      function populateBaselineSelect() {
         const revCount = editor.revisionManager.getRevisionCount();
         const currentIndex = editor.revisionManager.getCurrentIndex();
-        const fromSelect = document.getElementById('fromRevision');
-        const toSelect = document.getElementById('toRevision');
+        const select = document.getElementById('baselineRevision');
         
-        console.log('updateRevisionSelects - revCount:', revCount, 'currentIndex:', currentIndex);
+        console.log('Populating baseline - revCount:', revCount, 'currentIndex:', currentIndex, 'current baseline:', baselineRevision);
         
-        // Save current selections
-        const currentFromValue = fromSelect.value;
-        const currentToValue = toSelect.value;
+        // Save current baseline value
+        const savedBaseline = baselineRevision;
         
         // Clear options
-        fromSelect.innerHTML = '';
-        toSelect.innerHTML = '';
+        select.innerHTML = '';
         
-        // Build revision list
         // Always include initial state
-        const initialOption1 = new Option('Initial', '-1');
-        const initialOption2 = new Option('Initial', '-1');
-        fromSelect.add(initialOption1);
-        toSelect.add(initialOption2);
+        const initialOption = new Option('Initial', '-1');
+        select.add(initialOption);
         
         // Add all revisions up to current
         for (let i = 0; i <= currentIndex; i++) {
           const label = `Revision ${i + 1}`;
-          const option1 = new Option(label, i.toString());
-          const option2 = new Option(label, i.toString());
-          fromSelect.add(option1);
-          toSelect.add(option2);
+          const option = new Option(label, i.toString());
+          select.add(option);
         }
         
-        // Restore or set default selections
-        if (currentFromValue && fromSelect.querySelector(`option[value="${currentFromValue}"]`)) {
-          fromSelect.value = currentFromValue;
-        } else {
-          // Default: from = one before current
-          fromSelect.value = Math.max(-1, currentIndex - 1);
-        }
-        
-        if (currentToValue && toSelect.querySelector(`option[value="${currentToValue}"]`)) {
-          toSelect.value = currentToValue;
-        } else {
-          // Default: to = current
-          toSelect.value = currentIndex;
-        }
-        
-        // Update status
-        document.getElementById('status').innerHTML = 
-          `Current revision: ${currentIndex + 1} | Total changes: ${revCount}`;
+        // Keep the baseline fixed - don't change it when updating options
+        select.value = savedBaseline.toString();
       }
 
-      // Show diffs based on current selections
-      function showDiffs() {
+      // Show live diffs
+      function showLiveDiffs() {
         try {
-          const fromIndex = parseInt(document.getElementById('fromRevision').value);
-          const toIndex = parseInt(document.getElementById('toRevision').value);
+          const currentIndex = editor.revisionManager.getCurrentIndex();
+          console.log('showLiveDiffs - currentIndex:', currentIndex, 'baselineRevision:', baselineRevision);
           
-          if (isNaN(fromIndex) || isNaN(toIndex)) {
-            return;
-          }
-          
-          // Check if same revision
-          if (fromIndex === toIndex) {
-            const msg = '<div style="padding: 20px; text-align: center; color: #666;">Same revision selected</div>';
+          // Check if comparing same revision
+          if (baselineRevision === currentIndex) {
+            const msg = '<div style="padding: 20px; text-align: center; color: #666;">No changes from baseline (same revision selected)</div>';
             document.getElementById('inlineDiffContainer').innerHTML = msg;
             document.getElementById('sideBySideDiffContainer').innerHTML = msg;
             return;
           }
           
           // Show diffs
-          const inlineDiffHTML = editor.getSourceDiffInline({ fromIndex, toIndex });
+          console.log('Showing diff from', baselineRevision, 'to', currentIndex);
+          const inlineDiffHTML = editor.getSourceDiffInline({ fromIndex: baselineRevision, toIndex: currentIndex });
           document.getElementById('inlineDiffContainer').innerHTML = inlineDiffHTML;
           
-          const sideBySideDiffHTML = editor.getSourceDiffHTML({ fromIndex, toIndex });
+          const sideBySideDiffHTML = editor.getSourceDiffHTML({ fromIndex: baselineRevision, toIndex: currentIndex });
           document.getElementById('sideBySideDiffContainer').innerHTML = sideBySideDiffHTML;
           
         } catch (e) {
@@ -338,60 +339,50 @@ Try the buttons below to make different types of changes and see how they appear
         }
       }
 
+      // Handle content changes - just re-render diffs
+      function handleContentChange() {
+        populateBaselineSelect();
+        updateStatus();
+        showLiveDiffs();
+      }
+
+      // Handle baseline selection change
+      function handleBaselineChange() {
+        baselineRevision = parseInt(document.getElementById('baselineRevision').value);
+        updateStatus();
+        showLiveDiffs();
+      }
+
       // Initialize
-      updateRevisionSelects();
-      showDiffs();
+      console.log('Initializing live diff demo');
+      populateBaselineSelect();
+      updateStatus();
+      showLiveDiffs();
       
-      // Update on content changes
+      // Event listeners
       editor.events.on('contentChanged', () => {
-        console.log('Content changed event fired');
-        updateRevisionSelects();
-        showDiffs();
+        console.log('Content changed event');
+        handleContentChange();
       });
       
-      // Fallback: Also update periodically in case events don't fire
+      document.getElementById('baselineRevision').addEventListener('change', () => {
+        console.log('Baseline changed');
+        handleBaselineChange();
+      });
+      
+      // Fallback timer to ensure updates
       setInterval(() => {
-        const currentRevCount = editor.revisionManager.getRevisionCount();
         const currentIndex = editor.revisionManager.getCurrentIndex();
-        const fromSelect = document.getElementById('fromRevision');
+        const select = document.getElementById('baselineRevision');
         
-        // Only update if something changed
-        if (fromSelect.options.length - 1 !== currentIndex + 1) {
-          console.log('Timer update needed - options:', fromSelect.options.length, 'currentIndex:', currentIndex);
-          updateRevisionSelects();
-          showDiffs();
+        // Check if we need to update
+        if (select.options.length - 1 !== currentIndex + 1) {
+          console.log('Timer update: populating selects');
+          populateBaselineSelect();
+          updateStatus();
+          showLiveDiffs();
         }
       }, 500);
-      
-      // Update on selection changes
-      document.getElementById('fromRevision').addEventListener('change', showDiffs);
-      document.getElementById('toRevision').addEventListener('change', showDiffs);
-      
-      // Sample edit buttons
-      document.getElementById('makeTextEdit').addEventListener('click', () => {
-        let content = editor.getContent();
-        content = content.replace(
-          'This paragraph contains some original text',
-          'This paragraph contains some **modified and enhanced** text'
-        );
-        content = content.replace(
-          'You can see how different types of changes appear',
-          'You can clearly observe how various types of modifications appear'
-        );
-        editor.setContent(content);
-      });
-      
-      document.getElementById('addParagraph').addEventListener('click', () => {
-        const timestamp = new Date().toLocaleTimeString();
-        const newParagraph = `\n\n## ✨ New Section Added at ${timestamp}\n\nThis is a completely new section that demonstrates how **additions** appear in both diff views. Notice how the inline view shows this in blue highlighting, while the side-by-side view shows it as green-highlighted lines.\n\n- New bullet point\n- Another fresh item\n- Third addition for variety`;
-        editor.setContent(editor.getContent() + newParagraph);
-      });
-      
-      document.getElementById('deleteSection').addEventListener('click', () => {
-        let content = editor.getContent();
-        content = content.replace(/### Features to Test[\s\S]*?(?=\n##|$)/g, '');
-        editor.setContent(content);
-      });
     });
   </script>
 </body>

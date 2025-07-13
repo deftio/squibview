@@ -117,9 +117,6 @@
 <body>
   <div class="container">
     <h1>SquibView Inline Diff Debug</h1>
-    <div id="version-info" style="background: #e8edff; padding: 10px; border-radius: 4px; margin: 10px 0;">
-      Loading version info...
-    </div>
     
     <h2>Editor</h2>
     <div class="editor-container">
@@ -167,12 +164,10 @@
     document.head.appendChild(script);
     
     function initializeDebug() {
-      // Display version info
-      document.getElementById('version-info').innerHTML = 
-        `SquibView Version: ${SquibView.version.version} | Repository: <a href="${SquibView.version.url}" target="_blank">${SquibView.version.url}</a>`;
-      
       // Create editor
       const editor = new SquibView('#editor', {
+        titleShow: true,
+        titleContent: "SquibView Debug " + SquibView.version.version,
         initialContent: 'This is the original text.',
         initialView: 'src'
       });
