@@ -6,9 +6,11 @@ SquibView provides multiple build types to fit different development environment
 
 | Build Type | Best For | Dependencies | Size |
 |------------|----------|--------------|------|
-| **ESM** | Modern bundlers (Vite, Webpack) | External | Smallest |
-| **UMD** | Legacy browsers, global scripts | External | Small |
-| **Standalone** | Quick prototypes, CDN usage | Bundled | Largest |
+| **ESM** | Modern bundlers (Vite, Webpack) | markdown-it bundled | ~240KB |
+| **ESM-lean** | Advanced users managing deps | External | ~140KB |
+| **UMD** | Legacy browsers, global scripts | markdown-it bundled | ~250KB |
+| **UMD-lean** | Advanced users managing deps | External | ~140KB |
+| **Standalone** | Quick prototypes, CDN usage | Everything bundled | ~3.7MB |
 
 ## NPM Installation
 
@@ -63,23 +65,47 @@ Everything bundled together - perfect for prototypes:
 
 **When to use:** CodePen, quick prototypes, or when you want zero configuration.
 
-### UMD with External Dependencies
+### ESM Build (Default - v1.0.15+)
 
-More control over dependency versions:
+As of v1.0.15, markdown-it is bundled by default. No import maps needed!
 
 ```html
 <!-- SquibView CSS -->
 <link rel="stylesheet" href="https://unpkg.com/squibview/dist/squibview.min.css">
 
-<!-- External dependencies -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+<!-- Optional external dependencies for advanced features -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 
-<!-- SquibView -->
-<script src="https://unpkg.com/squibview/dist/squibview.umd.min.js"></script>
+<script type="module">
+  // Import SquibView - markdown-it is now bundled!
+  import SquibView from 'https://unpkg.com/squibview/dist/squibview.esm.min.js';
+  
+  const editor = new SquibView('#editor');
+</script>
+```
+
+### ESM-Lean Build (Advanced Users)
+
+If you're managing your own dependencies:
+
+```html
+<!-- Import map for external dependencies -->
+<script type="importmap">
+{
+  "imports": {
+    "markdown-it": "https://esm.sh/markdown-it@14.1.0",
+    "tiny-emitter": "https://esm.sh/tiny-emitter@2.1.0",
+    "diff-match-patch": "https://esm.sh/diff-match-patch@1.0.5"
+  }
+}
+</script>
+
+<!-- SquibView ESM-lean build -->
+<script type="module">
+  import SquibView from 'https://unpkg.com/squibview/dist/squibview.esm-lean.min.js';
+  const editor = new SquibView('#editor');
+</script>
 ```
 
 ## CLI Installation
@@ -114,17 +140,22 @@ SquibView uses these external libraries for enhanced functionality:
 - **Leaflet** - Map rendering (GeoJSON/TopoJSON)
 - **Three.js** - 3D model rendering (STL files)
 
-### Standalone vs Regular Builds
+### Choosing the Right Build
 
-**Regular builds** (ESM/UMD) expect these dependencies to be loaded separately, giving you:
-- Smaller bundle size
-- Control over versions
-- Ability to exclude unused features
+**Default builds** (ESM/UMD) include markdown-it bundled (v1.0.15+):
+- No import map complexity for new users
+- Medium bundle size (~240-250KB)
+- Optional external dependencies for advanced features (highlight.js, mermaid, etc.)
 
-**Standalone builds** include all dependencies, providing:
-- Zero configuration
+**Lean builds** (ESM-lean/UMD-lean) for advanced users:
+- Smallest bundle size (~140KB)
+- Full control over dependency versions
+- Requires managing external dependencies
+
+**Standalone builds** include all dependencies:
+- Zero configuration needed
 - Guaranteed compatibility
-- Larger file size
+- Largest file size (~3.7MB)
 
 ## Next Steps
 

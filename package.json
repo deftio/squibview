@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/deftio/squibview",
   "main": "dist/squibview.umd.min.js",
-  "module": "dist/squibview.min.js",
+  "module": "dist/squibview.esm.min.js",
   "unpkg": "dist/squibview.umd.min.js",
   "browser": "dist/squibview.umd.min.js",
   "bin": {

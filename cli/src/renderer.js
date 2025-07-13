@@ -16,8 +16,8 @@ export async function renderMarkdownToHTML(content, options = {}) {
   const { window, document } = createJSDOMEnvironment();
   
   try {
-    // Dynamically import SquibView using .mjs extension for standalone ESM build
-    const SquibViewModule = await import('../../dist/squibview.standalone.esm.min.mjs');
+    // Dynamically import SquibView using .js extension for standalone ESM build
+    const SquibViewModule = await import('../../dist/squibview.standalone.esm.min.js');
     const SquibView = SquibViewModule.default;
     
     // Get the container element

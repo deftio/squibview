@@ -31,16 +31,15 @@ npm install squibview
 
 ## Build Formats
 
-SquibView is available in three formats:
+SquibView is available in multiple formats:
 
-### ESM (ES Modules)
+### ESM (ES Modules) - Default Build (v1.0.15+)
 ```html
-<!-- Required dependencies -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
+<!-- Optional dependencies for advanced features -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
 <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
 
-<!-- SquibView -->
+<!-- SquibView (markdown-it is now bundled!) -->
 <link rel="stylesheet" href="../dist/squibview.css">
 <script type="module">
   import SquibView from '../dist/squibview.esm.min.js';
@@ -48,19 +47,55 @@ SquibView is available in three formats:
 </script>
 ```
 
-### UMD (Universal Module Definition)
+### ESM-Lean (Advanced Users)
 ```html
-<!-- Required dependencies -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
+<!-- Import map for external dependencies -->
+<script type="importmap">
+{
+  "imports": {
+    "markdown-it": "https://esm.sh/markdown-it@14.1.0",
+    "tiny-emitter": "https://esm.sh/tiny-emitter@2.1.0",
+    "diff-match-patch": "https://esm.sh/diff-match-patch@1.0.5"
+  }
+}
+</script>
+
+<!-- Optional dependencies -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
+
+<!-- SquibView lean build -->
+<script type="module">
+  import SquibView from '../dist/squibview.esm-lean.min.js';
+  const editor = new SquibView('#editor');
+</script>
+```
+
+### UMD (Universal Module Definition) - Default Build (v1.0.15+)
+```html
+<!-- Optional dependencies for advanced features -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
 <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-<script src="https://unpkg.com/tiny-emitter@2.1.0/dist/tinyemitter.min.js"></script>
-<script src="https://unpkg.com/diff-match-patch@1.0.5/index.js"></script>
-<script src="https://unpkg.com/turndown@7.1.2/dist/turndown.js"></script>
 
-<!-- SquibView -->
+<!-- SquibView (markdown-it is now bundled!) -->
 <link rel="stylesheet" href="../dist/squibview.css">
 <script src="../dist/squibview.umd.min.js"></script>
+<script>
+  const editor = new SquibView('#editor');
+</script>
+```
+
+### UMD-Lean (Advanced Users)
+```html
+<!-- Required dependencies -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/14.1.0/markdown-it.min.js"></script>
+<script src="https://unpkg.com/tiny-emitter@2.1.0/dist/tinyemitter.min.js"></script>
+<script src="https://unpkg.com/diff-match-patch@1.0.5/index.js"></script>
+
+<!-- Optional dependencies -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
+
+<!-- SquibView lean build -->
+<script src="../dist/squibview.umd-lean.min.js"></script>
 <script>
   const editor = new SquibView('#editor');
 </script>

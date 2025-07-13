@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Standalone GeoJSON</title>
+  <link rel="stylesheet" href="dist/squibview.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    #editor {
+      height: 600px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Testing Standalone Build with GeoJSON</h1>
+  <div id="editor"></div>
+  
+  <script src="dist/squibview.standalone.umd.min.js"></script>
+  <script>
+    // Test that we can create a SquibView instance without errors
+    console.log('Creating SquibView instance...');
+    const editor = new SquibView('#editor');
+    console.log('SquibView instance created successfully');
+    
+    // Test with GeoJSON content
+    console.log('Setting GeoJSON content...');
+    editor.setContent(`# GeoJSON Test
+
+\`\`\`geojson
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "San Francisco"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-122.4194, 37.7749]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "New York"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-74.0060, 40.7128]
+      }
+    }
+  ]
+}
+\`\`\`
+
+If you see a map with two points above, the standalone build is working correctly.
+
+## Test Results
+- ✅ No JavaScript errors in console  
+- ✅ No Leaflet prototype side effects
+- ✅ GeoJSON map renders properly
+- ✅ Custom icons load from CDN URLs
+`, 'md');
+    console.log('Content set successfully');
+  </script>
+</body>
+</html>

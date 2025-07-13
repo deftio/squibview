@@ -1,15 +1,27 @@
 # SquibView Development Troubleshooting
 
-## Module Resolution Issues
+## v1.0.15 Update: Import Maps No Longer Required!
 
-When running the development files in the `/dev` directory, you might encounter these errors:
+As of v1.0.15, the default ESM and UMD builds now include markdown-it, tiny-emitter, and diff-match-patch bundled. This means **new users no longer need to deal with import maps**! Simply use the default builds:
+
+```html
+<!-- Just works! No import maps needed -->
+<script type="module">
+  import SquibView from 'https://unpkg.com/squibview/dist/squibview.esm.min.js';
+  const editor = new SquibView('#editor');
+</script>
+```
+
+## Module Resolution Issues (Development/Lean Builds)
+
+When using the lean builds or running development files in the `/dev` directory, you might encounter these errors:
 
 1. `Uncaught TypeError: Failed to resolve module specifier "tiny-emitter". Relative references must start with either "/", "./", or "../".`
 2. `Uncaught SyntaxError: The requested module 'diff-match-patch' does not provide an export named 'default'`
 
 ### The Issue
 
-The development files in `/dev` use ES modules directly with import statements like:
+The lean builds and development files use ES modules directly with import statements like:
 
 ```javascript
 import TinyEmitter from 'tiny-emitter';
@@ -18,9 +30,9 @@ import DiffMatchPatch from 'diff-match-patch';
 
 However, these modules are CommonJS modules, not ES modules, and they don't provide default exports.
 
-### The Solution
+### The Solution for Lean Builds
 
-We use import maps to resolve the module specifiers and esm.sh to convert CommonJS modules to ES modules:
+For lean builds, use import maps to resolve the module specifiers and esm.sh to convert CommonJS modules to ES modules:
 
 ```html
 <script type="importmap">
@@ -70,10 +82,11 @@ For UMD build issues, use the wrapper solution in `/examples/example_UMD_fixed.h
 
 ## Development Tips
 
-1. **Use ESM.sh for Development:** When working with ES modules and CommonJS dependencies, esm.sh provides proper ES module versions of CommonJS libraries
-2. **Use Import Maps:** Import maps help browsers resolve bare module specifiers like `import X from 'library'`
-3. **Prefer Standalone Build:** For testing, the standalone build includes all dependencies and is easier to work with
-4. **Test Multiple Browsers:** Some browsers handle ES modules and import maps differently
+1. **Use Default Builds (v1.0.15+):** The default ESM and UMD builds now bundle markdown-it, eliminating import map complexity for most users
+2. **Use ESM.sh for Lean Builds:** When using lean builds with external dependencies, esm.sh provides proper ES module versions of CommonJS libraries  
+3. **Import Maps for Advanced Users:** Import maps are now only needed for lean builds or custom dependency management
+4. **Prefer Standalone Build:** For testing, the standalone build includes all dependencies and is easier to work with
+5. **Test Multiple Browsers:** Some browsers handle ES modules and import maps differently
 
 ## Examples
 

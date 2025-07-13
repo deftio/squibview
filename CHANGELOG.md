@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.15] - 2025-07-13
+### Changed
+- **BREAKING**: Default ESM/UMD builds now include bundled markdown-it (~240KB)
+  - Eliminates import map complexity for new users
+  - Existing apps continue to work - same filenames maintained
+- Standalone builds no longer modify global Leaflet prototype (fixes side effects)
+
+### Added
+- New lean builds (`-lean` suffix) for advanced users who manage their own dependencies
+- ESM standalone builds now properly generated
+- Clean, modern examples without module mixing
+
+### Fixed
+- GeoJSON rendering in standalone builds works without prototype pollution
+- ESM standalone build was missing - now properly generated
+- Library warnings only show when actually needed
+
+### Documentation
+- Updated all docs to reflect bundled dependencies in default builds
+- Cleaned up examples to use best practices
+
+## [1.0.13] - 2025-07-13
+### Added
+- Comprehensive diff view support
+  - `getSourceDiff()` method for diff data between revisions
+  - `getSourceDiffHTML()` for side-by-side visualization
+  - `getSourceDiffInline()` for inline diff with color coding
+- Support for comparing any revision against any other
+
+### Changed
+- Enhanced revision history API
+- Improved CSS for diff visualization
+
 ## [0.0.30] - 2024-03-28
 ### Added
 - Text selection API with events for detecting when text is selected in either panel

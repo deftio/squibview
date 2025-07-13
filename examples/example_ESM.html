@@ -1,139 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
-<!--
-Visual Markdown Viewer with Graphics Support
-Author: @deftio
-
-Uses Markdown-it for parsing Markdown content, Highlight.js for syntax highlighting, and Mermaid for diagrams.
-
-Allows live editing of Markdown content with a split view of the rendered HTML output.
-Also supports Mermaid diagrams and SVG content within fenced code blocks.
--->
-
 <head>
-  <meta charset="UTF-8" />
-  <title>SquibView Editor with Live Render Support</title>
-  <link rel="icon"
-    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SquibView ESM Example</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
 
-  <!-- External dependencies (markdown-it now bundled in squibview.esm.min.js) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
-  <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-  <script src="https://unpkg.com/turndown@7.1.2/dist/turndown.js"></script>
-  
-  <!-- New renderer dependencies -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    // Configure Leaflet icon paths
-    if (typeof L !== 'undefined') {
-      delete L.Icon.Default.prototype._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
-      });
-    }
-  </script>
-  <script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <!-- SquibView CSS -->
+  <link rel="stylesheet" href="../dist/squibview.min.css">
 
-
+  <!-- External dependencies for advanced features -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/default.min.css">
-  <link rel="stylesheet" href="../dist/squibview.css">
-
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://esm.sh/three@0.164.1",
-      "three/addons/": "https://esm.sh/three@0.164.1/examples/jsm/"
-    }
-  }
-  </script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
   <style>
     body {
       font-family: Arial, sans-serif;
       margin: 0;
-      padding: 1% 4%;
+      padding: 20px;
       height: 100vh;
-      display: flex;
-      flex-direction: column;
+      box-sizing: border-box;
     }
 
-    #editorContainer {
-      margin-top: 0.5em;
-      min-height: 0;
-      /* Important for Firefox */
-      height: 90vh;
-      display: flex;
-      flex-direction: column;
-      /* border : 1px solid lightgrey; */
-      border-radius: 5px;
-    }
-
-    .error-icon {
-      display: none;
-    }
-    text.error-text {
-      display: none;
+    #editor {
+      height: calc(100vh - 40px);
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      overflow: hidden;
     }
   </style>
 </head>
-
 <body>
-
-  <!-- Libraries -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
-  <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-  
-  <!-- 
-  <div id="testControls">
-    <button onclick="toggleTitle()" style="margin-right: 10px; padding: 8px 16px; border-radius: 4px; border: 1px solid #2a57d3; background: white; color: #2a57d3; cursor: pointer;">Toggle Title</button>
-    <button onclick="toggleControls()" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #2a57d3; background: white; color: #2a57d3; cursor: pointer;">Toggle Controls</button>
-    <button onclick="toggleView()" style="padding: 8px 16px; border-radius: 4px; border: 1px solid #2a57d3; background: white; color: #2a57d3; cursor: pointer;">Toggle View</button>
-    <hr>
-  </div>
--->
-  <div id="editorContainer"></div>
+  <div id="editor"></div>
 
   <script type="module">
+    // Import SquibView ESM build (includes markdown-it bundled)
     import SquibView from '../dist/squibview.esm.min.js';
-    import * as THREE from 'three'; // Import Three.js as ES module
     
-    window.SquibView = SquibView;  // user can access SquibView from the console
-    window.THREE = THREE;  // Make Three.js available globally for SquibView
+    // Import external libraries for advanced features
+    const loadExternalLibraries = async () => {
+      // Load highlight.js first (it needs to be loaded via script tag for proper global setup)
+      await new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js';
+        script.onload = resolve;
+        document.head.appendChild(script);
+      });
 
-    // This is the main code that creates the editor and sets the content
-    // it has nothing to do with the GraphicalMD editor
-    const editor = new SquibView('#editorContainer', {
-      titleShow: true,
-      titleContent: "SquibView Editor (ESM Example) " + SquibView.version.version
-    });
+      // Load other libraries in parallel
+      const [mermaid, leaflet, topojson, THREE] = await Promise.all([
+        import('https://unpkg.com/mermaid@10/dist/mermaid.esm.min.mjs'),
+        import('https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js'),
+        import('https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js').then(() => window.topojson),
+        import('https://unpkg.com/three@0.164.1/build/three.module.js')
+      ]);
 
-    window.editor = editor; // Make the editor instance accessible globally
+      // Make libraries globally available for SquibView
+      window.mermaid = mermaid.default;
+      window.L = leaflet;
+      window.THREE = THREE;
 
-    (async filename => {
-      try {
-        editor.setContent(await (await fetch(filename)).text(), "md");
-      } catch (error) {
-        console.error("Failed to load Markdown:", error);
+      // Configure Leaflet icons
+      if (leaflet.Icon && leaflet.Icon.Default) {
+        delete leaflet.Icon.Default.prototype._getIconUrl;
+        leaflet.Icon.Default.mergeOptions({
+          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+        });
       }
-    })("./sample-content.md");
 
-    // external test functions for playing around with the editor
-    function toggleTitle() {
-      const currentState = editor.title.style.display !== 'none';
-      editor.titleShow(!currentState);
-    }
+      // Initialize mermaid
+      mermaid.default.initialize({ startOnLoad: false });
+    };
 
-    function toggleControls() {
-      const currentState = editor.controls.style.display !== 'none';
-      editor.controlsShow(!currentState);
-    }
+    // Initialize SquibView
+    const init = async () => {
+      try {
+        // Load external libraries
+        await loadExternalLibraries();
 
+        // Create SquibView instance
+        const editor = new SquibView('#editor', {
+          initialView: 'split',
+          showControls: true,
+          titleShow: true,
+          titleContent: `SquibView ESM Example v${SquibView.version.version}`
+        });
 
+        // Load sample content
+        const response = await fetch('./sample-content.md');
+        const content = await response.text();
+        editor.setContent(content, 'md');
+
+        // Make editor available globally for debugging
+        window.editor = editor;
+        
+        console.log('SquibView initialized successfully');
+      } catch (error) {
+        console.error('Failed to initialize SquibView:', error);
+        document.getElementById('editor').innerHTML = `
+          <div style="padding: 20px; color: red;">
+            Failed to initialize: ${error.message}
+          </div>
+        `;
+      }
+    };
+
+    // Start initialization
+    init();
   </script>
 </body>
-
 </html>

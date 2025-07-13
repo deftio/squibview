@@ -34,16 +34,17 @@ SquibView renders Markdown (or HTML) with live preview and allows editing in bot
 
 ## Quick Start
 
-### Browser (ESM)
+### Browser (ESM) - Now with Bundled Dependencies! 🎉
 ```html
-<!-- Required dependencies -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
+<!-- SquibView CSS -->
+<link rel="stylesheet" href="https://unpkg.com/squibview/dist/squibview.min.css">
+
+<!-- Optional: Only needed for syntax highlighting and diagrams -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
 <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
 
-<!-- SquibView -->
-<link rel="stylesheet" href="https://unpkg.com/squibview/dist/squibview.min.css">
 <script type="module">
+  // SquibView ESM build - markdown-it is now bundled! No import maps needed!
   import SquibView from 'https://unpkg.com/squibview/dist/squibview.esm.min.js';
   
   const editor = new SquibView('#editor', {
@@ -54,7 +55,7 @@ SquibView renders Markdown (or HTML) with live preview and allows editing in bot
 <div id="editor"></div>
 ```
 
-For standalone build (no dependencies needed), see [installation options](./docs/guides/02-installation.html).
+> **New in v1.0.15**: Default builds now include markdown-it bundled. No more import map errors! For advanced users who want to manage dependencies, use the `-lean` builds.
 
 ### NPM Install
 ```bash
@@ -144,11 +145,15 @@ editor.exportHTML();   // Download as file
 
 ## Build Options
 
-| Build | When to Use | Size |
-|-------|-------------|------|
-| `squibview.esm.js` | Modern bundlers (webpack, vite) | ~90KB |
-| `squibview.umd.js` | Script tags with dependencies | ~90KB |
-| `squibview.standalone.js` | No dependencies needed | ~2.5MB |
+| Build | When to Use | Size | What's Included |
+|-------|-------------|------|-----------------|
+| `squibview.esm.min.js` | Modern bundlers (webpack, vite) | ~240KB | markdown-it bundled |
+| `squibview.esm-lean.min.js` | When you manage markdown-it | ~140KB | No dependencies |
+| `squibview.umd.min.js` | Script tags | ~250KB | markdown-it bundled |
+| `squibview.umd-lean.min.js` | Legacy with own dependencies | ~140KB | No dependencies |
+| `squibview.standalone.umd.min.js` | Zero setup needed | ~3.7MB | Everything bundled |
+
+> **v1.0.15 Change**: Default builds now include markdown-it, diff-match-patch, and tiny-emitter bundled. Use `-lean` builds if you need the old behavior.
 
 ## License
 
