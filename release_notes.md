@@ -1,25 +1,30 @@
 # SquibView Release Notes
 
-## v1.0.11-dev.0 (Current Development)
-*Release Date: In Development*
+## v1.0.13 (July 13, 2025)
+*Release Date: July 13, 2025*
 
-### 🔧 Documentation & Build System Overhaul
-- **NEW**: Comprehensive documentation restructure with dedicated `docs/` directory
-- **NEW**: Replaced docbat with squibv for all HTML documentation generation
-- **NEW**: Configurable HTML output system with JSON configuration files
-- **NEW**: CLI parameter override system (`--html-style-config`, `--html-style-param`)
-- **NEW**: Automatic .md to .html link conversion for documentation generation (`--convert-md-links`)
-- **NEW**: `tools/rebuild-docs.js` script for automated documentation builds
-- **IMPROVED**: README.md streamlined as "front door" with better navigation
-- **IMPROVED**: Default CSS styling with better margins (900px max-width)
-- **FIXED**: CLI offline bundling dependency path issues
-- **REMOVED**: docbat dependency (replaced with native squibv)
+### ✨ Major New Feature: Diff View Support
+- **NEW**: `getSourceDiff()` method to get diff data between any two revisions
+- **NEW**: `getSourceDiffHTML()` method for side-by-side diff visualization
+- **NEW**: `getSourceDiffInline()` method for inline diff with blue additions/red deletions
+- **NEW**: CSS styling for diff views with proper colors and formatting
+- **NEW**: Support for comparing any revision against any other (including initial state)
+- **NEW**: Working example demos: `diff_view_inline.html` and `diff_view_live.html`
 
-### 📚 Documentation Structure
-- Created comprehensive guides: Quick Start, Installation, Basic Usage, CLI Usage
-- Added API reference documentation (Options, Methods, Events)
-- Established content strategy for better user onboarding
-- Integrated navigation between all documentation sections
+### 🔧 RevisionHistory Enhancements
+- **NEW**: `getContentAtRevision()` method to retrieve content at any revision
+- **NEW**: `computeDiff()` method for character-level diffs
+- **NEW**: `computeLineDiff()` method for line-by-line comparisons
+- **NEW**: `getDiffStats()` method to get additions/deletions/changes count
+- **NEW**: `getRevisionInfo()` method for revision metadata
+
+### 📝 Examples & Documentation
+- **NEW**: Inline diff demo showing manual revision comparison
+- **NEW**: Live diff demo showing real-time cumulative changes
+- **IMPROVED**: ESM module loading in diff examples
+- **FIXED**: Revision dropdown population and event handling
+- **FIXED**: Baseline revision persistence in live diff mode
+- **CLEANED**: Removed broken/debug example files
 
 ---
 ## v1.0.12 (July 01, 2025)

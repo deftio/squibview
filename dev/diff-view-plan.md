@@ -3,6 +3,10 @@
 ## Overview
 This document outlines the step-by-step implementation plan for adding diff view functionality to SquibView. The diff view will show source-only differences between any two revisions with both programmatic API and HTML display options.
 
+(implemented in 1.0.13)  
+see examples/ for how to use the diff mechanism, including diffs from dirrent points etc.
+
+
 ## Core Principles
 - **Incremental Development**: Each step must pass all existing tests before proceeding, new functions must get majority coverage
 - **Documentation**: All new functions have full doc strings, describing their params, docs in the api and other documentation are updated for new features

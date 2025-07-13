@@ -8,13 +8,14 @@
 
 **SquibView is a headless JavaScript embeddable editor/viewer that renders GitHub-Flavored Markdown (or full HTML pages) on the fly.**
 
-For Markdown inputs, it supports rendering Mermaid diagrams, GeoJSON/TopoJSON maps, STL 3D models, math equations, syntax-highlighted code blocks, tables, CSV data, and inline SVG graphics. This provides a powerful and interactive way to view and export Markdown content as HTML.
+For Markdown inputs, it supports rendering Mermaid diagrams, GeoJSON/TopoJSON maps, STL 3D models, math equations, syntax-highlighted code blocks, tables, CSV data, and inline SVG graphics. This provides a powerful and interactive way to view and export Markdown content as HTML.  Squibview live-updates bidirectionally when possible (source a rendered views).
 
 SquibView supports full cut-and-paste functionality and allows edits made in the rendered view to be reflected back in the source.
 
 <img src="./squibview-demo.gif" alt="SquibView Live Demo - Progressive markdown rendering showing headings, bullets, tables, diagrams, math, and maps" width="100%">
 
 ## Quick Start
+Squibview also has a command line cli (also aliased as squibv) that can be used to turn markdown / texts / csv / tsv / psv or  html snippets in to full web pages.
 
 ### CLI Usage (Fastest Way)
 ```bash
@@ -41,6 +42,8 @@ npx squibv document.md
 - 📊 **Rich Content** - Mermaid diagrams, GeoJSON maps, STL 3D models, math equations
 - 📝 **GitHub-Flavored Markdown** - Full GFM support with tables and syntax highlighting  
 - 🔄 **Bidirectional Editing** - Edit in source or rendered view
+- 🔍 **Diff View** - Compare revisions with inline or side-by-side diffs
+- ↩️ **Revision History** - Full undo/redo with diff visualization
 - 📋 **Easy Export** - Copy HTML or export to files
 - ⚡ **Multiple Views** - Source, HTML, or split view
 - 🎨 **Customizable** - Plugin system and custom CSS support
@@ -63,6 +66,8 @@ npx squibv document.md
 - [🚀 **Live Demo**](https://deftio.github.io/squibview/examples/example_ESM.html) - Try all features
 - [📁 **ESM Example**](./examples/example_ESM.html) - Modern ES modules usage
 - [📄 **Standalone Example**](./examples/example_standalone.html) - Simple CDN usage
+- [🔍 **Diff Comparison**](./examples/diff_view_inline.html) - Compare any two revisions
+- [📈 **Live Diff**](./examples/diff_view_live.html) - Real-time change tracking
 
 ## License
 

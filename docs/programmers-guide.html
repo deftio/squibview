@@ -257,7 +257,30 @@ editor.<span class="hljs-title function_">revisionUndo</span>()                 
 editor.<span class="hljs-title function_">revisionRedo</span>()                    <span class="hljs-comment">// Redo last change</span>
 editor.<span class="hljs-title function_">revisionSet</span>(index)                <span class="hljs-comment">// Set to specific revision</span>
 editor.<span class="hljs-title function_">revisionNumRevsions</span>()             <span class="hljs-comment">// Get number of revisions</span>
-editor.<span class="hljs-title function_">revisionGetCurrentIndex</span>()         <span class="hljs-comment">// Get current revision index</span></code></pre></div><h3>Text Selection API</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Get current selection</span><span class="hljs-keyword">const</span> selection = editor.<span class="hljs-title function_">getCurrentSelection</span>();
+editor.<span class="hljs-title function_">revisionGetCurrentIndex</span>()         <span class="hljs-comment">// Get current revision index</span><span class="hljs-comment">// Diff Viewing (New in v1.0.13)</span>
+editor.<span class="hljs-title function_">getSourceDiff</span>(options)            <span class="hljs-comment">// Get diff data between revisions</span>
+editor.<span class="hljs-title function_">getSourceDiffHTML</span>(options)        <span class="hljs-comment">// Get side-by-side diff HTML</span>
+editor.<span class="hljs-title function_">getSourceDiffInline</span>(options)      <span class="hljs-comment">// Get inline diff HTML (blue/red)</span></code></pre></div><h3>Diff Viewing API</h3><p>Compare different revisions of your content with visual diff displays.</p><h4>getSourceDiff(options)</h4><p>Returns raw diff data between two revisions.</p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Get diff between current and previous revision</span><span class="hljs-keyword">const</span> diffData = editor.<span class="hljs-title function_">getSourceDiff</span>();
+
+<span class="hljs-comment">// Get diff between specific revisions</span><span class="hljs-keyword">const</span> diffData = editor.<span class="hljs-title function_">getSourceDiff</span>({ 
+  <span class="hljs-attr">fromIndex</span>: <span class="hljs-number">0</span>,    <span class="hljs-comment">// Starting revision (-1 for initial state)</span><span class="hljs-attr">toIndex</span>: <span class="hljs-number">3</span><span class="hljs-comment">// Ending revision</span>
+});
+
+<span class="hljs-comment">// Returns: { added, removed, changed, stats, patches }</span></code></pre></div><h4>getSourceDiffHTML(options)</h4><p>Returns side-by-side diff visualization as HTML.</p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Compare current vs previous</span><span class="hljs-keyword">const</span> diffHTML = editor.<span class="hljs-title function_">getSourceDiffHTML</span>();
+
+<span class="hljs-comment">// Compare specific revisions</span><span class="hljs-keyword">const</span> diffHTML = editor.<span class="hljs-title function_">getSourceDiffHTML</span>({ 
+  <span class="hljs-attr">fromIndex</span>: <span class="hljs-number">1</span>, 
+  <span class="hljs-attr">toIndex</span>: <span class="hljs-number">5</span>,
+  <span class="hljs-attr">showLineNumbers</span>: <span class="hljs-literal">true</span><span class="hljs-comment">// Optional</span>
+});
+
+<span class="hljs-comment">// Insert into page</span><span class="hljs-variable language_">document</span>.<span class="hljs-title function_">getElementById</span>(<span class="hljs-string">'diff-view'</span>).<span class="hljs-property">innerHTML</span> = diffHTML;
+</code></pre></div><h4>getSourceDiffInline(options)</h4><p>Returns inline diff with blue additions and red strikethrough deletions.</p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Get inline diff</span><span class="hljs-keyword">const</span> inlineHTML = editor.<span class="hljs-title function_">getSourceDiffInline</span>({ 
+  <span class="hljs-attr">fromIndex</span>: <span class="hljs-number">0</span>, 
+  <span class="hljs-attr">toIndex</span>: -<span class="hljs-number">1</span><span class="hljs-comment">// Compare against current</span>
+});
+
+<span class="hljs-comment">// Styling: additions in blue, deletions in red with strikethrough</span></code></pre></div><h3>Text Selection API</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Get current selection</span><span class="hljs-keyword">const</span> selection = editor.<span class="hljs-title function_">getCurrentSelection</span>();
 
 <span class="hljs-comment">// Replace selected text</span>
 editor.<span class="hljs-title function_">replaceSelectedText</span>(<span class="hljs-string">'new text'</span>, selection);

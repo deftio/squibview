@@ -226,6 +226,62 @@ editor.revisionRedo()                    // Redo last change
 editor.revisionSet(index)                // Set to specific revision
 editor.revisionNumRevsions()             // Get number of revisions
 editor.revisionGetCurrentIndex()         // Get current revision index
+
+// Diff Viewing (New in v1.0.13)
+editor.getSourceDiff(options)            // Get diff data between revisions
+editor.getSourceDiffHTML(options)        // Get side-by-side diff HTML
+editor.getSourceDiffInline(options)      // Get inline diff HTML (blue/red)
+```
+
+### Diff Viewing API
+
+Compare different revisions of your content with visual diff displays.
+
+#### getSourceDiff(options)
+Returns raw diff data between two revisions.
+
+```javascript
+// Get diff between current and previous revision
+const diffData = editor.getSourceDiff();
+
+// Get diff between specific revisions
+const diffData = editor.getSourceDiff({ 
+  fromIndex: 0,    // Starting revision (-1 for initial state)
+  toIndex: 3       // Ending revision
+});
+
+// Returns: { added, removed, changed, stats, patches }
+```
+
+#### getSourceDiffHTML(options)
+Returns side-by-side diff visualization as HTML.
+
+```javascript
+// Compare current vs previous
+const diffHTML = editor.getSourceDiffHTML();
+
+// Compare specific revisions
+const diffHTML = editor.getSourceDiffHTML({ 
+  fromIndex: 1, 
+  toIndex: 5,
+  showLineNumbers: true  // Optional
+});
+
+// Insert into page
+document.getElementById('diff-view').innerHTML = diffHTML;
+```
+
+#### getSourceDiffInline(options)
+Returns inline diff with blue additions and red strikethrough deletions.
+
+```javascript
+// Get inline diff
+const inlineHTML = editor.getSourceDiffInline({ 
+  fromIndex: 0, 
+  toIndex: -1  // Compare against current
+});
+
+// Styling: additions in blue, deletions in red with strikethrough
 ```
 
 ### Text Selection API
