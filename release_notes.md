@@ -34,6 +34,17 @@
 - **V1.0.12 enhanced docs, fixed badge copy errors for README.md generation
 
 ---
+## v1.0.14 (July 13, 2025)
+*Release Date: July 13, 2025*
+
+### 📝 Release Highlights
+Fixed ci/cd builds for diffs
+
+### ✨ Improvements
+- **V1.0.14 docs update
+
+---
+
 ## v1.0.13 (July 13, 2025)
 *Release Date: July 13, 2025*
 
