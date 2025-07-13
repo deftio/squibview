@@ -1634,12 +1634,13 @@ class SquibView {
   getSourceDiff(options = {}) {
     const { fromIndex = null, toIndex = null } = options;
     
-    // Get the line diff
-    const lineDiff = this.revisionManager.computeLineDiff(fromIndex, toIndex);
-    
     // Get metadata about the revisions being compared
-    const actualFromIndex = fromIndex === null ? this.revisionManager.getCurrentIndex() - 1 : fromIndex;
-    const actualToIndex = toIndex === null ? this.revisionManager.getCurrentIndex() : toIndex;
+    const currentIndex = this.revisionManager.getCurrentIndex();
+    const actualFromIndex = fromIndex === null ? Math.max(-1, currentIndex - 1) : fromIndex;
+    const actualToIndex = toIndex === null ? currentIndex : toIndex;
+    
+    // Get the line diff
+    const lineDiff = this.revisionManager.computeLineDiff(actualFromIndex, actualToIndex);
     
     // Build the diff object
     const diffData = {
@@ -1741,7 +1742,7 @@ class SquibView {
       
       // Escape HTML in content
       const escapedContent = this._escapeHtml(line.content);
-      html += `<span class="diff-content-text">${escapedContent}</span>`;
+      html += `<span class="${classes.content}">${escapedContent}</span>`;
       
       html += `</div>`;
     }
@@ -1788,8 +1789,9 @@ class SquibView {
     };
     
     // Get the actual content from the revisions
-    const actualFromIndex = fromIndex === null ? this.revisionManager.getCurrentIndex() - 1 : fromIndex;
-    const actualToIndex = toIndex === null ? this.revisionManager.getCurrentIndex() : toIndex;
+    const currentIndex = this.revisionManager.getCurrentIndex();
+    const actualFromIndex = fromIndex === null ? Math.max(-1, currentIndex - 1) : fromIndex;
+    const actualToIndex = toIndex === null ? currentIndex : toIndex;
     
     let fromContent, toContent;
     try {

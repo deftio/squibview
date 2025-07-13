@@ -255,77 +255,75 @@ class RevisionManager {
    * @returns {Array} Array of line diff objects with { type, content, oldLineNum, newLineNum }
    */
   computeLineDiff(fromIndex = null, toIndex = null) {
-    // Get the raw diff
-    const rawDiff = this.computeDiff(fromIndex, toIndex);
-    
+    // Default to comparing previous revision to current if not specified
+    if (fromIndex === null) {
+      fromIndex = this.currentIndex - 1;
+    }
+    if (toIndex === null) {
+      toIndex = this.currentIndex;
+    }
+
+    // Validate indices
+    if (fromIndex < -1 || fromIndex >= this.diffs.length) {
+      throw new Error(`Invalid fromIndex: ${fromIndex}. Valid range: -1 to ${this.diffs.length - 1}`);
+    }
+    if (toIndex < -1 || toIndex >= this.diffs.length) {
+      throw new Error(`Invalid toIndex: ${toIndex}. Valid range: -1 to ${this.diffs.length - 1}`);
+    }
+    if (fromIndex > toIndex) {
+      throw new Error(`fromIndex (${fromIndex}) cannot be greater than toIndex (${toIndex})`);
+    }
+
     // Get the full content to properly handle line numbers
-    const fromContent = this.getContentAtRevision(fromIndex === null ? this.currentIndex - 1 : fromIndex).content;
-    const toContent = this.getContentAtRevision(toIndex === null ? this.currentIndex : toIndex).content;
+    const fromContent = this.getContentAtRevision(fromIndex).content;
+    const toContent = this.getContentAtRevision(toIndex).content;
     
     // Split content into lines for reference
     const fromLines = fromContent.split('\n');
     const toLines = toContent.split('\n');
     
-    // Convert raw diff to line-based format using a different approach
-    const lineDiffs = [];
-    let currentFromLine = 0;
-    let currentToLine = 0;
-    let fromPos = 0;
-    let toPos = 0;
+    // Use diff_match_patch to compute line-level diffs
+    const lineDiff = this.diffEngine.diff_linesToChars_(fromContent, toContent);
+    const diffs = this.diffEngine.diff_main(lineDiff.chars1, lineDiff.chars2, false);
+    this.diffEngine.diff_charsToLines_(diffs, lineDiff.lineArray);
     
-    for (const [operation, text] of rawDiff) {
-      if (operation === DiffMatchPatch.DIFF_EQUAL) {
-        // Count how many lines are in this equal section
-        const equalLines = text.split('\n');
-        for (let i = 0; i < equalLines.length; i++) {
-          if (i === equalLines.length - 1 && equalLines[i] === '') {
-            // This is just the newline at the end of the previous line
-            continue;
-          }
-          if (currentFromLine < fromLines.length && currentToLine < toLines.length) {
-            lineDiffs.push({
-              type: 'unchanged',
-              content: fromLines[currentFromLine],
-              oldLineNum: currentFromLine + 1,
-              newLineNum: currentToLine + 1
-            });
-            currentFromLine++;
-            currentToLine++;
-          }
-        }
-      } else if (operation === DiffMatchPatch.DIFF_DELETE) {
-        // Count deleted lines
-        const deletedLines = text.split('\n');
-        for (let i = 0; i < deletedLines.length; i++) {
-          if (i === deletedLines.length - 1 && deletedLines[i] === '') {
-            continue;
-          }
-          if (currentFromLine < fromLines.length) {
-            lineDiffs.push({
-              type: 'removed',
-              content: fromLines[currentFromLine],
-              oldLineNum: currentFromLine + 1,
-              newLineNum: null
-            });
-            currentFromLine++;
-          }
-        }
-      } else if (operation === DiffMatchPatch.DIFF_INSERT) {
-        // Count added lines
-        const addedLines = text.split('\n');
-        for (let i = 0; i < addedLines.length; i++) {
-          if (i === addedLines.length - 1 && addedLines[i] === '') {
-            continue;
-          }
-          if (currentToLine < toLines.length) {
-            lineDiffs.push({
-              type: 'added',
-              content: toLines[currentToLine],
-              oldLineNum: null,
-              newLineNum: currentToLine + 1
-            });
-            currentToLine++;
-          }
+    // Convert to our format
+    const lineDiffs = [];
+    let oldLineNum = 1;
+    let newLineNum = 1;
+    
+    for (const [operation, text] of diffs) {
+      const lines = text.split('\n').filter((line, idx, arr) => 
+        // Keep all lines except empty last one (which is just the trailing newline)
+        idx < arr.length - 1 || line !== ''
+      );
+      
+      for (const line of lines) {
+        if (operation === DiffMatchPatch.DIFF_EQUAL) {
+          lineDiffs.push({
+            type: 'unchanged',
+            content: line,
+            oldLineNum: oldLineNum,
+            newLineNum: newLineNum
+          });
+          oldLineNum++;
+          newLineNum++;
+        } else if (operation === DiffMatchPatch.DIFF_DELETE) {
+          lineDiffs.push({
+            type: 'removed',
+            content: line,
+            oldLineNum: oldLineNum,
+            newLineNum: null
+          });
+          oldLineNum++;
+        } else if (operation === DiffMatchPatch.DIFF_INSERT) {
+          lineDiffs.push({
+            type: 'added',
+            content: line,
+            oldLineNum: null,
+            newLineNum: newLineNum
+          });
+          newLineNum++;
         }
       }
     }
@@ -341,6 +339,25 @@ class RevisionManager {
    * @returns {Object} Stats object with { additions, deletions, modifications, totalChanges }
    */
   getDiffStats(fromIndex = null, toIndex = null) {
+    // Default to comparing previous revision to current if not specified
+    if (fromIndex === null) {
+      fromIndex = this.currentIndex - 1;
+    }
+    if (toIndex === null) {
+      toIndex = this.currentIndex;
+    }
+
+    // Validate indices (same validation as computeLineDiff)
+    if (fromIndex < -1 || fromIndex >= this.diffs.length) {
+      throw new Error(`Invalid fromIndex: ${fromIndex}. Valid range: -1 to ${this.diffs.length - 1}`);
+    }
+    if (toIndex < -1 || toIndex >= this.diffs.length) {
+      throw new Error(`Invalid toIndex: ${toIndex}. Valid range: -1 to ${this.diffs.length - 1}`);
+    }
+    if (fromIndex > toIndex) {
+      throw new Error(`fromIndex (${fromIndex}) cannot be greater than toIndex (${toIndex})`);
+    }
+
     // Get the line diff
     const lineDiff = this.computeLineDiff(fromIndex, toIndex);
     
