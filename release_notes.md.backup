@@ -1,5 +1,44 @@
 # SquibView Release Notes
 
+## v1.0.15 (July 13, 2025)
+*Release Date: July 13, 2025*
+
+### 🚀 Major Build System Improvements
+- **BREAKING CHANGE**: Default ESM/UMD builds now include bundled markdown-it (~240KB)
+  - No more import map errors for new users!
+  - Existing apps continue to work - same filenames maintained
+- **NEW**: Lean builds (`-lean` suffix) for advanced users who manage their own dependencies
+- **NEW**: ESM standalone builds now properly built and available
+- **IMPROVED**: Build naming consistency across all targets
+
+### 🐛 Bug Fixes
+- **FIXED**: Standalone builds no longer cause side effects with Leaflet icons
+- **FIXED**: GeoJSON rendering in standalone builds works without prototype pollution
+- **FIXED**: ESM standalone build was missing - now properly generated
+- **FIXED**: Library warnings only show when actually needed (not on every render)
+
+### 📚 Documentation & Examples
+- **CLEANED**: Completely rewrote `example_ESM.html` - modern, clean ES module approach
+- **CLEANED**: Simplified `example_UMD.html` - removed module mixing and complexity
+- **FIXED**: Syntax highlighting in ESM example (proper highlight.js loading)
+- **ARCHIVED**: Moved unused/outdated examples to `examples/archive/`
+
+### 📦 Build Details
+| Build | Module | Size | Includes | Use Case |
+|-------|--------|------|----------|----------|
+| squibview.esm.min.js | ESM | ~240KB | markdown-it bundled | Default - works out of box |
+| squibview.esm-lean.min.js | ESM | ~140KB | No deps | Advanced users |
+| squibview.umd.min.js | UMD | ~250KB | markdown-it bundled | Default - works out of box |
+| squibview.umd-lean.min.js | UMD | ~140KB | No deps | Advanced users |
+| squibview.standalone.*.min.js | Both | ~3.7MB | Everything | All features, no setup |
+
+### 🔄 Migration Notes
+- No action required for existing users - filenames unchanged
+- To use lean builds, update your imports to use `-lean` suffix
+- Import maps no longer needed for default builds
+
+---
+
 ## v1.0.13 (July 13, 2025)
 *Release Date: July 13, 2025*
 
@@ -34,6 +73,17 @@
 - **V1.0.12 enhanced docs, fixed badge copy errors for README.md generation
 
 ---
+## v1.0.14 (July 13, 2025)
+*Release Date: July 13, 2025*
+
+### 📝 Release Highlights
+Fixed ci/cd builds for diffs
+
+### ✨ Improvements
+- **V1.0.14 docs update
+
+---
+
 ## v1.0.13 (July 13, 2025)
 *Release Date: July 13, 2025*
 

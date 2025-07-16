@@ -65,38 +65,9 @@ const umdConfig = {
 };
 
 /* ------------------------------------------------------------------
-   2) "Standalone Basic" UMD Build:
-   Bundles core functionality excluding heavy deps like Three.js
+   2) "Standalone Basic" UMD Build: REMOVED
+   This confusing build type has been removed
 ------------------------------------------------------------------ */
-const umdStandaloneBasicConfig = {
-  input: 'src/standalone-basic.squibview.js',
-  output: {
-    file: 'dist/squibview.standalone-basic.umd.min.js',
-    format: 'umd',
-    name: 'SquibView',
-    sourcemap: true,
-    inlineDynamicImports: true,
-  },
-  external: ['debug'],
-  plugins: [
-    // json(), // if needed
-    polyfillNode(),
-    resolve({ extensions, browser: true }),
-    commonjs({
-      include: /node_modules/
-    }),
-    postcss({
-      extract: 'squibview.css',
-      minimize: false
-    }),
-    babel({
-      babelHelpers: 'bundled',
-      extensions,
-      presets: ['@babel/preset-env'],
-    }),
-    terser(),
-  ],
-};
 
 /* ------------------------------------------------------------------
    3) "Standalone Full" UMD Build:
@@ -418,5 +389,4 @@ export default process.env.BUILD === 'react' ? reactConfig :
        process.env.BUILD === 'umd-lean' ? umdLeanConfig :
        process.env.BUILD === 'esm-lean' ? esmLeanConfig :
        process.env.BUILD === 'standalone' ? umdStandaloneConfig :
-       process.env.BUILD === 'standalone-basic' ? umdStandaloneBasicConfig :
-       [umdConfig, umdStandaloneBasicConfig, umdStandaloneConfig, esmRegularConfig, esmStandaloneConfig, umdLeanConfig, esmLeanConfig, reactConfig, vueConfig, htmlToMarkdownConfig];
+        [umdConfig, esmRegularConfig, umdLeanConfig, esmLeanConfig, reactConfig, vueConfig, htmlToMarkdownConfig, umdStandaloneConfig, esmStandaloneConfig];

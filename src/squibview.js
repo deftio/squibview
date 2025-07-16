@@ -1125,7 +1125,7 @@ class SquibView {
       // Store original data for HtmlToMarkdown conversion FIRST
       container.setAttribute('data-original-source', originalData);
       
-      if (typeof L === 'undefined') {
+      if (typeof window.L === 'undefined') {
         // No console warning - placeholder message is sufficient
         container.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">Leaflet library not loaded</p>';
         return;
@@ -1142,18 +1142,18 @@ class SquibView {
       container.id = mapId;
       
       // Initialize Leaflet map
-      const map = L.map(mapId).setView([0, 0], 2);
+      const map = window.L.map(mapId).setView([0, 0], 2);
       
       // Store map reference for copy functionality
       window[mapId + '_map'] = map;
       
       // Add tile layer
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
       
       // Add GeoJSON layer
-      const geojsonLayer = L.geoJSON(jsonData).addTo(map);
+      const geojsonLayer = window.L.geoJSON(jsonData).addTo(map);
       
       // Fit map to data bounds
       if (geojsonLayer.getBounds().isValid()) {
@@ -1180,7 +1180,7 @@ class SquibView {
       // Store original data for HtmlToMarkdown conversion FIRST
       container.setAttribute('data-original-source', originalData);
       
-      if (typeof L === 'undefined') {
+      if (typeof window.L === 'undefined') {
         // No console warning - placeholder message is sufficient
         container.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">Leaflet library not loaded</p>';
         return;
@@ -1206,10 +1206,10 @@ class SquibView {
       container.id = mapId;
       
       // Initialize Leaflet map
-      const map = L.map(mapId).setView([0, 0], 2);
+      const map = window.L.map(mapId).setView([0, 0], 2);
       
       // Add tile layer
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
       
@@ -3310,7 +3310,7 @@ class SquibView {
         if (element.classList.contains('geojson-container') || element.id && element.id.startsWith('map-')) {
           // Try to access the Leaflet map instance
           const mapId = element.id;
-          if (typeof L !== 'undefined' && mapId && window[mapId + '_map']) {
+          if (typeof window.L !== 'undefined' && mapId && window[mapId + '_map']) {
             const map = window[mapId + '_map'];
             
             // Use Leaflet's built-in screenshot functionality if available
