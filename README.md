@@ -6,7 +6,8 @@
 
 JavaScript editor/viewer for Markdown and HTML with live preview, bidirectional editing, and rich content support.
 
-[**Live Demo**](https://deftio.github.io/squibview/examples/example_ESM.html) | [**Documentation**](https://deftio.github.io/squibview/docs/home.html) | [**API Reference**](https://deftio.github.io/squibview/docs/programmers-guide.html) | [**Local Demo**](./examples/index.html)
+**GitHub:** [**Live Demo**](https://deftio.github.io/squibview/examples/example_ESM.html) | [**Examples**](https://deftio.github.io/squibview/examples/) | [**Documentation**](https://deftio.github.io/squibview/docs/home.html) | [**API Reference**](https://deftio.github.io/squibview/docs/programmers-guide.html)  
+**Local:** [**Live Demo**](./examples/example_ESM.html) | [**Examples**](./examples/) | [**Documentation**](./docs/) | [**Source**](./src/)
 
 <img src="./squibview-demo.gif" alt="SquibView Live Demo - Progressive markdown rendering showing headings, bullets, tables, diagrams, math, and maps" width="100%">
 
