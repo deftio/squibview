@@ -22,8 +22,34 @@
       box-sizing: border-box;
     }
 
+    .demo-controls {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .demo-controls button {
+      padding: 8px 16px;
+      border: 1px solid #ddd;
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+
+    .demo-controls button:hover {
+      background: #f0f0f0;
+      border-color: #bbb;
+    }
+
+    .demo-controls button:active {
+      background: #e0e0e0;
+    }
+
     #editor {
-      height: calc(100vh - 40px);
+      height: calc(100vh - 100px);
       border: 1px solid #ddd;
       border-radius: 8px;
       overflow: hidden;
@@ -48,6 +74,12 @@
   </style>
 </head>
 <body>
+  <div class="demo-controls">
+    <h3 style="margin: 0; margin-right: 20px;">Line Numbers Demo</h3>
+    <button id="toggleBtn">Toggle Line Numbers (ON)</button>
+    <button id="themeBtn">Toggle Theme</button>
+    <button id="startBtn">Start at 100</button>
+  </div>
   <div id="editor"></div>
 
   <script type="module">
@@ -229,10 +261,7 @@ Try the following:
           initialView: 'split',
           showControls: true,
           titleShow: true,
-          titleContent: `SquibView Line Numbers Example - 
-            <button id="toggleBtn" style="margin-left: 10px; padding: 4px 8px; cursor: pointer;">Toggle Line Numbers</button>
-            <button id="themeBtn" style="margin-left: 10px; padding: 4px 8px; cursor: pointer;">Toggle Theme</button>
-            <button id="startBtn" style="margin-left: 10px; padding: 4px 8px; cursor: pointer;">Start at 100</button>`,
+          titleContent: `SquibView Line Numbers Example v${SquibView.version.version}`,
           showLineNumbers: true,
           lineNumberStart: 1,
           lineNumberMinDigits: 2

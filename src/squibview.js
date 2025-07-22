@@ -844,6 +844,11 @@ class SquibView {
     // Render the content
     this.renderOutput();
     
+    // Update line numbers if enabled
+    if (this.options.showLineNumbers && this.lineGutter) {
+      this.updateLineNumbers();
+    }
+    
     // Emit content change event
     this.events.emit('content:change', content, contentType);
   }
@@ -3533,16 +3538,41 @@ class SquibView {
     // Set up scroll synchronization
     this.setupLineNumberScrollSync();
     
-    // Update line numbers on input
-    this.input.addEventListener('input', () => {
+    // Store bound handler for cleanup
+    this._lineNumberInputHandler = () => {
       this.updateLineNumbersIfNeeded();
-    });
+    };
+    
+    // Update line numbers on input
+    this.input.addEventListener('input', this._lineNumberInputHandler);
+    
+    // Store bound resize handler for cleanup
+    this._lineNumberResizeHandler = this.updateLineNumbersDebounced.bind(this);
     
     // Update on window resize
-    window.addEventListener('resize', this.updateLineNumbersDebounced);
+    window.addEventListener('resize', this._lineNumberResizeHandler);
     
     // Initial update
     this.updateLineNumbers();
+  }
+
+  /**
+   * Cleanup line numbers functionality
+   * @private
+   */
+  cleanupLineNumbers() {
+    // Remove event listeners
+    if (this._lineNumberInputHandler) {
+      this.input.removeEventListener('input', this._lineNumberInputHandler);
+    }
+    if (this._lineNumberResizeHandler) {
+      window.removeEventListener('resize', this._lineNumberResizeHandler);
+    }
+    
+    // Remove line mirror
+    if (this.lineMirror && this.lineMirror.parentNode) {
+      this.lineMirror.parentNode.removeChild(this.lineMirror);
+    }
   }
 
   /**
@@ -3670,14 +3700,20 @@ class SquibView {
     
     this.options.showLineNumbers = show;
     
-    // Rebuild the editor structure
+    // Store current state
     const currentContent = this.getContent();
-    const currentType = this.currentContentType;
+    const currentType = this.inputContentType;
     const currentView = this.currentView;
+    
+    // Clean up existing line numbers if any
+    if (!show && this.lineMirror) {
+      this.cleanupLineNumbers();
+    }
     
     // Re-create structure
     this.createStructure();
     this.initializeEventHandlers();
+    this.initializeResizeObserver();
     
     if (show) {
       this.initializeLineNumbers();
@@ -3686,6 +3722,9 @@ class SquibView {
     // Restore content and view
     this.setContent(currentContent, currentType, false);
     this.setView(currentView);
+    
+    // Update type buttons
+    this.updateTypeButtons();
   }
 
   /**
