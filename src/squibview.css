@@ -20,6 +20,15 @@
     --squibview-code-block-bg: #f7f7f7;
     --squibview-caret-color: red;
 
+    /* Line Numbers */
+    --squibview-gutter-bg: var(--squibview-background-color);
+    --squibview-gutter-fg: #666;
+    --squibview-gutter-border: var(--squibview-border-color);
+    --squibview-gutter-width: 50px;
+    --squibview-gutter-padding: 8px;
+    --squibview-gutter-font-family: var(--squibview-font-family-monospace);
+    --squibview-gutter-font-size: var(--squibview-font-size-input);
+
     /* Typography */
     --squibview-font-family-monospace: monospace;
     --squibview-font-size-base: 1rem; /* Base for relative units */
@@ -388,6 +397,70 @@
     }
 }
 
+/*
+  Line Numbers Styles
+  For displaying line numbers in source view
+*/
+
+/* Source panel wrapper when line numbers are enabled */
+.squibview-source-panel {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* Line gutter styling */
+.squibview-line-gutter {
+    flex-shrink: 0;
+    width: var(--squibview-gutter-width);
+    background: var(--squibview-gutter-bg);
+    color: var(--squibview-gutter-fg);
+    border-right: 1px solid var(--squibview-gutter-border);
+    overflow: hidden;
+    user-select: none;
+    font-family: var(--squibview-gutter-font-family);
+    font-size: var(--squibview-gutter-font-size);
+    line-height: var(--squibview-line-height, 1.5);
+    padding: var(--squibview-padding-base) 0;
+}
+
+/* Individual line number styling */
+.squibview-gutter-line {
+    text-align: right;
+    padding: 0 var(--squibview-gutter-padding);
+    box-sizing: border-box;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+}
+
+/* Adjust input when line numbers are shown */
+.squibview-source-panel .squibview-input {
+    flex: 1;
+    border-left: none;
+    margin: 0;
+    border-radius: 0;
+}
+
+/* Mirror for line measurement (hidden) */
+.squibview-line-mirror {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+    visibility: hidden;
+    pointer-events: none;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Ensure consistent line height between gutter and textarea */
+.squibview-line-gutter,
+.squibview-input {
+    line-height: var(--squibview-line-height, 1.5);
+}
+
 /* Dark mode support (when parent has dark theme) */
 .squibview.dark .squibview-diff,
 .squibview[data-theme="dark"] .squibview-diff {
@@ -533,4 +606,12 @@
 .squibview[data-theme="dark"] .squibview-diff-inline .diff-inline-removed {
     background-color: #c53030;
     color: #fed7d7;
+}
+
+/* Dark mode for line numbers */
+.squibview.dark .squibview-line-gutter,
+.squibview[data-theme="dark"] .squibview-line-gutter {
+    background-color: #2d3748;
+    color: #a0aec0;
+    border-right-color: #4a5568;
 }

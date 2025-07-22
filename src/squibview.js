@@ -63,7 +63,10 @@ class SquibView {
     initialView: 'split',
     baseClass: 'squibview',
     onReplaceSelectedText: null,
-    preserveImageTags: true // Changed default to true
+    preserveImageTags: true, // Changed default to true
+    showLineNumbers: false,  // Enable/disable line numbers
+    lineNumberStart: 1,      // Starting line number
+    lineNumberMinDigits: 2   // Minimum digits (e.g., 01, 02)
   };
 
   static version = {
@@ -120,6 +123,11 @@ class SquibView {
     this.createStructure();
     this.initializeEventHandlers();
     this.initializeResizeObserver();
+    
+    // Initialize line numbers if enabled
+    if (this.options.showLineNumbers) {
+      this.initializeLineNumbers();
+    }
     
     // Set initial content
     if (this.options.initialContent) {
@@ -488,7 +496,13 @@ class SquibView {
         <span class="${this.options.baseClass}-type-buttons"></span>
       </div>
       <div class="${this.options.baseClass}-editor">
-        <textarea class="${this.options.baseClass}-input"></textarea>
+        ${this.options.showLineNumbers ? 
+          `<div class="${this.options.baseClass}-source-panel">
+            <div class="${this.options.baseClass}-line-gutter"></div>
+            <textarea class="${this.options.baseClass}-input"></textarea>
+          </div>` :
+          `<textarea class="${this.options.baseClass}-input"></textarea>`
+        }
         <div class="${this.options.baseClass}-output"></div>
       </div>
     `;
@@ -500,6 +514,12 @@ class SquibView {
     this.output = this.container.querySelector(`.${this.options.baseClass}-output`);
     this.typeButtonsContainer = this.container.querySelector(`.${this.options.baseClass}-type-buttons`);
     this.universalButtonsContainer = this.container.querySelector(`.${this.options.baseClass}-universal-buttons`);
+    
+    // Line numbers elements
+    if (this.options.showLineNumbers) {
+      this.sourcePanel = this.container.querySelector(`.${this.options.baseClass}-source-panel`);
+      this.lineGutter = this.container.querySelector(`.${this.options.baseClass}-line-gutter`);
+    }
   }
 
   /**
@@ -1476,21 +1496,35 @@ class SquibView {
     const copyHTMLButton = this.controls.querySelector('.copy-html-button');
 
     if (view === 'src') {
-      this.input.classList.remove('squibview-hidden');
+      if (this.sourcePanel) {
+        this.sourcePanel.classList.remove('squibview-hidden');
+        this.sourcePanel.style.width = '100%';
+      } else {
+        this.input.classList.remove('squibview-hidden');
+        this.input.style.width = '100%';
+      }
       this.output.classList.add('squibview-hidden');
-      this.input.style.width = '100%';
       copyMDButton.classList.remove('squibview-hidden');
       copyHTMLButton.classList.add('squibview-hidden');
     } else if (view === 'html') {
-      this.input.classList.add('squibview-hidden');
+      if (this.sourcePanel) {
+        this.sourcePanel.classList.add('squibview-hidden');
+      } else {
+        this.input.classList.add('squibview-hidden');
+      }
       this.output.classList.remove('squibview-hidden');
       this.output.style.width = '100%';
       copyMDButton.classList.add('squibview-hidden');
       copyHTMLButton.classList.remove('squibview-hidden');
     } else { // view == 'split'
-      this.input.classList.remove('squibview-hidden');
+      if (this.sourcePanel) {
+        this.sourcePanel.classList.remove('squibview-hidden');
+        this.sourcePanel.style.width = '50%';
+      } else {
+        this.input.classList.remove('squibview-hidden');
+        this.input.style.width = '50%';
+      }
       this.output.classList.remove('squibview-hidden');
-      this.input.style.width = '50%';
       this.output.style.width = '50%';
       copyMDButton.classList.remove('squibview-hidden');
       copyHTMLButton.classList.remove('squibview-hidden');
@@ -3480,6 +3514,216 @@ class SquibView {
         reject(error);
       }
     });
+  }
+
+  /**
+   * Initialize line numbers functionality
+   * @private
+   */
+  initializeLineNumbers() {
+    // Create line mirror for measuring line heights
+    this.lineMirror = document.createElement('div');
+    this.lineMirror.className = `${this.options.baseClass}-line-mirror`;
+    this.lineMirror.setAttribute('aria-hidden', 'true');
+    this.container.appendChild(this.lineMirror);
+    
+    // Track last line count for optimization
+    this.lastLineCount = 0;
+    
+    // Set up scroll synchronization
+    this.setupLineNumberScrollSync();
+    
+    // Update line numbers on input
+    this.input.addEventListener('input', () => {
+      this.updateLineNumbersIfNeeded();
+    });
+    
+    // Update on window resize
+    window.addEventListener('resize', this.updateLineNumbersDebounced);
+    
+    // Initial update
+    this.updateLineNumbers();
+  }
+
+  /**
+   * Set up scroll synchronization between textarea and line gutter
+   * @private
+   */
+  setupLineNumberScrollSync() {
+    if (!this.lineGutter) return;
+    
+    this.input.addEventListener('scroll', () => {
+      if (this.lineGutter) {
+        this.lineGutter.scrollTop = this.input.scrollTop;
+      }
+    });
+  }
+
+  /**
+   * Update line numbers if the line count has changed
+   * @private
+   */
+  updateLineNumbersIfNeeded() {
+    const newLineCount = (this.input.value.match(/\n/g) || []).length + 1;
+    if (newLineCount !== this.lastLineCount) {
+      this.lastLineCount = newLineCount;
+      this.updateLineNumbersDebounced();
+    }
+  }
+
+  /**
+   * Debounced version of updateLineNumbers
+   * @private
+   */
+  updateLineNumbersDebounced = this.debounce(() => {
+    requestAnimationFrame(() => this.updateLineNumbers());
+  }, 100);
+
+  /**
+   * Update the line numbers in the gutter
+   * @private
+   */
+  updateLineNumbers() {
+    if (!this.options.showLineNumbers || !this.lineGutter) return;
+    
+    const lines = this.input.value.split('\n');
+    const totalLines = lines.length;
+    const minDigits = Math.max(
+      this.options.lineNumberMinDigits,
+      String(totalLines + this.options.lineNumberStart - 1).length
+    );
+    
+    // Clear gutter
+    this.lineGutter.innerHTML = '';
+    
+    // Sync mirror styles with textarea
+    this.syncMirrorStyles();
+    
+    // Create line number elements
+    lines.forEach((line, index) => {
+      const lineNum = this.options.lineNumberStart + index;
+      const lineNumStr = String(lineNum).padStart(minDigits, '0');
+      
+      // Measure line height
+      const lineHeight = this.measureLineHeight(line);
+      
+      // Create line number element
+      const gutterLine = document.createElement('div');
+      gutterLine.className = `${this.options.baseClass}-gutter-line`;
+      gutterLine.textContent = lineNumStr;
+      gutterLine.style.height = lineHeight + 'px';
+      gutterLine.style.lineHeight = lineHeight + 'px';
+      
+      this.lineGutter.appendChild(gutterLine);
+    });
+  }
+
+  /**
+   * Measure the height of a single line of text
+   * @private
+   * @param {string} lineContent - The content of the line
+   * @returns {number} The height in pixels
+   */
+  measureLineHeight(lineContent) {
+    // Create temporary element in mirror
+    const tempLine = document.createElement('div');
+    tempLine.textContent = lineContent || '\u00A0'; // nbsp for empty lines
+    tempLine.style.wordBreak = 'break-all';
+    tempLine.style.whiteSpace = 'pre-wrap';
+    tempLine.style.overflow = 'hidden';
+    
+    this.lineMirror.appendChild(tempLine);
+    const rect = tempLine.getBoundingClientRect();
+    const height = Math.ceil(rect.height); // Round up to avoid sub-pixel issues
+    this.lineMirror.removeChild(tempLine);
+    
+    return height;
+  }
+
+  /**
+   * Sync the mirror div styles with the textarea
+   * @private
+   */
+  syncMirrorStyles() {
+    const computed = window.getComputedStyle(this.input);
+    const stylesToCopy = [
+      'fontFamily', 'fontSize', 'lineHeight', 'letterSpacing',
+      'paddingTop', 'paddingBottom', 'paddingLeft', 'paddingRight',
+      'borderTopWidth', 'borderBottomWidth', 'borderLeftWidth', 'borderRightWidth',
+      'boxSizing', 'whiteSpace', 'wordWrap', 'wordBreak', 'overflowWrap'
+    ];
+    
+    stylesToCopy.forEach(prop => {
+      this.lineMirror.style[prop] = computed[prop];
+    });
+    
+    // Match textarea content width exactly
+    this.lineMirror.style.width = this.input.clientWidth + 'px';
+  }
+
+  /**
+   * Toggle line numbers on/off
+   * @param {boolean} show - Whether to show line numbers
+   */
+  setLineNumbers(show) {
+    if (this.options.showLineNumbers === show) return;
+    
+    this.options.showLineNumbers = show;
+    
+    // Rebuild the editor structure
+    const currentContent = this.getContent();
+    const currentType = this.currentContentType;
+    const currentView = this.currentView;
+    
+    // Re-create structure
+    this.createStructure();
+    this.initializeEventHandlers();
+    
+    if (show) {
+      this.initializeLineNumbers();
+    }
+    
+    // Restore content and view
+    this.setContent(currentContent, currentType, false);
+    this.setView(currentView);
+  }
+
+  /**
+   * Get the current line numbers state
+   * @returns {boolean} Whether line numbers are shown
+   */
+  getLineNumbers() {
+    return this.options.showLineNumbers;
+  }
+
+  /**
+   * Set the starting line number
+   * @param {number} start - The starting line number
+   */
+  setLineNumberStart(start) {
+    this.options.lineNumberStart = start;
+    if (this.options.showLineNumbers) {
+      this.updateLineNumbers();
+    }
+  }
+
+  /**
+   * Utility function to debounce function calls
+   * @private
+   * @param {Function} func - The function to debounce
+   * @param {number} wait - The debounce delay in milliseconds
+   * @returns {Function} The debounced function
+   */
+  debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
   }
 }
 

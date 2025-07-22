@@ -66,6 +66,20 @@
 - **CLEANED**: Removed broken/debug example files
 
 ---
+## v1.0.15 (July 13, 2025)
+*Release Date: July 13, 2025*
+
+### ✨ Improvements
+- **Update documentation for v1.0.15 bundled dependencies
+- **Remove duplicate Leaflet icon configuration from standalone_umd example
+- **Remove console warnings for missing libraries
+- **Update examples to use bundled builds
+- **Implement bundled builds with markdown-it
+- **V1.0.15 task list and version bump
+- **Fix line diff algorithm and edge cases for v1.0.14
+
+---
+
 ## v1.0.12 (July 01, 2025)
 *Release Date: July 01, 2025*
 
