@@ -66,6 +66,20 @@
 - **CLEANED**: Removed broken/debug example files
 
 ---
+## v1.0.17 (July 22, 2025)
+*Release Date: July 22, 2025*
+
+### ✨ Improvements
+- **Updated cli build
+- **Added line number support, add examples for showing hhow to use themes.
+- **Dark theme styling and remove container border
+- **Resolve line numbers bugs and improve example
+- **Update line numbers example with proper dependencies and formatting
+- **Add line numbers support to source view
+- **Update bin path format to match npm requirements
+
+---
+
 ## v1.0.16 (July 16, 2025)
 *Release Date: July 16, 2025*
 
