@@ -11,6 +11,7 @@
 
   <!-- External dependencies for advanced features -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/default.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
   <style>
     body {
@@ -19,67 +20,17 @@
       padding: 20px;
       height: 100vh;
       box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
     }
 
-    .controls {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      padding: 10px;
-      background: #f5f5f5;
-      border-radius: 8px;
-    }
-
-    .controls button {
-      padding: 8px 16px;
-      border: 1px solid #ddd;
-      background: white;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    .controls button:hover {
-      background: #f0f0f0;
-    }
-
-    .controls button.active {
-      background: #2a57d3;
-      color: white;
-    }
-
-    .editor-container {
-      display: flex;
-      gap: 20px;
-      flex: 1;
-      min-height: 0;
-    }
-
-    #editor1, #editor2 {
-      flex: 1;
+    #editor {
+      height: calc(100vh - 40px);
       border: 1px solid #ddd;
       border-radius: 8px;
       overflow: hidden;
     }
 
-    .editor-wrapper {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .editor-title {
-      padding: 10px;
-      background: #f0f0f0;
-      border-bottom: 1px solid #ddd;
-      font-weight: bold;
-    }
-
-    /* Custom theme for dark mode example */
-    #editor2 {
+    /* Dark theme override */
+    .dark-theme {
       --squibview-background-color: #1a1a1a;
       --squibview-input-background-color: #1a1a1a;
       --squibview-output-background-color: #1a1a1a;
@@ -90,173 +41,251 @@
       --squibview-gutter-border: #444;
     }
 
-    #editor2 .squibview-input {
-      color: #e0e0e0;
-    }
-
-    #editor2 .squibview-output {
+    .dark-theme .squibview-input,
+    .dark-theme .squibview-output {
       color: #e0e0e0;
     }
   </style>
 </head>
 <body>
-  <h1>SquibView Line Numbers Example</h1>
-  
-  <div class="controls">
-    <button id="toggleLineNumbers1">Toggle Line Numbers (Editor 1)</button>
-    <button id="toggleLineNumbers2">Toggle Line Numbers (Editor 2)</button>
-    <button id="changeStartNumber">Change Start Number to 100</button>
-    <button id="addLongContent">Add Long Content</button>
-  </div>
-
-  <div class="editor-container">
-    <div class="editor-wrapper">
-      <div class="editor-title">Editor 1: Line Numbers Enabled</div>
-      <div id="editor1"></div>
-    </div>
-    
-    <div class="editor-wrapper">
-      <div class="editor-title">Editor 2: Dark Theme with Line Numbers</div>
-      <div id="editor2"></div>
-    </div>
-  </div>
+  <div id="editor"></div>
 
   <script type="module">
     // Import SquibView ESM build
     import SquibView from '../dist/squibview.esm.min.js';
     
-    // Load highlight.js for syntax highlighting
-    const loadHighlightJs = async () => {
+    // Import external libraries for advanced features
+    const loadExternalLibraries = async () => {
+      // Load highlight.js first (it needs to be loaded via script tag for proper global setup)
       await new Promise((resolve) => {
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js';
         script.onload = resolve;
         document.head.appendChild(script);
       });
+
+      // Load other libraries in parallel
+      const [mermaid, leaflet, topojson, THREE] = await Promise.all([
+        import('https://unpkg.com/mermaid@10/dist/mermaid.esm.min.mjs'),
+        import('https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js'),
+        import('https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js').then(() => window.topojson),
+        import('https://unpkg.com/three@0.164.1/build/three.module.js')
+      ]);
+
+      // Make libraries globally available for SquibView
+      window.mermaid = mermaid.default;
+      window.L = leaflet;
+      window.THREE = THREE;
+
+      // Configure Leaflet icons
+      if (leaflet.Icon && leaflet.Icon.Default) {
+        delete leaflet.Icon.Default.prototype._getIconUrl;
+        leaflet.Icon.Default.mergeOptions({
+          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+        });
+      }
+
+      // Initialize mermaid
+      mermaid.default.initialize({ startOnLoad: false });
     };
 
-    await loadHighlightJs();
+    // Sample content demonstrating line numbers
+    const sampleContent = `# Line Numbers Feature Demo
 
-    // Sample content to demonstrate line numbers
-    const sampleContent = `# Line Numbers Demo
+This example demonstrates the new line numbers feature in SquibView v${SquibView.version.version}.
 
-This is a demonstration of the line numbers feature in SquibView.
+## Key Features
 
-## Features
+1. **Line numbers in source view** - See line numbers on the left side of the editor
+2. **Wrapped line support** - Long lines that wrap maintain the same line number
+3. **Scroll synchronization** - Line numbers scroll with the content
+4. **Customizable options** - Set starting number and minimum digits
+5. **Theme support** - Works with light and dark themes
 
-- Line numbers are displayed on the left side
-- Numbers update automatically as you type
-- Works with wrapped lines (try resizing the window!)
-- Scroll synchronization between gutter and content
+## API Methods
 
-## Code Example
-
-Here's a code block to test syntax highlighting:
+### Enable/Disable Line Numbers
 
 \`\`\`javascript
-function fibonacci(n) {
-  if (n <= 1) return n;
-  return fibonacci(n - 1) + fibonacci(n - 2);
-}
+// Toggle line numbers on/off
+editor.setLineNumbers(true);  // Enable
+editor.setLineNumbers(false); // Disable
 
-// This is a very long comment that will wrap to multiple lines when the editor is narrow enough. It demonstrates how line numbers handle wrapped content correctly.
-console.log(fibonacci(10));
+// Check current state
+const hasLineNumbers = editor.getLineNumbers();
 \`\`\`
 
-## Long Lines
+### Customize Line Numbers
 
-This is a very long line that will definitely wrap when the editor width is reduced. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
+\`\`\`javascript
+// Set starting line number (default: 1)
+editor.setLineNumberStart(100);
 
-## Lists
+// Set minimum digits (default: 2)
+// This is configured in options:
+new SquibView('#editor', {
+  showLineNumbers: true,
+  lineNumberStart: 1,
+  lineNumberMinDigits: 3  // Shows 001, 002, etc.
+});
+\`\`\`
 
-1. First item
-2. Second item with a very long description that might wrap to multiple lines depending on the width of the editor
-3. Third item
-   - Nested item
-   - Another nested item with long text that demonstrates wrapping behavior
+## Testing Long Lines
 
-## Testing Empty Lines
+This is a very long line that will wrap when the editor width is reduced. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+
+## Mermaid Diagram Test
+
+\`\`\`mermaid
+graph TD
+    A[User Types] --> B{Line Count Changed?}
+    B -->|Yes| C[Update Line Numbers]
+    B -->|No| D[Skip Update]
+    C --> E[Measure Line Heights]
+    E --> F[Render Numbers]
+\`\`\`
+
+## Code Block with Many Lines
+
+\`\`\`javascript
+// Fibonacci sequence generator
+function* fibonacci() {
+  let [a, b] = [0, 1];
+  while (true) {
+    yield a;
+    [a, b] = [b, a + b];
+  }
+}
+
+// Example usage
+const fib = fibonacci();
+for (let i = 0; i < 10; i++) {
+  console.log(fib.next().value);
+}
+
+// This function has many lines
+// to demonstrate how line numbers
+// work with longer code blocks
+function complexFunction(param1, param2, param3) {
+  // Validate parameters
+  if (!param1 || typeof param1 !== 'string') {
+    throw new Error('param1 must be a non-empty string');
+  }
+  
+  if (!param2 || typeof param2 !== 'number') {
+    throw new Error('param2 must be a number');
+  }
+  
+  // Process data
+  const result = param1
+    .split('')
+    .map(char => char.charCodeAt(0))
+    .filter(code => code > param2)
+    .reduce((sum, code) => sum + code, 0);
+  
+  return result * (param3 || 1);
+}
+\`\`\`
+
+## Empty Lines Test
 
 Line before empty lines.
 
 
-Multiple empty lines above.
+Multiple empty lines above this line.
 
-## The End
+## Keyboard Shortcuts
 
-Try editing this content and watch how the line numbers update!`;
+You can add keyboard shortcuts to toggle line numbers:
 
-    // Initialize editor 1 with line numbers enabled
-    const editor1 = new SquibView('#editor1', {
-      initialContent: sampleContent,
-      showLineNumbers: true,
-      initialView: 'split'
-    });
-
-    // Initialize editor 2 with line numbers and different settings
-    const editor2 = new SquibView('#editor2', {
-      initialContent: `# Dark Theme Example
-
-This editor demonstrates line numbers with a dark theme.
-
-## Custom Line Number Start
-
-You can set a custom starting line number:
-
-\`\`\`python
-def hello_world():
-    print("Hello, World!")
-    
-def main():
-    hello_world()
-    
-if __name__ == "__main__":
-    main()
+\`\`\`javascript
+document.addEventListener('keydown', (e) => {
+  // Ctrl/Cmd + L to toggle line numbers
+  if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
+    e.preventDefault();
+    editor.setLineNumbers(!editor.getLineNumbers());
+  }
+});
 \`\`\`
 
-The line numbers can start from any value you choose.`,
-      showLineNumbers: true,
-      lineNumberStart: 1,
-      lineNumberMinDigits: 3,
-      initialView: 'src'
-    });
+---
 
-    // Toggle line numbers for editor 1
-    document.getElementById('toggleLineNumbers1').addEventListener('click', () => {
-      const currentState = editor1.getLineNumbers();
-      editor1.setLineNumbers(!currentState);
-      document.getElementById('toggleLineNumbers1').textContent = 
-        `Toggle Line Numbers (Editor 1) - Currently: ${!currentState ? 'ON' : 'OFF'}`;
-    });
+Try the following:
+1. **Resize the window** - Watch how line numbers adapt to wrapped lines
+2. **Toggle between views** - Line numbers appear in source and split views
+3. **Edit the content** - Line numbers update automatically
+4. **Add many lines** - Performance remains smooth even with hundreds of lines`;
 
-    // Toggle line numbers for editor 2
-    document.getElementById('toggleLineNumbers2').addEventListener('click', () => {
-      const currentState = editor2.getLineNumbers();
-      editor2.setLineNumbers(!currentState);
-      document.getElementById('toggleLineNumbers2').textContent = 
-        `Toggle Line Numbers (Editor 2) - Currently: ${!currentState ? 'ON' : 'OFF'}`;
-    });
+    // Initialize SquibView
+    const init = async () => {
+      try {
+        // Load external libraries
+        await loadExternalLibraries();
 
-    // Change start number
-    document.getElementById('changeStartNumber').addEventListener('click', () => {
-      editor1.setLineNumberStart(100);
-      editor2.setLineNumberStart(42);
-    });
+        // Create SquibView instance with line numbers enabled
+        const editor = new SquibView('#editor', {
+          initialView: 'split',
+          showControls: true,
+          titleShow: true,
+          titleContent: `SquibView Line Numbers Example - 
+            <button id="toggleBtn" style="margin-left: 10px; padding: 4px 8px; cursor: pointer;">Toggle Line Numbers</button>
+            <button id="themeBtn" style="margin-left: 10px; padding: 4px 8px; cursor: pointer;">Toggle Theme</button>
+            <button id="startBtn" style="margin-left: 10px; padding: 4px 8px; cursor: pointer;">Start at 100</button>`,
+          showLineNumbers: true,
+          lineNumberStart: 1,
+          lineNumberMinDigits: 2
+        });
 
-    // Add long content to test performance
-    document.getElementById('addLongContent').addEventListener('click', () => {
-      let longContent = editor1.getContent() + '\n\n## Performance Test\n\n';
-      for (let i = 1; i <= 100; i++) {
-        longContent += `Line ${i}: This is a test line with some content. Lorem ipsum dolor sit amet.\n`;
+        // Set initial content
+        editor.setContent(sampleContent, 'md');
+
+        // Add button handlers
+        document.getElementById('toggleBtn').addEventListener('click', () => {
+          const current = editor.getLineNumbers();
+          editor.setLineNumbers(!current);
+          document.getElementById('toggleBtn').textContent = 
+            `Toggle Line Numbers (${!current ? 'ON' : 'OFF'})`;
+        });
+
+        document.getElementById('themeBtn').addEventListener('click', () => {
+          document.getElementById('editor').classList.toggle('dark-theme');
+        });
+
+        document.getElementById('startBtn').addEventListener('click', () => {
+          const currentStart = editor.options.lineNumberStart;
+          const newStart = currentStart === 1 ? 100 : 1;
+          editor.setLineNumberStart(newStart);
+          document.getElementById('startBtn').textContent = 
+            `Start at ${newStart === 1 ? 100 : 1}`;
+        });
+
+        // Add keyboard shortcut
+        document.addEventListener('keydown', (e) => {
+          // Ctrl/Cmd + L to toggle line numbers
+          if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
+            e.preventDefault();
+            editor.setLineNumbers(!editor.getLineNumbers());
+          }
+        });
+
+        // Make editor available globally for debugging
+        window.editor = editor;
+        
+        console.log('SquibView Line Numbers Example initialized successfully');
+      } catch (error) {
+        console.error('Failed to initialize SquibView:', error);
+        document.getElementById('editor').innerHTML = `
+          <div style="padding: 20px; color: red;">
+            Failed to initialize: ${error.message}
+          </div>
+        `;
       }
-      editor1.setContent(longContent, 'md');
-    });
+    };
 
-    // Update button text to show current state
-    document.getElementById('toggleLineNumbers1').textContent = 
-      'Toggle Line Numbers (Editor 1) - Currently: ON';
-    document.getElementById('toggleLineNumbers2').textContent = 
-      'Toggle Line Numbers (Editor 2) - Currently: ON';
+    // Start initialization
+    init();
   </script>
 </body>
 </html>
