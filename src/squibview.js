@@ -1492,6 +1492,9 @@ class SquibView {
    */
   setView(view) {
     this.currentView = view;
+    
+    // Set data-view attribute on editor for CSS styling
+    this.editor.setAttribute('data-view', view);
 
     this.controls.querySelectorAll('button[data-view]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.view === view);
@@ -3564,15 +3567,22 @@ class SquibView {
     // Remove event listeners
     if (this._lineNumberInputHandler) {
       this.input.removeEventListener('input', this._lineNumberInputHandler);
+      this._lineNumberInputHandler = null;
     }
     if (this._lineNumberResizeHandler) {
       window.removeEventListener('resize', this._lineNumberResizeHandler);
+      this._lineNumberResizeHandler = null;
     }
     
     // Remove line mirror
     if (this.lineMirror && this.lineMirror.parentNode) {
       this.lineMirror.parentNode.removeChild(this.lineMirror);
     }
+    
+    // Clear references
+    this.lineMirror = undefined;
+    this.lineGutter = undefined;
+    this.sourcePanel = undefined;
   }
 
   /**

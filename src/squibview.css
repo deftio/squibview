@@ -97,7 +97,6 @@
     height: 100%;
     box-sizing: border-box; /* Includes padding and border in the element's total width and height */
     border: var(--squibview-border-width) var(--squibview-border-style) var(--squibview-border-color);
-    border-radius: var(--squibview-border-radius-main);
 }
 
 /* Styling for the Markdown/source input textarea */
@@ -119,6 +118,12 @@
 /* Utility class to hide elements */
 .squibview-hidden {
     display: none !important; /* !important is used here to ensure override */
+}
+
+/* Fix double borders in split view */
+.squibview-editor[data-view="split"] .squibview-input,
+.squibview-editor[data-view="split"] .squibview-source-panel .squibview-input {
+    border-right: none;
 }
 
 /* Styling for tables within the rendered output */

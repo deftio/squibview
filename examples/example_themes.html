@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SquibView Themes Example</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
+
+  <!-- SquibView CSS -->
+  <link rel="stylesheet" href="../dist/squibview.min.css">
+  
+  <!-- Common example styles -->
+  <link rel="stylesheet" href="examples-common.css">
+
+  <style>
+    /* Page-specific styles */
+
+    .container {
+      display: flex;
+      gap: 20px;
+      height: calc(100vh - 140px);
+    }
+
+    .editor-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #editor {
+      flex: 1;
+      min-height: 0;
+    }
+
+    .controls-section {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      background: #f5f5f5;
+      border-radius: 8px;
+    }
+
+    /* Theme buttons */
+    .theme-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+
+    .theme-btn {
+      flex: 1;
+      padding: 15px;
+      border: 2px solid #ddd;
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .theme-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .theme-btn.active {
+      border-color: #2a57d3;
+      background: #f0f4ff;
+    }
+
+    .theme-btn h4 {
+      margin: 0 0 5px 0;
+      color: #333;
+    }
+
+    .theme-btn p {
+      margin: 0;
+      font-size: 14px;
+      color: #666;
+    }
+
+    /* Code examples */
+    .code-example {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+
+    .code-example h4 {
+      margin: 0 0 10px 0;
+      color: #333;
+    }
+
+    .code-example pre {
+      margin: 0;
+      padding: 10px;
+      background: #f8f8f8;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .code-example code {
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    }
+
+    /* Color swatches */
+    .color-swatches {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .swatch {
+      padding: 10px;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 12px;
+      font-family: monospace;
+    }
+
+    /* High contrast theme */
+    .high-contrast-theme {
+      --squibview-background-color: #000;
+      --squibview-input-background-color: #000;
+      --squibview-output-background-color: #000;
+      --squibview-primary-color: #1a1a1a;
+      --squibview-primary-text-color: #ffffff;
+      --squibview-secondary-color: #ffffff;
+      --squibview-secondary-text-color: #000000;
+      --squibview-border-color: #fff;
+      --squibview-gutter-bg: #000;
+      --squibview-gutter-fg: #fff;
+      --squibview-gutter-border: #fff;
+      --squibview-table-header-bg: #1a1a1a;
+      --squibview-code-block-bg: #0a0a0a;
+      --squibview-caret-color: #ffff00;
+    }
+
+    .high-contrast-theme .squibview-input,
+    .high-contrast-theme .squibview-output {
+      color: #fff;
+      background-color: #000;
+      font-weight: 500;
+    }
+    
+    .high-contrast-theme .squibview-input {
+      caret-color: #fff;
+    }
+    
+    .high-contrast-theme .squibview-line-gutter {
+      background-color: #000 !important;
+      color: #fff !important;
+      border-right: 2px solid #fff;
+    }
+
+    .high-contrast-theme .squibview-title {
+      background-color: #000;
+      color: #fff;
+      border-bottom: 2px solid #fff;
+      font-weight: bold;
+    }
+
+    .high-contrast-theme .squibview-controls {
+      background-color: #000;
+      border-bottom: 2px solid #fff;
+    }
+
+    .high-contrast-theme .squibview-controls button {
+      background-color: #1a1a1a;
+      color: #ffffff;
+      border: 2px solid #ffffff;
+    }
+
+    .high-contrast-theme .squibview-controls button:hover {
+      background-color: #333;
+    }
+
+    .high-contrast-theme .squibview-controls button.active {
+      background-color: #ffffff;
+      color: #000000;
+      border-color: #ffffff;
+    }
+
+    /* Dark theme controls section */
+    .dark-theme .controls-section {
+      background: #2d2d2d;
+      color: #e0e0e0;
+    }
+
+    .dark-theme .code-example {
+      background: #1a1a1a;
+      border-color: #444;
+    }
+
+    .dark-theme .code-example h4 {
+      color: #e0e0e0;
+    }
+
+    .dark-theme .code-example pre {
+      background: #0d0d0d;
+    }
+
+    .dark-theme .theme-btn {
+      background: #2d2d2d;
+      border-color: #444;
+    }
+
+    .dark-theme .theme-btn h4 {
+      color: #e0e0e0;
+    }
+
+    .dark-theme .theme-btn p {
+      color: #aaa;
+    }
+
+    .dark-theme .theme-btn.active {
+      background: #3d3d3d;
+      border-color: #4a9eff;
+    }
+
+    /* High contrast controls section */
+    .high-contrast-theme .controls-section {
+      background: #000;
+      color: #fff;
+      border: 2px solid #fff;
+    }
+
+    .high-contrast-theme .code-example {
+      background: #000;
+      border: 2px solid #fff;
+    }
+
+    .high-contrast-theme .code-example h4 {
+      color: #ffff00;
+    }
+
+    .high-contrast-theme .code-example pre {
+      background: #000;
+      border: 1px solid #fff;
+      color: #fff;
+    }
+    
+    .high-contrast-theme .code-example code {
+      color: #fff;
+    }
+
+    .high-contrast-theme .theme-btn {
+      background: #000;
+      border: 2px solid #fff;
+    }
+
+    .high-contrast-theme .theme-btn h4 {
+      color: #ffff00;
+    }
+
+    .high-contrast-theme .theme-btn p {
+      color: #fff;
+    }
+
+    .high-contrast-theme .theme-btn.active {
+      background: #ffff00;
+      border-color: #fff;
+    }
+
+    .high-contrast-theme .theme-btn.active h4 {
+      color: #000;
+    }
+
+    .high-contrast-theme .theme-btn.active p {
+      color: #000;
+    }
+
+    /* High contrast theme for rendered output */
+    .high-contrast-theme .squibview-output h1,
+    .high-contrast-theme .squibview-output h2,
+    .high-contrast-theme .squibview-output h3,
+    .high-contrast-theme .squibview-output h4,
+    .high-contrast-theme .squibview-output h5,
+    .high-contrast-theme .squibview-output h6 {
+      color: #ffff00;
+    }
+
+    .high-contrast-theme .squibview-output code {
+      background-color: #000;
+      color: #fff;
+      border: 1px solid #fff;
+      padding: 2px 4px;
+    }
+
+    .high-contrast-theme .squibview-output pre code {
+      background-color: #000;
+      border: none;
+      padding: 1em;
+    }
+
+    .high-contrast-theme .squibview-output pre {
+      border: 1px solid #fff;
+      background-color: #000;
+    }
+    
+    /* Override highlight.js colors for high contrast */
+    .high-contrast-theme .hljs {
+      background: #000;
+      color: #fff;
+    }
+    
+    .high-contrast-theme .hljs-keyword,
+    .high-contrast-theme .hljs-selector-tag,
+    .high-contrast-theme .hljs-title,
+    .high-contrast-theme .hljs-section,
+    .high-contrast-theme .hljs-doctag,
+    .high-contrast-theme .hljs-name,
+    .high-contrast-theme .hljs-strong {
+      color: #ffff00;
+    }
+    
+    .high-contrast-theme .hljs-string,
+    .high-contrast-theme .hljs-number,
+    .high-contrast-theme .hljs-literal,
+    .high-contrast-theme .hljs-type,
+    .high-contrast-theme .hljs-built_in,
+    .high-contrast-theme .hljs-builtin-name {
+      color: #00ff00;
+    }
+
+    .high-contrast-theme .squibview-output blockquote {
+      border-left: 4px solid #ffff00;
+      color: #fff;
+    }
+
+    .high-contrast-theme .squibview-output table {
+      color: #fff;
+    }
+
+    .high-contrast-theme .squibview-output th {
+      background-color: #1a1a1a;
+      color: #ffff00;
+      border: 2px solid #fff;
+    }
+
+    .high-contrast-theme .squibview-output td {
+      border: 1px solid #fff;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+      
+      .editor-section,
+      .controls-section {
+        flex: none;
+        height: 50%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>SquibView Themes Example</h1>
+  <p>This example demonstrates SquibView's theming system with three built-in themes and shows how to create custom themes.</p>
+  
+  <div class="container">
+    <div class="editor-section">
+      <div id="editor"></div>
+    </div>
+    
+    <div class="controls-section">
+      <h2>SquibView Theme System</h2>
+      <p>SquibView supports theming through CSS custom properties. Choose a theme below or create your own.</p>
+      
+      <h3>Built-in Themes</h3>
+      <div class="theme-buttons">
+        <button class="theme-btn active" data-theme="light">
+          <h4>Light</h4>
+          <p>Default theme with light background</p>
+        </button>
+        <button class="theme-btn" data-theme="dark">
+          <h4>Dark</h4>
+          <p>Dark theme for low-light environments</p>
+        </button>
+        <button class="theme-btn" data-theme="high-contrast">
+          <h4>High Contrast</h4>
+          <p>Maximum contrast for accessibility</p>
+        </button>
+      </div>
+
+      <div class="code-example">
+        <h4>Applying a Theme</h4>
+        <pre><code>// Method 1: Add class to body or container
+document.body.classList.add('dark-theme');
+
+// Method 2: Add data attribute
+editor.container.setAttribute('data-theme', 'dark');
+
+// Method 3: Override CSS variables directly
+editor.container.style.setProperty('--squibview-background-color', '#1a1a1a');</code></pre>
+      </div>
+
+      <div class="code-example">
+        <h4>Creating a Custom Theme</h4>
+        <pre><code>/* Define your theme with CSS custom properties */
+.my-custom-theme {
+  --squibview-primary-color: #ff6b6b;
+  --squibview-background-color: #f8f9fa;
+  --squibview-border-color: #dee2e6;
+  --squibview-input-background-color: #ffffff;
+  /* ... more properties */
+}</code></pre>
+      </div>
+
+      <div class="code-example">
+        <h4>Current Theme Colors</h4>
+        <div class="color-swatches" id="colorSwatches">
+          <!-- Will be populated dynamically -->
+        </div>
+      </div>
+
+      <div class="code-example">
+        <h4>Available CSS Variables</h4>
+        <pre><code>--squibview-primary-color
+--squibview-primary-text-color
+--squibview-secondary-color
+--squibview-secondary-text-color
+--squibview-border-color
+--squibview-background-color
+--squibview-input-background-color
+--squibview-output-background-color
+--squibview-table-header-bg
+--squibview-code-block-bg
+--squibview-gutter-bg
+--squibview-gutter-fg
+--squibview-gutter-border</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import SquibView from '../dist/squibview.esm.min.js';
+    
+    // Import external libraries for advanced features
+    const loadExternalLibraries = async () => {
+      // Load highlight.js first (it needs to be loaded via script tag for proper global setup)
+      await new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js';
+        script.onload = resolve;
+        document.head.appendChild(script);
+      });
+
+      // Load other libraries in parallel
+      const [mermaid, leaflet, topojson, THREE] = await Promise.all([
+        import('https://unpkg.com/mermaid@10/dist/mermaid.esm.min.mjs'),
+        import('https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js'),
+        import('https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js').then(() => window.topojson),
+        import('https://unpkg.com/three@0.164.1/build/three.module.js')
+      ]);
+
+      // Make libraries globally available for SquibView
+      window.mermaid = mermaid.default;
+      window.L = leaflet;
+      window.THREE = THREE;
+
+      // Configure Leaflet icons
+      if (leaflet.Icon && leaflet.Icon.Default) {
+        delete leaflet.Icon.Default.prototype._getIconUrl;
+        leaflet.Icon.Default.mergeOptions({
+          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+        });
+      }
+
+      // Initialize mermaid
+      mermaid.default.initialize({ startOnLoad: false });
+    };
+
+    // Sample content demonstrating various elements
+    const sampleContent = `# Theme Demonstration
+
+This editor demonstrates SquibView's theming capabilities. Try switching between **Light**, **Dark**, and **High Contrast** themes using the buttons on the right.
+
+## Code Example
+
+\`\`\`javascript
+// Fibonacci sequence generator
+function* fibonacci() {
+  let [prev, curr] = [0, 1];
+  while (true) {
+    yield curr;
+    [prev, curr] = [curr, prev + curr];
+  }
+}
+
+// Usage
+const fib = fibonacci();
+for (let i = 0; i < 10; i++) {
+  console.log(fib.next().value);
+}
+\`\`\`
+
+## Table Example
+
+| Theme | Background | Primary | Use Case |
+|-------|------------|---------|----------|
+| Light | White | Blue | Default, daytime use |
+| Dark | Black | Light Blue | Low-light environments |
+| High Contrast | Black | Yellow | Accessibility |
+
+## Lists and Formatting
+
+1. **Bold text** stands out in all themes
+2. *Italic text* maintains readability
+3. \`Inline code\` is clearly distinguished
+4. ~~Strikethrough~~ works in all themes
+
+> Blockquotes adapt to the theme's color scheme
+> maintaining readability and visual hierarchy
+
+### Links and Interactive Elements
+
+- [SquibView Documentation](https://github.com/deftio/squibview)
+- [Theme Customization Guide](#)
+- [Accessibility Guidelines](#)
+
+## Mermaid Diagram
+
+\`\`\`mermaid
+graph LR
+    A[Light Theme] --> B{User Choice}
+    B --> C[Dark Theme]
+    B --> D[High Contrast]
+    C --> E[Low Light]
+    D --> F[Accessibility]
+\`\`\`
+
+---
+
+The theme system ensures all elements remain readable and accessible across different color schemes.`;
+
+    // Initialize SquibView after loading dependencies
+    await loadExternalLibraries();
+    
+    // Create editor instance
+    const editor = new SquibView('#editor', {
+      initialContent: sampleContent,
+      title: 'Theme Preview',
+      initialView: 'split',
+      showControls: true,
+      showLineNumbers: true
+    });
+
+    // Theme management
+    let currentTheme = 'light';
+    const themes = {
+      'light': '',
+      'dark': 'dark-theme',
+      'high-contrast': 'high-contrast-theme'
+    };
+
+    // Update color swatches display
+    function updateColorSwatches() {
+      const swatchContainer = document.getElementById('colorSwatches');
+      const computedStyle = getComputedStyle(editor.container);
+      
+      const colors = [
+        { name: 'Primary', var: '--squibview-primary-color' },
+        { name: 'Background', var: '--squibview-background-color' },
+        { name: 'Border', var: '--squibview-border-color' },
+        { name: 'Input BG', var: '--squibview-input-background-color' }
+      ];
+      
+      swatchContainer.innerHTML = colors.map(color => {
+        const value = computedStyle.getPropertyValue(color.var).trim();
+        return `
+          <div class="swatch" style="background: ${value}; color: ${getContrastColor(value)}; border: 1px solid ${currentTheme === 'high-contrast' ? '#fff' : '#ddd'}">
+            <div>${color.name}</div>
+            <div>${value}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Helper to get contrasting text color
+    function getContrastColor(hexcolor) {
+      if (!hexcolor || hexcolor === 'white' || hexcolor === '#fff' || hexcolor === '#ffffff') return '#000';
+      if (hexcolor === 'black' || hexcolor === '#000' || hexcolor === '#000000') return '#fff';
+      
+      // Convert to RGB
+      const r = parseInt(hexcolor.substr(1, 2), 16);
+      const g = parseInt(hexcolor.substr(3, 2), 16);
+      const b = parseInt(hexcolor.substr(5, 2), 16);
+      
+      // Calculate luminance
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      
+      return luminance > 0.5 ? '#000' : '#fff';
+    }
+
+    // Theme switching
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const theme = btn.dataset.theme;
+        
+        // Update active button
+        document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Remove all theme classes
+        Object.values(themes).forEach(themeClass => {
+          if (themeClass) document.body.classList.remove(themeClass);
+        });
+        
+        // Apply new theme
+        if (themes[theme]) {
+          document.body.classList.add(themes[theme]);
+        }
+        
+        currentTheme = theme;
+        updateColorSwatches();
+        
+        // Re-render to update any theme-dependent content
+        editor.renderOutput();
+      });
+    });
+
+    // Initial color swatches
+    updateColorSwatches();
+
+    // Make editor available for debugging
+    window.editor = editor;
+  </script>
+</body>
+</html>

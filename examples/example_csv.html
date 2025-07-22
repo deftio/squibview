@@ -26,29 +26,17 @@ Also supports Mermaid diagrams and SVG content within fenced code blocks.
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
   <link rel="stylesheet" href="../dist/squibview.css"/>
+  
+  <!-- Common example styles -->
+  <link rel="stylesheet" href="examples-common.css">
   <!-- end dependeancies -->
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 1% 4%;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
+    /* Page-specific styles */
     #editorContainer {
       margin-top: 0.5em;
-      min-height: 0;
-      /* Important for Firefox */
       height: 90vh;
-      display: flex;
-      flex-direction: column;
-      /* border : 1px solid lightgrey; */
-      border-radius: 5px;
     }
-
   </style>
 </head>
 

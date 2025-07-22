@@ -4,7 +4,7 @@ Welcome to the **Squibview** live markdown editor. This document shows various f
 
 [Code is Here on GitHub](www.github.com/deftio/graphics-md-viewer)
 
-Squibview allows live view of source (mixed markdown), rendered (html), or split-view for debugging.  It can be used as a lightweight editor or as a headless component which can be deployed in apps. quibview supports running headless (no controls) and can be styled or themed with CSS.
+Squibview allows live view of source (mixed markdown), rendered (html), or split-view for debugging.  It can be used as a lightweight editor or as a headless component which can be deployed in apps. Squibview supports running headless (no controls) and can be styled or themed with CSS.
 
 ## Diagram Example
 
