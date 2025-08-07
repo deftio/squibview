@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SquibView ESM CDN Example</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
+
+  <!-- SquibView CSS from CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/squibview@latest/dist/squibview.min.css">
+  
+  <!-- Common example styles -->
+  <link rel="stylesheet" href="examples-common.css">
+
+  <!-- External dependencies for advanced features -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/default.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <style>
+    /* Page-specific styles */
+    #editor {
+      height: calc(100vh - 40px);
+    }
+  </style>
+</head>
+<body>
+  <div id="editor"></div>
+
+  <script type="module">
+    // Import SquibView ESM build from CDN (includes markdown-it bundled)
+    import SquibView from 'https://cdn.jsdelivr.net/npm/squibview@latest/dist/squibview.esm.min.js';
+    
+    // Import external libraries for advanced features
+    const loadExternalLibraries = async () => {
+      // Load highlight.js first (it needs to be loaded via script tag for proper global setup)
+      await new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js';
+        script.onload = resolve;
+        document.head.appendChild(script);
+      });
+
+      // Load other libraries in parallel
+      const [mermaid, leaflet, topojson, THREE] = await Promise.all([
+        import('https://unpkg.com/mermaid@10/dist/mermaid.esm.min.mjs'),
+        import('https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js'),
+        import('https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js').then(() => window.topojson),
+        import('https://unpkg.com/three@0.164.1/build/three.module.js')
+      ]);
+
+      // Make libraries globally available for SquibView
+      window.mermaid = mermaid.default;
+      window.L = leaflet;
+      window.THREE = THREE;
+
+      // Configure Leaflet icons
+      if (leaflet.Icon && leaflet.Icon.Default) {
+        delete leaflet.Icon.Default.prototype._getIconUrl;
+        leaflet.Icon.Default.mergeOptions({
+          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+        });
+      }
+
+      // Initialize mermaid
+      mermaid.default.initialize({ startOnLoad: false });
+    };
+
+    // Initialize SquibView
+    const init = async () => {
+      try {
+        // Load external libraries
+        await loadExternalLibraries();
+
+        // Create SquibView instance
+        const editor = new SquibView('#editor', {
+          initialView: 'split',
+          showControls: true,
+          titleShow: true,
+          titleContent: `SquibView ESM CDN Example v${SquibView.version.version}`
+        });
+
+        // Load sample content
+        const response = await fetch('./sample-content.md');
+        const content = await response.text();
+        editor.setContent(content, 'md');
+
+        // Make editor available globally for debugging
+        window.editor = editor;
+        
+        console.log('SquibView initialized successfully from CDN');
+      } catch (error) {
+        console.error('Failed to initialize SquibView:', error);
+        document.getElementById('editor').innerHTML = `
+          <div style="padding: 20px; color: red;">
+            Failed to initialize: ${error.message}
+          </div>
+        `;
+      }
+    };
+
+    // Start initialization
+    init();
+  </script>
+</body>
+</html>
