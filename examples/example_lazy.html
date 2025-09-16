@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SquibView Lazy Loading Example</title>
+
+  <!-- SquibView CSS -->
+  <link rel="stylesheet" href="../dist/squibview.min.css">
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+
+    .header {
+      max-width: 1200px;
+      margin: 0 auto 20px;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .header h1 {
+      margin: 0 0 10px;
+      color: #333;
+    }
+
+    .header p {
+      margin: 0;
+      color: #666;
+    }
+
+    .status {
+      padding: 10px;
+      margin: 10px 0;
+      background: #e3f2fd;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    .editor-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 600px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .instance-container {
+      margin: 20px auto;
+      max-width: 1200px;
+    }
+
+    .instance-label {
+      padding: 10px;
+      background: #333;
+      color: white;
+      border-radius: 8px 8px 0 0;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>SquibView Lazy Loading Demo</h1>
+    <p>This example demonstrates the lazy-loading build of SquibView. Libraries like Mermaid, Highlight.js, MathJax, Leaflet, and Three.js are loaded only when needed.</p>
+    <div id="status" class="status">Initializing...</div>
+  </div>
+
+  <!-- First Instance -->
+  <div class="instance-container">
+    <div class="instance-label">Instance 1: Full Feature Demo</div>
+    <div id="editor1" class="editor-container"></div>
+  </div>
+
+  <!-- Second Instance -->
+  <div class="instance-container">
+    <div class="instance-label">Instance 2: Testing Duplicate Prevention</div>
+    <div id="editor2" class="editor-container"></div>
+  </div>
+
+  <script type="module">
+    import SquibView from '../dist/squibview.lazy.esm.min.js';
+
+    const statusEl = document.getElementById('status');
+
+    // Track library loading
+    const originalLog = console.log;
+    const originalError = console.error;
+    let loadedLibraries = [];
+
+    console.log = function(...args) {
+      const msg = args.join(' ');
+      if (msg.includes('SquibView')) {
+        statusEl.textContent = msg;
+      }
+      originalLog.apply(console, args);
+    };
+
+    console.error = function(...args) {
+      const msg = args.join(' ');
+      if (msg.includes('SquibView')) {
+        statusEl.textContent = '❌ ' + msg;
+        statusEl.style.background = '#ffebee';
+      }
+      originalError.apply(console, args);
+    };
+
+    // Monitor script loading
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.tagName === 'SCRIPT') {
+            const libName =
+              node.src.includes('mermaid') ? 'Mermaid' :
+              node.src.includes('highlight') ? 'Highlight.js' :
+              node.src.includes('mathjax') ? 'MathJax' :
+              node.src.includes('leaflet') ? 'Leaflet' :
+              node.src.includes('three') ? 'Three.js' :
+              'Unknown';
+
+            if (libName !== 'Unknown') {
+              loadedLibraries.push(libName);
+              statusEl.textContent = `✅ Lazy loaded: ${libName} (Total: ${loadedLibraries.join(', ')})`;
+              statusEl.style.background = '#e8f5e9';
+            }
+          }
+        });
+      });
+    });
+
+    observer.observe(document.head, { childList: true });
+
+    // Sample content with various features
+    const sampleContent = `# SquibView Lazy Loading Test
+
+## Markdown Rendering (Built-in)
+This basic markdown rendering is handled by the bundled markdown-it library.
+
+- Lists work immediately
+- **Bold** and *italic* text
+- [Links](https://github.com) work out of the box
+
+## Code Highlighting (Lazy Loaded)
+
+The following code block will trigger lazy loading of highlight.js:
+
+\`\`\`javascript
+// This will be syntax highlighted after hljs loads
+function fibonacci(n) {
+  if (n <= 1) return n;
+  return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+console.log(fibonacci(10));
+\`\`\`
+
+## Math Equations (Lazy Loaded)
+
+Inline math: $E = mc^2$ and block math:
+
+$$
+\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
+$$
+
+## Mermaid Diagrams (Lazy Loaded)
+
+\`\`\`mermaid
+graph TD
+    A[Start] --> B{Is Lazy Loading?}
+    B -->|Yes| C[Load Only When Needed]
+    B -->|No| D[Load Everything]
+    C --> E[Save Bandwidth]
+    D --> F[Larger Initial Load]
+\`\`\`
+
+## Geographic Data (Lazy Loaded)
+
+\`\`\`geojson
+{
+  "type": "Feature",
+  "geometry": {
+    "type": "Point",
+    "coordinates": [-122.4194, 37.7749]
+  },
+  "properties": {
+    "name": "San Francisco",
+    "description": "Leaflet loads only when this appears!"
+  }
+}
+\`\`\`
+
+## 3D Models (Lazy Loaded)
+
+\`\`\`stl
+solid cube
+  facet normal 0 0 1
+    outer loop
+      vertex 0 0 1
+      vertex 1 0 1
+      vertex 1 1 1
+    endloop
+  endfacet
+  facet normal 0 0 1
+    outer loop
+      vertex 0 0 1
+      vertex 1 1 1
+      vertex 0 1 1
+    endloop
+  endfacet
+endsolid
+\`\`\`
+`;
+
+    // Initialize first editor
+    statusEl.textContent = 'Initializing Editor 1...';
+    const editor1 = new SquibView('#editor1', {
+      initialContent: sampleContent,
+      view: 'split',
+      theme: 'default'
+    });
+
+    // Initialize second editor with simpler content
+    setTimeout(() => {
+      statusEl.textContent = 'Initializing Editor 2...';
+      const editor2 = new SquibView('#editor2', {
+        initialContent: '# Second Instance\n\nThis tests that libraries are not loaded twice.\n\n```javascript\nconst test = "duplicate prevention";\n```',
+        view: 'split',
+        theme: 'default'
+      });
+    }, 1000);
+
+    // Report final status
+    setTimeout(() => {
+      if (loadedLibraries.length > 0) {
+        const unique = [...new Set(loadedLibraries)];
+        statusEl.textContent = `✅ Successfully lazy loaded: ${unique.join(', ')}`;
+        statusEl.style.background = '#c8e6c9';
+      } else {
+        statusEl.textContent = 'ℹ️ No external libraries needed yet';
+      }
+    }, 5000);
+  </script>
+</body>
+</html>

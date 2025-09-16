@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SquibView Autoload Example</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
+
+  <!-- SquibView CSS -->
+  <link rel="stylesheet" href="../dist/squibview.min.css">
+
+  <!-- Common example styles -->
+  <link rel="stylesheet" href="examples-common.css">
+
+  <style>
+    /* Page-specific styles */
+    #editor {
+      height: calc(100vh - 40px);
+    }
+
+    .autoload-notice {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(76, 175, 80, 0.9);
+      color: white;
+      padding: 10px 15px;
+      border-radius: 6px;
+      font-size: 14px;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .autoload-notice.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="editor"></div>
+  <div id="autoload-notice" class="autoload-notice"></div>
+
+  <script type="module">
+    // Import SquibView Autoload build - libraries load automatically!
+    import SquibView from '../dist/squibview.autoload.esm.min.js';
+
+    // Monitor autoloading (optional - just for demonstration)
+    const monitorAutoloading = () => {
+      const notice = document.getElementById('autoload-notice');
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node.tagName === 'SCRIPT' || node.tagName === 'LINK') {
+              const url = node.src || node.href || '';
+              let libName = '';
+
+              if (url.includes('mermaid')) libName = 'Mermaid';
+              else if (url.includes('highlight')) libName = 'Highlight.js';
+              else if (url.includes('mathjax')) libName = 'MathJax';
+              else if (url.includes('leaflet')) libName = 'Leaflet';
+              else if (url.includes('three')) libName = 'Three.js';
+
+              if (libName) {
+                notice.textContent = `✨ Autoloaded ${libName}`;
+                notice.classList.add('show');
+                setTimeout(() => notice.classList.remove('show'), 3000);
+                console.log(`✨ Autoloaded ${libName} from:`, url);
+              }
+            }
+          });
+        });
+      });
+
+      observer.observe(document.head, { childList: true });
+    };
+
+    // Initialize SquibView with autoloading
+    const init = async () => {
+      try {
+        // Enable monitoring (optional)
+        monitorAutoloading();
+
+        // Create SquibView instance - no library loading needed!
+        const editor = new SquibView('#editor', {
+          initialView: 'split',
+          showControls: true,
+          titleShow: true,
+          titleContent: `SquibView Autoload Example - Libraries Load Automatically!`
+        });
+
+        // Load sample content
+        const response = await fetch('./sample-content.md');
+        const content = await response.text();
+        editor.setContent(content, 'md');
+
+        // Make editor available globally for debugging
+        window.editor = editor;
+
+        console.log('✅ SquibView Autoload initialized - libraries will load as needed');
+      } catch (error) {
+        console.error('Failed to initialize SquibView:', error);
+        document.getElementById('editor').innerHTML = `
+          <div style="padding: 20px; color: red;">
+            Failed to initialize: ${error.message}
+          </div>
+        `;
+      }
+    };
+
+    // Start initialization
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SquibView Autoload Example - Smart Library Loading</title>
+
+  <!-- SquibView CSS -->
+  <link rel="stylesheet" href="../dist/squibview.min.css">
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      text-align: center;
+      color: white;
+      margin-bottom: 30px;
+      padding: 40px 20px;
+    }
+
+    .header h1 {
+      margin: 0 0 10px;
+      font-size: 2.5em;
+      font-weight: 300;
+    }
+
+    .header p {
+      margin: 10px 0;
+      font-size: 1.1em;
+      opacity: 0.95;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .feature-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .feature-card h3 {
+      margin: 0 0 10px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .feature-card .icon {
+      font-size: 1.5em;
+    }
+
+    .feature-card p {
+      color: #666;
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .status-bar {
+      background: white;
+      border-radius: 12px;
+      padding: 15px 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .status-bar .status-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ddd;
+      transition: all 0.3s;
+    }
+
+    .status-indicator.loaded {
+      background: #4caf50;
+      box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+    }
+
+    .editor-wrapper {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+
+    .editor-header {
+      background: #2c3e50;
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .editor-header h2 {
+      margin: 0;
+      font-size: 1.2em;
+      font-weight: 400;
+    }
+
+    .editor-tabs {
+      display: flex;
+      gap: 10px;
+    }
+
+    .tab-button {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 14px;
+    }
+
+    .tab-button:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    .tab-button.active {
+      background: rgba(255,255,255,0.3);
+      border-color: rgba(255,255,255,0.4);
+    }
+
+    #editor {
+      height: 600px;
+    }
+
+    .info-box {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 30px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .info-box h3 {
+      margin-top: 0;
+      color: #2c3e50;
+    }
+
+    .info-box code {
+      background: #f4f4f4;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .comparison-table th {
+      background: #f5f5f5;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .comparison-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge.autoload {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+
+    .badge.standalone {
+      background: #fce4ec;
+      color: #c2185b;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .loading {
+      animation: pulse 1s infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🚀 SquibView Autoload Demo</h1>
+      <p>Experience smart, on-demand library loading that keeps your app fast and efficient</p>
+      <p style="font-size: 0.9em; opacity: 0.8;">Libraries load automatically when content requires them - no configuration needed!</p>
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h3><span class="icon">⚡</span> Lightning Fast</h3>
+        <p>Initial load is only ~240KB. Heavy libraries like Mermaid (2MB+) load only when you use them.</p>
+      </div>
+      <div class="feature-card">
+        <h3><span class="icon">🎯</span> Smart Detection</h3>
+        <p>Automatically detects what content needs which libraries and loads them seamlessly.</p>
+      </div>
+      <div class="feature-card">
+        <h3><span class="icon">💾</span> Efficient Caching</h3>
+        <p>Libraries load once and are shared between multiple editor instances on the same page.</p>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <div class="status-item">
+        <strong>Library Status:</strong>
+      </div>
+      <div class="status-item">
+        <span class="status-indicator" id="status-mermaid"></span>
+        <span>Mermaid</span>
+      </div>
+      <div class="status-item">
+        <span class="status-indicator" id="status-hljs"></span>
+        <span>Highlight.js</span>
+      </div>
+      <div class="status-item">
+        <span class="status-indicator" id="status-mathjax"></span>
+        <span>MathJax</span>
+      </div>
+      <div class="status-item">
+        <span class="status-indicator" id="status-leaflet"></span>
+        <span>Leaflet</span>
+      </div>
+      <div class="status-item">
+        <span class="status-indicator" id="status-three"></span>
+        <span>Three.js</span>
+      </div>
+    </div>
+
+    <div class="editor-wrapper">
+      <div class="editor-header">
+        <h2>Interactive Editor with Autoloading</h2>
+        <div class="editor-tabs">
+          <button class="tab-button active" onclick="loadExample('basic')">Basic Markdown</button>
+          <button class="tab-button" onclick="loadExample('diagram')">Diagram (Mermaid)</button>
+          <button class="tab-button" onclick="loadExample('code')">Code (Highlight.js)</button>
+          <button class="tab-button" onclick="loadExample('math')">Math (MathJax)</button>
+          <button class="tab-button" onclick="loadExample('map')">Map (Leaflet)</button>
+          <button class="tab-button" onclick="loadExample('all')">Everything!</button>
+        </div>
+      </div>
+      <div id="editor"></div>
+    </div>
+
+    <div class="info-box">
+      <h3>📊 Autoload vs Standalone Comparison</h3>
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th><span class="badge autoload">Autoload Build</span></th>
+            <th><span class="badge standalone">Standalone Build</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Initial Download Size</td>
+            <td>~240KB (core only)</td>
+            <td>~3.7MB (everything)</td>
+          </tr>
+          <tr>
+            <td>Network Requirements</td>
+            <td>Requires internet for full features</td>
+            <td>Works completely offline</td>
+          </tr>
+          <tr>
+            <td>Best For</td>
+            <td>Public websites, fast initial load</td>
+            <td>Corporate intranets, offline apps</td>
+          </tr>
+          <tr>
+            <td>Library Loading</td>
+            <td>On-demand from CDN</td>
+            <td>All bundled, immediate availability</td>
+          </tr>
+          <tr>
+            <td>Page Load Performance</td>
+            <td>⭐⭐⭐⭐⭐ Excellent</td>
+            <td>⭐⭐⭐ Good</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 style="margin-top: 30px;">💡 How to Use</h3>
+      <p>Simply import the autoload build and SquibView handles the rest:</p>
+      <pre><code>import SquibView from 'squibview/dist/squibview.autoload.esm.min.js';
+
+const editor = new SquibView('#editor', {
+  initialContent: '# Your content here'
+});
+
+// That's it! Libraries load automatically as needed</code></pre>
+    </div>
+  </div>
+
+  <script type="module">
+    import SquibView from '../dist/squibview.autoload.esm.min.js';
+
+    // Content examples
+    const examples = {
+      basic: `# Welcome to SquibView Autoload!
+
+This is basic markdown that uses only the bundled markdown-it library.
+No external libraries are needed for:
+
+- **Bold text** and *italic text*
+- Lists and bullet points
+- [Links](https://github.com/deftio/squibview)
+- > Blockquotes
+- Tables
+
+| Feature | Status |
+|---------|--------|
+| Markdown | ✅ Built-in |
+| HTML | ✅ Built-in |
+
+Try clicking the tabs above to see how libraries load on-demand!`,
+
+      diagram: `# Mermaid Diagram Example
+
+When you add a Mermaid diagram, the library loads automatically:
+
+\`\`\`mermaid
+graph TB
+    A[User Adds Diagram] -->|Autoload Detects| B{Is Mermaid Loaded?}
+    B -->|No| C[Load from CDN]
+    B -->|Yes| D[Use Cached]
+    C --> E[Render Diagram]
+    D --> E
+    E --> F[Display Result]
+
+    style A fill:#e1f5fe
+    style F fill:#c8e6c9
+\`\`\`
+
+Notice how Mermaid (~2MB) loads only when you need it!`,
+
+      code: `# Syntax Highlighting Example
+
+Code blocks trigger Highlight.js loading:
+
+\`\`\`javascript
+// This triggers Highlight.js autoload
+class SquibViewAutoload {
+  constructor(options) {
+    this.options = options;
+    this.libraries = new Map();
+  }
+
+  async autoload(library) {
+    if (this.libraries.has(library)) {
+      return this.libraries.get(library);
+    }
+
+    const module = await import(library);
+    this.libraries.set(library, module);
+    return module;
+  }
+}
+\`\`\`
+
+\`\`\`python
+# Python example
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+print(f"Result: {fibonacci(10)}")
+\`\`\``,
+
+      math: `# Mathematical Equations
+
+Math content triggers MathJax loading:
+
+## Inline Math
+The famous equation $E = mc^2$ shows the relationship between energy and mass.
+
+## Block Math
+The Gaussian integral:
+
+$$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
+
+## Complex Equations
+Maxwell's equations in differential form:
+
+$$\\nabla \\cdot \\mathbf{E} = \\frac{\\rho}{\\epsilon_0}$$
+
+$$\\nabla \\cdot \\mathbf{B} = 0$$
+
+$$\\nabla \\times \\mathbf{E} = -\\frac{\\partial \\mathbf{B}}{\\partial t}$$
+
+$$\\nabla \\times \\mathbf{B} = \\mu_0\\mathbf{J} + \\mu_0\\epsilon_0\\frac{\\partial \\mathbf{E}}{\\partial t}$$`,
+
+      map: `# Geographic Data Visualization
+
+GeoJSON content triggers Leaflet loading:
+
+\`\`\`geojson
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-122.4194, 37.7749]
+      },
+      "properties": {
+        "name": "San Francisco",
+        "description": "Home of Silicon Valley"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-74.0060, 40.7128]
+      },
+      "properties": {
+        "name": "New York",
+        "description": "The Big Apple"
+      }
+    }
+  ]
+}
+\`\`\`
+
+Leaflet and its CSS load automatically when map content is detected!`,
+
+      all: `# All Features Demo
+
+## 1. Mermaid Diagram
+\`\`\`mermaid
+graph LR
+    A[Start] --> B[Process]
+    B --> C{Decision}
+    C -->|Yes| D[Result]
+    C -->|No| E[Alternative]
+\`\`\`
+
+## 2. Highlighted Code
+\`\`\`javascript
+const greeting = (name) => {
+  return \`Hello, \${name}!\`;
+};
+\`\`\`
+
+## 3. Math Equation
+$$\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}$$
+
+## 4. Geographic Data
+\`\`\`geojson
+{
+  "type": "Feature",
+  "geometry": {
+    "type": "Point",
+    "coordinates": [0, 0]
+  },
+  "properties": {
+    "name": "Origin"
+  }
+}
+\`\`\`
+
+Watch the status indicators as each library loads on demand!`
+    };
+
+    // Initialize editor
+    let editor;
+
+    function initEditor() {
+      editor = new SquibView('#editor', {
+        initialContent: examples.basic,
+        view: 'split',
+        theme: 'default'
+      });
+
+      // Monitor library loading
+      monitorLibraries();
+    }
+
+    // Load different examples
+    window.loadExample = function(type) {
+      // Update active tab
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+
+      // Load content
+      if (editor && examples[type]) {
+        editor.setContent(examples[type], 'md');
+      }
+    };
+
+    // Monitor library loading status
+    function monitorLibraries() {
+      const checkLibrary = (name, global, indicatorId) => {
+        const indicator = document.getElementById(indicatorId);
+        if (window[global]) {
+          indicator.classList.add('loaded');
+          return true;
+        }
+        return false;
+      };
+
+      // Check periodically
+      setInterval(() => {
+        checkLibrary('mermaid', 'mermaid', 'status-mermaid');
+        checkLibrary('highlight.js', 'hljs', 'status-hljs');
+        checkLibrary('mathjax', 'MathJax', 'status-mathjax');
+        checkLibrary('leaflet', 'L', 'status-leaflet');
+        checkLibrary('three.js', 'THREE', 'status-three');
+      }, 500);
+
+      // Also monitor script additions
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node.tagName === 'SCRIPT' || node.tagName === 'LINK') {
+              // Flash the appropriate indicator
+              const url = node.src || node.href || '';
+              let indicatorId = null;
+
+              if (url.includes('mermaid')) indicatorId = 'status-mermaid';
+              else if (url.includes('highlight')) indicatorId = 'status-hljs';
+              else if (url.includes('mathjax')) indicatorId = 'status-mathjax';
+              else if (url.includes('leaflet')) indicatorId = 'status-leaflet';
+              else if (url.includes('three')) indicatorId = 'status-three';
+
+              if (indicatorId) {
+                const indicator = document.getElementById(indicatorId);
+                indicator.classList.add('loading');
+                setTimeout(() => {
+                  indicator.classList.remove('loading');
+                  indicator.classList.add('loaded');
+                }, 1000);
+              }
+            }
+          });
+        });
+      });
+
+      observer.observe(document.head, { childList: true });
+    }
+
+    // Initialize on load
+    initEditor();
+  </script>
+</body>
+</html>

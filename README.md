@@ -139,22 +139,62 @@ editor.exportHTML();   // Download as file
 - [Quick Start Guide](https://deftio.github.io/squibview/docs/guides/01-quick-start.html) - Get running in 5 minutes
 - [API Reference](https://deftio.github.io/squibview/docs/programmers-guide.html) - Methods, options, events
 - [CLI Documentation](https://deftio.github.io/squibview/docs/guides/04-cli-usage.html) - Command line usage
+- [Release Notes](https://deftio.github.io/squibview/docs/release-notes.html) - Version history and changelog
 
 **Local Documentation** (after cloning)
 - [Documentation Home](./docs/home.html)
 - [API Reference](./docs/programmers-guide.html)
+- [Release Notes](./docs/release-notes.md)
 
 ## Build Options
 
 | Build | When to Use | Size | What's Included |
 |-------|-------------|------|-----------------|
 | `squibview.esm.min.js` | Modern bundlers (webpack, vite) | ~240KB | markdown-it bundled |
+| `squibview.autoload.esm.min.js` | **NEW: Autoloads fence handlers** | ~240KB | Core bundled, autoloads extras |
 | `squibview.esm-lean.min.js` | When you manage markdown-it | ~140KB | No dependencies |
 | `squibview.umd.min.js` | Script tags | ~250KB | markdown-it bundled |
+| `squibview.autoload.umd.min.js` | **NEW: Autoloads fence handlers** | ~250KB | Core bundled, autoloads extras |
 | `squibview.umd-lean.min.js` | Legacy with own dependencies | ~140KB | No dependencies |
 | `squibview.standalone.umd.min.js` | Zero setup needed | ~3.7MB | Everything bundled |
 
 > **v1.0.15 Change**: Default builds now include markdown-it, diff-match-patch, and tiny-emitter bundled. Use `-lean` builds if you need the old behavior.
+
+### Autoload Build (NEW) - Best for Easy Deployment
+
+The autoload build variant (`squibview.autoload.*.js`) provides the best developer experience:
+- **Small initial download** - Only ~240KB with core functionality
+- **Automatic loading** - Libraries load from CDN when needed
+- **Zero configuration** - Works out of the box
+- **Smart caching** - Libraries only load once, even with multiple editors
+
+Libraries autoloaded on-demand:
+- **Mermaid** - For diagrams and flowcharts
+- **Highlight.js** - For syntax highlighting
+- **MathJax** - For math equations
+- **Leaflet** - For GeoJSON/TopoJSON maps
+- **Three.js** - For 3D STL models
+
+Example usage:
+```html
+<!-- Just use the autoload build - libraries load automatically -->
+<script type="module">
+  import SquibView from 'https://unpkg.com/squibview/dist/squibview.autoload.esm.min.js';
+
+  const editor = new SquibView('#editor', {
+    initialContent: '# Hello\n\n```mermaid\ngraph TD\n  A --> B\n```'
+    // Mermaid will load automatically when needed!
+  });
+</script>
+```
+
+### Standalone Build - Best for Offline/Secure Environments
+
+The standalone build (`squibview.standalone.*.js`) bundles everything:
+- **Largest size** - ~3.7MB includes all libraries
+- **Works offline** - No external dependencies
+- **Corporate friendly** - No CDN calls, perfect for secure environments
+- **Everything included** - All features work immediately
 
 ## License
 

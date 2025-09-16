@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SquibView Release Notes</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; viewBox=&#39;0 0 32 32&#39;&gt;&lt;circle cx=&#39;16&#39; cy=&#39;16&#39; r=&#39;14&#39; fill=&#39;%23f57c00&#39; stroke=&#39;%23000&#39; stroke-width=&#39;1&#39;/&gt;&lt;path d=&#39;M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z&#39; fill=&#39;none&#39; stroke=&#39;%23000&#39; stroke-width=&#39;1&#39;/&gt;&lt;/svg&gt;">
+  <style>
+
+
+/* Additional CSS */
+/* SquibView CLI Generated Styles */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  line-height: 1.6;
+  color: #333;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 3rem;
+  background-color: #fff;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+h1 { 
+  font-size: 2rem;
+  
+}
+h2 { 
+  font-size: 1.5rem;
+  
+}
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1rem; }
+h5 { font-size: 0.875rem; }
+h6 { font-size: 0.85rem; color: #666; }
+
+p { margin-bottom: 1rem; }
+
+a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #0066cc;
+  text-decoration: underline;
+}
+
+ul, ol {
+  margin-bottom: 1rem;
+  padding-left: 2rem;
+}
+
+li {
+  margin-bottom: 0.25rem;
+}
+
+blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 4px solid #ddd;
+  background-color: #f9f9f9;
+  color: #666;
+}
+
+code {
+  background-color: #f5f5f5;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.85em;
+}
+
+pre {
+  background-color: #f8f8f8;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  border-radius: 4px;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 1rem;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 2rem 0;
+}
+
+/* Badge images - inline display */
+p img {
+  display: inline;
+  margin: 0 2px;
+  vertical-align: middle;
+}
+
+/* Math styling */
+.MathJax {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  body {
+    padding: 1rem 1.5rem;
+  }
+  
+  table {
+    font-size: 0.875rem;
+  }
+  
+  th, td {
+    padding: 0.25rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    padding: 0;
+    color: #000;
+  }
+  
+  a {
+    color: #000;
+    text-decoration: underline;
+  }
+  
+  pre, blockquote {
+    page-break-inside: avoid;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+}
+  </style>
+    <!-- Highlight.js for syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <!-- Leaflet for GeoJSON/TopoJSON maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <!-- Three.js for STL 3D models -->
+  <script src="https://unpkg.com/three@0.171.0/build/three.min.js"></script>
+  <!-- MathJax for math rendering -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true
+      },
+      options: {
+        ignoreHtmlClass: 'tex2jax_ignore',
+        processHtmlClass: 'tex2jax_process'
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+  </script>
+  <!-- Mermaid for diagram rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+</head>
+<body>
+<div><h1>SquibView Release Notes</h1><h2>v1.0.15 (July 13, 2025)</h2><p><em>Release Date: July 13, 2025</em></p><h3>🚀 Major Build System Improvements</h3><ul><li><strong>BREAKING CHANGE</strong>: Default ESM/UMD builds now include bundled markdown-it (~240KB)
+<ul><li>No more import map errors for new users!</li><li>Existing apps continue to work - same filenames maintained</li></ul></li><li><strong>NEW</strong>: Lean builds (<code>-lean</code> suffix) for advanced users who manage their own dependencies</li><li><strong>NEW</strong>: ESM standalone builds now properly built and available</li><li><strong>IMPROVED</strong>: Build naming consistency across all targets</li></ul><h3>🐛 Bug Fixes</h3><ul><li><strong>FIXED</strong>: Standalone builds no longer cause side effects with Leaflet icons</li><li><strong>FIXED</strong>: GeoJSON rendering in standalone builds works without prototype pollution</li><li><strong>FIXED</strong>: ESM standalone build was missing - now properly generated</li><li><strong>FIXED</strong>: Library warnings only show when actually needed (not on every render)</li></ul><h3>📚 Documentation &amp; Examples</h3><ul><li><strong>CLEANED</strong>: Completely rewrote <code>example_ESM.html</code> - modern, clean ES module approach</li><li><strong>CLEANED</strong>: Simplified <code>example_UMD.html</code> - removed module mixing and complexity</li><li><strong>FIXED</strong>: Syntax highlighting in ESM example (proper highlight.js loading)</li><li><strong>ARCHIVED</strong>: Moved unused/outdated examples to <code>examples/archive/</code></li></ul><h3>📦 Build Details</h3><table><thead><tr><th>Build</th><th>Module</th><th>Size</th><th>Includes</th><th>Use Case</th></tr></thead><tbody><tr><td>squibview.esm.min.js</td><td>ESM</td><td>~240KB</td><td>markdown-it bundled</td><td>Default - works out of box</td></tr><tr><td>squibview.esm-lean.min.js</td><td>ESM</td><td>~140KB</td><td>No deps</td><td>Advanced users</td></tr><tr><td>squibview.umd.min.js</td><td>UMD</td><td>~250KB</td><td>markdown-it bundled</td><td>Default - works out of box</td></tr><tr><td>squibview.umd-lean.min.js</td><td>UMD</td><td>~140KB</td><td>No deps</td><td>Advanced users</td></tr><tr><td>squibview.standalone.*.min.js</td><td>Both</td><td>~3.7MB</td><td>Everything</td><td>All features, no setup</td></tr></tbody></table><h3>🔄 Migration Notes</h3><ul><li>No action required for existing users - filenames unchanged</li><li>To use lean builds, update your imports to use <code>-lean</code> suffix</li><li>Import maps no longer needed for default builds</li></ul><hr><h2>v1.0.13 (July 13, 2025)</h2><p><em>Release Date: July 13, 2025</em></p><h3>✨ Major New Feature: Diff View Support</h3><ul><li><strong>NEW</strong>: <code>getSourceDiff()</code> method to get diff data between any two revisions</li><li><strong>NEW</strong>: <code>getSourceDiffHTML()</code> method for side-by-side diff visualization</li><li><strong>NEW</strong>: <code>getSourceDiffInline()</code> method for inline diff with blue additions/red deletions</li><li><strong>NEW</strong>: CSS styling for diff views with proper colors and formatting</li><li><strong>NEW</strong>: Support for comparing any revision against any other (including initial state)</li><li><strong>NEW</strong>: Working example demos: <code>diff_view_inline.html</code> and <code>diff_view_live.html</code></li></ul><h3>🔧 RevisionHistory Enhancements</h3><ul><li><strong>NEW</strong>: <code>getContentAtRevision()</code> method to retrieve content at any revision</li><li><strong>NEW</strong>: <code>computeDiff()</code> method for character-level diffs</li><li><strong>NEW</strong>: <code>computeLineDiff()</code> method for line-by-line comparisons</li><li><strong>NEW</strong>: <code>getDiffStats()</code> method to get additions/deletions/changes count</li><li><strong>NEW</strong>: <code>getRevisionInfo()</code> method for revision metadata</li></ul><h3>📝 Examples &amp; Documentation</h3><ul><li><strong>NEW</strong>: Inline diff demo showing manual revision comparison</li><li><strong>NEW</strong>: Live diff demo showing real-time cumulative changes</li><li><strong>IMPROVED</strong>: ESM module loading in diff examples</li><li><strong>FIXED</strong>: Revision dropdown population and event handling</li><li><strong>FIXED</strong>: Baseline revision persistence in live diff mode</li><li><strong>CLEANED</strong>: Removed broken/debug example files</li></ul><hr><h2>v1.0.17 (July 22, 2025)</h2><p><em>Release Date: July 22, 2025</em></p><h3>✨ Improvements</h3><ul><li>**Updated cli build</li><li>**Added line number support, add examples for showing hhow to use themes.</li><li>**Dark theme styling and remove container border</li><li>**Resolve line numbers bugs and improve example</li><li>**Update line numbers example with proper dependencies and formatting</li><li>**Add line numbers support to source view</li><li>**Update bin path format to match npm requirements</li></ul><hr><h2>v1.0.16 (July 16, 2025)</h2><p><em>Release Date: July 16, 2025</em></p><h3>✨ Improvements</h3><ul><li>**V1.0.16 release</li><li>**V1.0.16 pre-release docs updated</li><li>**V1.0.16 prelease</li></ul><hr><h2>v1.0.15 (July 13, 2025)</h2><p><em>Release Date: July 13, 2025</em></p><h3>✨ Improvements</h3><ul><li>**Update documentation for v1.0.15 bundled dependencies</li><li>**Remove duplicate Leaflet icon configuration from standalone_umd example</li><li>**Remove console warnings for missing libraries</li><li>**Update examples to use bundled builds</li><li>**Implement bundled builds with markdown-it</li><li>**V1.0.15 task list and version bump</li><li>**Fix line diff algorithm and edge cases for v1.0.14</li></ul><hr><h2>v1.0.12 (July 01, 2025)</h2><p><em>Release Date: July 01, 2025</em></p><h3>✨ Improvements</h3><ul><li>**V1.0.12 enhanced docs, fixed badge copy errors for <a href="http://README.md">README.md</a> generation</li></ul><hr><h2>v1.0.14 (July 13, 2025)</h2><p><em>Release Date: July 13, 2025</em></p><h3>📝 Release Highlights</h3><p>Fixed ci/cd builds for diffs</p><h3>✨ Improvements</h3><ul><li>**V1.0.14 docs update</li></ul><hr><h2>v1.0.13 (July 13, 2025)</h2><p><em>Release Date: July 13, 2025</em></p><h3>✨ Improvements</h3><ul><li>**V1.0.14 upgraded diff support completed</li><li>**Working diff view viewers</li><li>**Updated diff example view</li><li>**V1.0.13-dev.0 add diff view support as api</li></ul><hr><h2>v1.0.11 (July 01, 2025)</h2><p><em>Release Date: July 01, 2025</em></p><h3>✨ Improvements</h3><ul><li>**Simplify regex patterns to avoid bash syntax errors</li><li>**Regex syntax error in <a href="http://update-release-notes.sh">update-release-notes.sh</a></li><li>**Fixed release script</li><li>**Making release for enhanced docs</li><li>**Enhanced docs</li><li>**Updatd gif maker</li><li>**Working updated frame generator</li><li>**Fixing demo frame capture</li><li>**Incremental build fixed CORS errors on markdown badges being rendered</li><li>**Making more updates to docs</li></ul><hr><h2>v1.0.10 (June 24, 2025)</h2><p><em>Release Date: June 24, 2025</em></p><h3>🗺️ Enhanced Geographic &amp; 3D Content Support</h3><ul><li><strong>NEW</strong>: GeoJSON rendering with interactive Leaflet maps</li><li><strong>NEW</strong>: TopoJSON support for geographic visualizations</li><li><strong>NEW</strong>: ASCII STL support for 3D model rendering</li><li><strong>IMPROVED</strong>: Enhanced content type detection and rendering</li></ul><hr><h2>v1.0.7 (June 19, 2025)</h2><p><em>Release Date: June 19, 2025</em></p><h3>🧮 Math &amp; Content Copy Improvements</h3><ul><li><strong>FIXED</strong>: Math equation copy-paste functionality with proper sizing</li><li><strong>FIXED</strong>: Image copy-paste sizing issues in rendered content</li><li><strong>IMPROVED</strong>: Content copying reliability across different content types</li><li><strong>IMPROVED</strong>: SVG content width handling during copy operations</li></ul><hr><h2>v1.0.5 (June 17, 2025)</h2><p><em>Release Date: June 17, 2025</em></p><h3>💻 CLI Introduction &amp; Syntax Highlighting Fixes</h3><ul><li><strong>NEW</strong>: SquibV CLI tool for command-line Markdown to HTML conversion</li><li><strong>NEW</strong>: Standalone build support for CLI distribution</li><li><strong>FIXED</strong>: Syntax highlighting bugs in code blocks</li><li><strong>IMPROVED</strong>: Release tooling and version management</li><li><strong>IMPROVED</strong>: Integration testing for CLI functionality</li></ul><h3>CLI Features</h3><ul><li>Convert Markdown files to HTML from command line</li><li>Support for offline bundling with <code>--bundle-offline</code> option</li><li>Watch mode for automatic rebuilding</li><li>Comprehensive help and documentation</li></ul><hr><h2>v1.0.4 (June 16, 2025)</h2><p><em>Release Date: June 16, 2025</em></p><h3>🏗️ Build System &amp; Release Management</h3><ul><li><strong>IMPROVED</strong>: Release management tools for both library and CLI versions</li><li><strong>IMPROVED</strong>: Build tools and automation scripts</li><li><strong>UPDATED</strong>: Documentation for CLI usage and installation</li></ul><hr><h2>v1.0.3 (June 16, 2025)</h2><p><em>Release Date: June 16, 2025</em></p><h3>🧮 Math Rendering Improvements</h3><ul><li><strong>FIXED</strong>: Math rendering issues in various contexts</li><li><strong>IMPROVED</strong>: MathJax integration and reliability</li><li><strong>UPDATED</strong>: Documentation and examples for math support</li></ul><hr><h2>v1.0.1 (June 3, 2025)</h2><p><em>Release Date: June 3, 2025</em></p><h3>🔄 Bidirectional Editing Fixes &amp; Runtime Identification</h3><ul><li><strong>FIXED</strong>: Runtime version identification issues</li><li><strong>FIXED</strong>: Bidirectional rendering problems with SVG content</li><li><strong>FIXED</strong>: SVG roundtrip editing in rendered → source updates</li><li><strong>IMPROVED</strong>: Bidirectional editing reliability and accuracy</li><li><strong>UPDATED</strong>: Release instructions and documentation</li></ul><hr><h2>v1.0.0 (June 3, 2025)</h2><p><em>Release Date: June 3, 2025</em></p><h3>🎉 Major Release - Production Ready</h3><ul><li><strong>MILESTONE</strong>: First stable 1.0 release</li><li><strong>STABLE</strong>: All core features tested and production-ready</li><li><strong>COMPLETE</strong>: Bidirectional editing (source ↔ rendered) fully functional</li><li><strong>COMPLETE</strong>: Comprehensive content type support</li></ul><hr><h2>v0.0.36 (May 20, 2025)</h2><p><em>Release Date: May 20, 2025</em></p><h3>📊 Data Format Support &amp; CI Improvements</h3><ul><li><strong>NEW</strong>: CSV, TSV, and PSV inline block support with table rendering</li><li><strong>NEW</strong>: Smart line feed handling for better text flow</li><li><strong>IMPROVED</strong>: GitHub Actions CI workflow optimization</li><li><strong>IMPROVED</strong>: Build performance and testing speed</li><li><strong>UPDATED</strong>: Examples and documentation content</li></ul><hr><h2>v0.0.35 (May 14, 2025)</h2><p><em>Release Date: May 14, 2025</em></p><h3>🖼️ Image Handling &amp; React Integration</h3><ul><li><strong>IMPROVED</strong>: Image handling to preserve URLs in source view by default</li><li><strong>FIXED</strong>: React example import issues</li><li><strong>UPDATED</strong>: Example content and documentation</li><li><strong>ENHANCED</strong>: Image workflow for better user experience</li></ul><hr><h2>v0.0.33 (May 14, 2025)</h2><p><em>Release Date: May 14, 2025</em></p><h3>📦 Build System Enhancements</h3><ul><li><strong>NEW</strong>: Standalone ESM build for modern module systems</li><li><strong>IMPROVED</strong>: React build configuration and compatibility</li><li><strong>FIXED</strong>: All build targets (ESM, UMD, Standalone) working correctly</li><li><strong>ENHANCED</strong>: Build reliability across different environments</li></ul><hr><h2>v0.0.32 (May 11, 2025)</h2><p><em>Release Date: May 11, 2025</em></p><h3>⚛️ React Support &amp; Build Fixes</h3><ul><li><strong>NEW</strong>: Full React build support with standalone ESM</li><li><strong>FIXED</strong>: React build configuration issues</li><li><strong>IMPROVED</strong>: Build system reliability</li><li><strong>ADDED</strong>: React-specific examples and documentation</li></ul><hr><h2>v0.0.29 (March 12, 2025)</h2><p><em>Release Date: March 12, 2025</em></p><h3>↶ Undo/Redo System Implementation</h3><ul><li><strong>NEW</strong>: Full undo/redo support for both source and rendered content</li><li><strong>NEW</strong>: Revision history system with efficient diff-based storage</li><li><strong>IMPROVED</strong>: Content editing workflow with history tracking</li><li><strong>ENHANCED</strong>: User experience with familiar undo/redo keyboard shortcuts</li></ul><h3>Core Features Added</h3><ul><li>Revision history management</li><li>Memory-efficient diff system</li><li>Cross-panel undo/redo synchronization</li></ul><hr><h2>v0.0.28 (March 9, 2025)</h2><p><em>Release Date: March 9, 2025</em></p><h3>🏗️ Foundation Release</h3><ul><li><strong>NEW</strong>: Initial stable build system</li><li><strong>NEW</strong>: Core SquibView functionality</li><li><strong>NEW</strong>: Basic Markdown rendering with live preview</li><li><strong>NEW</strong>: Multiple view modes (source, HTML, split)</li><li><strong>ESTABLISHED</strong>: Project structure and development workflow</li></ul><h3>Core Architecture</h3><ul><li>Bidirectional editing foundation</li><li>Content type system</li><li>Plugin-ready architecture</li><li>Modern build system with Rollup</li></ul><hr><h2>Release Process Recommendations</h2><h3>Current Process Strengths</h3><p>✅ <strong>Automated tooling</strong>: <code>tools/make-release.sh</code> script handles git tagging and GitHub releases<br>
+✅ <strong>Version synchronization</strong>: Automatic sync between package.json and src/version.js<br>
+✅ <strong>Pre-flight checks</strong>: Validates git status, authentication, and branch<br>
+✅ <strong>Manual npm publish</strong>: Prevents accidental publishes with dry-run preview</p><h3>Recommended Improvements</h3><h4>1. <strong>Integrate Release Notes Updates</strong></h4><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash"><span class="hljs-comment"># Add to tools/make-release.sh before creating GitHub release:</span>
+./tools/update-release-notes.sh <span class="hljs-string">"<span class="hljs-variable">$VERSION</span>"</span><span class="hljs-string">"<span class="hljs-variable">$CUSTOM_NOTES</span>"</span></code></pre></div><h4>2. <strong>Create Automated Release Notes Script</strong></h4><p>Create <code>tools/update-release-notes.sh</code>:</p><ul><li>Parse git commits since last tag using conventional commit format</li><li>Auto-categorize changes (NEW/IMPROVED/FIXED/BREAKING)</li><li>Update release_notes.md with structured entry</li><li>Validate release notes format</li></ul><h4>3. <strong>Enforce Conventional Commits</strong></h4><ul><li>Add commit message validation via git hooks</li><li>Use format: <code>type(scope): description</code></li><li>Types: <code>feat</code>, <code>fix</code>, <code>docs</code>, <code>style</code>, <code>refactor</code>, <code>test</code>, <code>chore</code></li><li>Enable automated changelog generation</li></ul><h4>4. <strong>Enhanced Pre-release Validation</strong></h4><p>Add to prerelease process:</p><ul><li>✅ Run full test suite (already included)</li><li>✅ Build all targets (already included)</li><li>➕ Validate documentation links</li><li>➕ Check for breaking changes</li><li>➕ Validate release notes entry exists</li><li>➕ Run CLI integration tests</li></ul><h4>5. <strong>Release Checklist Integration</strong></h4><p>Create <code>tools/release-checklist.md</code> with:</p><ul><li>[ ] Update package.json version</li><li>[ ] Add release notes entry</li><li>[ ] Run <code>npm run prerelease</code></li><li>[ ] Run <code>./tools/make-release.sh "notes"</code></li><li>[ ] Test npm package locally</li><li>[ ] Publish to npm</li><li>[ ] Update documentation deployment</li></ul><h4>6. <strong>Automated Documentation Deployment</strong></h4><ul><li>Trigger docs rebuild on release</li><li>Deploy documentation to GitHub Pages</li><li>Update live demo links</li><li>Validate all examples work with new version</li></ul><h3>Implementation Priority</h3><ol><li><strong>HIGH</strong>: Release notes automation (immediate impact)</li><li><strong>MEDIUM</strong>: Conventional commits (improves changelog quality)</li><li><strong>LOW</strong>: Enhanced validation (nice to have, already quite robust)</li></ol></div>
+  <script>
+    // Initialize MathJax after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise().catch(function(err) {
+          console.warn('MathJax typesetting failed:', err);
+        });
+      }
+    });
+  </script>
+  <script>
+    // Initialize Mermaid after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.mermaid) {
+        try {
+          window.mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose',
+            fontFamily: 'inherit'
+          });
+          
+          // Manually render all mermaid diagrams
+          const mermaidElements = document.querySelectorAll('.mermaid');
+          mermaidElements.forEach(function(element, index) {
+            const id = 'mermaid-' + index;
+            element.id = id;
+            try {
+              window.mermaid.render(id + '-svg', element.textContent, function(svgCode) {
+                element.innerHTML = svgCode;
+              });
+            } catch (err) {
+              console.warn('Mermaid rendering failed for element', index, ':', err);
+              // Fallback: show the text content
+              element.innerHTML = '<pre>' + element.textContent + '</pre>';
+            }
+          });
+        } catch (err) {
+          console.warn('Mermaid initialization failed:', err);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

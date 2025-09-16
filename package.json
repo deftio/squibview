@@ -1,6 +1,6 @@
 {
   "name": "squibview",
-  "version": "1.0.17",
+  "version": "1.0.18a",
   "description": "SquibView is a light weight editor which live-renders mardown (including code, diagrams, etc) or HTML to a browser",
   "keywords": [
     "markdown",
@@ -49,6 +49,8 @@
     "build:esm": "npm run updateVersion && rollup -c --environment BUILD:esm && npm run minifyCSS",
     "build:esm-lean": "npm run updateVersion && rollup -c --environment BUILD:esm-lean && npm run minifyCSS",
     "build:umd-lean": "npm run updateVersion && rollup -c --environment BUILD:umd-lean && npm run minifyCSS",
+    "build:esm-autoload": "npm run updateVersion && rollup -c --environment BUILD:esm-autoload && npm run minifyCSS",
+    "build:umd-autoload": "npm run updateVersion && rollup -c --environment BUILD:umd-autoload && npm run minifyCSS",
     "build:standalone": "npm run updateVersion && rollup -c --environment BUILD:standalone && npm run minifyCSS",
     "build:react": "rollup -c --environment BUILD:react",
     "prerelease": "npm run build:all && npm run test:all",
