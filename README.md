@@ -4,7 +4,9 @@
 [![License](https://img.shields.io/badge/License-BSD_2--Clause-orange.svg)](LICENSE)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/deftio/squibview/ci.yml?branch=main&style=flat&logo=github&label=Build&color=blue)](https://github.com/deftio/squibview/actions/workflows/ci.yml)
 
-Markdown editor/viewer with live preview, bidirectional editing, and rich content support (code highlighting, diagrams, math, maps, csv/psv/tsv, 3D and more).
+Squibview is a markdown editor/viewer (pure js) with live preview, bidirectional editing, and rich content support (code highlighting, diagrams, math, maps, csv/psv/tsv, 3D and more).  It can be used as markdown editor or viewer in many projects or to view AI/LLM outputs interactively.  In headless mode squibview can be used as a lightweight viewer with the full support of markitdown and turndown libaries.  
+
+For a lightweight pure js bidirectional parser/editor consider it's sister project [quikdown](https://github.com/deftio/quikdown) which has no dependancies and starts at 9-15KB with some limits on less used commond mark features.
 
 **GitHub:** [**Live Demo**](https://deftio.github.io/squibview/examples/example_ESM.html) | [**Examples**](https://deftio.github.io/squibview/examples/) | [**Documentation**](https://deftio.github.io/squibview/docs/home.html) | [**API Reference**](https://deftio.github.io/squibview/docs/programmers-guide.html)  
 **Local:** [**Live Demo**](./examples/example_ESM.html) | [**Examples**](./examples/) | [**Documentation**](./docs/) | [**Source**](./src/)
@@ -35,7 +37,9 @@ SquibView renders Markdown (or HTML) with live preview and allows editing in bot
 
 ## Quick Start
 
-### Browser - Zero Configuration with Autoload! 🚀
+### Browser - Zero Configuration with Autoload 
+Autoload config dynamically loads dependancies for mermaid, math, geojson, and more.  See the Build Options section below for more on configuring Squibview for your project.
+
 ```html
 <!-- SquibView CSS -->
 <link rel="stylesheet" href="https://unpkg.com/squibview/dist/squibview.min.css">
@@ -67,7 +71,7 @@ const editor = new SquibView('#editor');
 
 ### CLI Tool
 
-SquibView includes a command line tool (`squibv`) for converting markdown/HTML files to standalone HTML pages.
+SquibView includes a command line tool (`squibv`) for converting markdown/HTML files to standalone HTML pages.  
 
 ```bash
 # Convert markdown to HTML page
@@ -149,7 +153,7 @@ editor.exportHTML();   // Download as file
 
 | Configuration | What It Does | Best For | Size (min/gzip) | What's Included |
 |--------------|--------------|----------|-----------------|------------------|
-| **Autoload** 🚀 | Zero config - just works! | Easiest setup | 257.8KB / 88.4KB | Core editor + auto-loads: diagrams, math, syntax highlighting, maps, 3D |
+| **Autoload**  | Zero config - just works! | Easiest setup | 257.8KB / 88.4KB | Core editor + auto-loads: diagrams, math, syntax highlighting, maps, 3D |
 | **Standard** | Pre-bundles common libraries | No CDN needed | 245.3KB / 85.2KB | Editor + diagram (mermaid) + syntax highlighting (hljs) |
 | **Lean** | Minimal - you add libraries | Custom bundlers | 126.2KB / 35.7KB | Editor only - bring your own libraries |
 | **Standalone** | Everything pre-bundled | Offline use | 3.5MB / 1MB | Everything - no external dependencies |
@@ -187,7 +191,7 @@ The autoload build (`squibview.autoload.*.js`) gives you everything with zero co
 - **Just works** - No setup needed, no libraries to install
 - **Smart loading** - Features load automatically when your content needs them
 - **Fast initial load** - 258KB to start, loads extras only when used
-- **No duplicate loading** - Libraries cached and shared between editors
+- **No duplicate loading** - Libraries cached and shared between multiple editor instances if needed
 
 #### What Gets Auto-Loaded When Needed:
 
