@@ -4,32 +4,28 @@
 
 | Build Variant | Minified Size | Gzipped | Description |
 |---------------|---------------|---------|-------------|
-| **ESM Bundle** | 245.3 KB | 85.2 KB | ES Module with all features bundled |
-| **UMD Bundle** | 246.4 KB | 85.4 KB | Universal Module Definition with all features |
-| **ESM Lean** | 126.2 KB | 35.7 KB | ES Module without bundled libraries |
-| **UMD Lean** | 128.5 KB | 36.2 KB | UMD without bundled libraries |
-| **ESM Autoload** | 257.8 KB | 88.4 KB | ES Module with CDN autoloading |
-| **UMD Autoload** | 258.7 KB | 88.5 KB | UMD with CDN autoloading |
-| **Standalone ESM** | 3562.8 KB | 982.3 KB | All-inclusive ES Module (no external dependencies) |
-| **Standalone UMD** | 3826.6 KB | 1032.5 KB | All-inclusive UMD (no external dependencies) |
+| **ESM Standard** | 254.1 KB | 87.0 KB | ES Module with autoload capability |
+| **UMD Standard** | 255.0 KB | 87.1 KB | Universal Module Definition with autoload capability |
+| **ESM Lean** | 135.0 KB | 37.6 KB | ES Module without bundled libraries |
+| **UMD Lean** | 137.1 KB | 38.0 KB | UMD without bundled libraries |
+| **Standalone ESM** | 3571.6 KB | 984.1 KB | All-inclusive ES Module (no external dependencies) |
+| **Standalone UMD** | 3835.2 KB | 1034.4 KB | All-inclusive UMD (no external dependencies) |
 | **CSS** | 23.2 KB | 4.9 KB | Minified styles (required for all builds) |
 
 ### Build Configuration Guide
 
-**All configurations are available in both ESM and UMD formats:**
+**All builds include autoload capability (v1.0.18+). Available in both ESM and UMD formats:**
 
 | Configuration | What It Does | When to Use | Libraries Included |
 |--------------|--------------|-------------|--------------------|
-| **Standard** | Bundles core libraries for immediate use | Default choice for most projects | markdown-it, mermaid, highlight.js bundled |
-| **Autoload** | Loads libraries from CDN when content needs them | Best for performance-conscious apps | Core only, loads mermaid/hljs/mathjax/leaflet/three.js on-demand |
+| **Standard** | Includes autoload for CDN libraries | Default choice for most projects | Core editor with autoload capability |
 | **Lean** | Minimal build, you provide all dependencies | Advanced users with existing bundler setup | None - bring your own |
-| **Standalone** | Everything bundled, no external dependencies | Offline/airgapped environments | All libraries pre-bundled (~3.8MB) |
+| **Standalone** | Everything bundled, no external dependencies | Offline/airgapped environments | All libraries pre-bundled (~3.5MB) |
 
 ### Quick Decision Guide
 
-- **Need it to just work?** → Use **Standard** (245.3 KB)
-- **Want smaller initial load?** → Use **Autoload** (257.8 KB, loads libraries as needed)
-- **Have a complex build system?** → Use **Lean** (126.2 KB, you control dependencies)
-- **No internet/CDN access?** → Use **Standalone** (3562.8 KB, everything included)
+- **Need it to just work?** → Use **Standard** (254.1 KB with autoload)
+- **Have a complex build system?** → Use **Lean** (135.0 KB, you control dependencies)
+- **No internet/CDN access?** → Use **Standalone** (3571.6 KB, everything included)
 
 <!-- End auto-generated content -->

@@ -10,12 +10,15 @@
   <link rel="stylesheet" href="../dist/squibview.min.css">
 
   <!-- Base example styles -->
-  <link rel="stylesheet" href="examples-base.css">
+  <link rel="stylesheet" href="examples.css">
 
   <style>
-    /* Page-specific overrides */
+    /* Page-specific overrides - 80vh total for all content */
+    .example-header {
+      margin-bottom: 5px;
+    }
     #editor {
-      height: calc(100vh - 120px);
+      height: calc(80vh - 100px); /* 80vh minus header space */
     }
   </style>
 </head>
@@ -33,19 +36,18 @@
   </div>
 
   <script type="module">
-    // Import SquibView Autoload build - libraries load automatically!
-    import SquibView from '../dist/squibview.autoload.esm.min.js';
+    // Import standard SquibView build - autoload is now built-in!
+    import SquibView from '../dist/squibview.esm.min.js';
 
-    // Remove all the monitoring/notification code - we want silent autoloading
-
-    // Initialize SquibView with autoloading
+    // Initialize SquibView with autoloading enabled
     const init = async () => {
       try {
-        // Create SquibView instance
+        // Create SquibView instance with autoload enabled
         const editor = new SquibView('#editor', {
           initialView: 'split',
           showControls: true,
-          titleShow: false  // Title is now in the HTML header
+          titleShow: false,  // Title is now in the HTML header
+          autoload_deps: { all: true }  // Enable autoloading for all libraries
         });
 
         // Load sample content

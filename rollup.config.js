@@ -18,7 +18,7 @@ const extensions = ['.js'];
 ------------------------------------------------------------------ */
 const umdConfig = {
   input: 'src/squibview.umd-entry.js',
-  external: ['mermaid', 'highlight.js'], // markdown-it removed from externals
+  external: [], // All dependencies handled dynamically or bundled
   output: [
     {
       file: 'dist/squibview.umd.js',
@@ -27,9 +27,7 @@ const umdConfig = {
       sourcemap: true,
       inlineDynamicImports: true,
       globals: {
-        mermaid: 'mermaid',
-        'highlight.js': 'hljs'
-        // markdown-it removed from globals
+        // All dependencies handled dynamically
       },
       exports: 'default',
     },
@@ -40,9 +38,7 @@ const umdConfig = {
       sourcemap: true,
       inlineDynamicImports: true,
       globals: {
-        mermaid: 'mermaid',
-        'highlight.js': 'hljs'
-        // markdown-it removed from globals
+        // All dependencies handled dynamically
       },
       exports: 'default',
       plugins: [terser()],
@@ -112,7 +108,7 @@ const umdStandaloneConfig = {
 ------------------------------------------------------------------ */
 const esmRegularConfig = {
   input: 'src/squibview.js',
-  external: ['mermaid', 'highlight.js'], // markdown-it removed from externals
+  external: [], // All dependencies handled dynamically or bundled
   output: [
     {
       file: 'dist/squibview.esm.js',
@@ -290,91 +286,7 @@ const htmlToMarkdownConfig = {
 };
 
 /* ------------------------------------------------------------------
-   7) AUTOLOAD Build - Bundles core deps, autoloads fence handlers on-demand
-   Includes markdown-it but autoloads mermaid, hljs, mathjax, leaflet, three.js when needed
------------------------------------------------------------------- */
-const esmAutoloadConfig = {
-  input: 'src/squibview-autoload.js',
-  external: ['mermaid', 'highlight.js'], // These will be autoloaded
-  output: [
-    {
-      file: 'dist/squibview.autoload.esm.js',
-      format: 'es',
-      sourcemap: true,
-      inlineDynamicImports: true,
-    },
-    {
-      file: 'dist/squibview.autoload.esm.min.js',
-      format: 'es',
-      sourcemap: true,
-      inlineDynamicImports: true,
-      plugins: [terser()],
-    },
-  ],
-  plugins: [
-    polyfillNode(),
-    resolve({ extensions, browser: true }),
-    commonjs(),
-    postcss({
-      extract: 'squibview.css',
-      minimize: false
-    }),
-    babel({
-      babelHelpers: 'bundled',
-      extensions,
-      exclude: 'node_modules/**',
-      presets: ['@babel/preset-env'],
-    }),
-  ],
-};
-
-const umdAutoloadConfig = {
-  input: 'src/squibview-autoload.js',
-  external: ['mermaid', 'highlight.js'], // These will be autoloaded
-  output: [
-    {
-      file: 'dist/squibview.autoload.umd.js',
-      format: 'umd',
-      name: 'SquibView',
-      sourcemap: true,
-      inlineDynamicImports: true,
-      globals: {
-        mermaid: 'mermaid',
-        'highlight.js': 'hljs'
-      },
-      exports: 'default',
-    },
-    {
-      file: 'dist/squibview.autoload.umd.min.js',
-      format: 'umd',
-      name: 'SquibView',
-      sourcemap: true,
-      inlineDynamicImports: true,
-      globals: {
-        mermaid: 'mermaid',
-        'highlight.js': 'hljs'
-      },
-      exports: 'default',
-      plugins: [terser()],
-    },
-  ],
-  plugins: [
-    resolve({ extensions, browser: true }),
-    commonjs(),
-    postcss({
-      extract: 'squibview.css',
-      minimize: false
-    }),
-    babel({
-      babelHelpers: 'bundled',
-      extensions,
-      presets: ['@babel/preset-env'],
-    }),
-  ],
-};
-
-/* ------------------------------------------------------------------
-   8) LEAN Builds - The original behavior with all deps external
+   7) LEAN Builds - The original behavior with all deps external
    These are for advanced users who want to manage dependencies
 ------------------------------------------------------------------ */
 const umdLeanConfig = {
@@ -472,7 +384,5 @@ export default process.env.BUILD === 'react' ? reactConfig :
        process.env.BUILD === 'esm' ? esmRegularConfig :
        process.env.BUILD === 'umd-lean' ? umdLeanConfig :
        process.env.BUILD === 'esm-lean' ? esmLeanConfig :
-       process.env.BUILD === 'umd-autoload' ? umdAutoloadConfig :
-       process.env.BUILD === 'esm-autoload' ? esmAutoloadConfig :
        process.env.BUILD === 'standalone' ? umdStandaloneConfig :
-        [umdConfig, esmRegularConfig, umdLeanConfig, esmLeanConfig, umdAutoloadConfig, esmAutoloadConfig, reactConfig, vueConfig, htmlToMarkdownConfig, umdStandaloneConfig, esmStandaloneConfig];
+        [umdConfig, esmRegularConfig, umdLeanConfig, esmLeanConfig, reactConfig, vueConfig, htmlToMarkdownConfig, umdStandaloneConfig, esmStandaloneConfig];

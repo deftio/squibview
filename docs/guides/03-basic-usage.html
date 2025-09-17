@@ -229,22 +229,22 @@ editor.<span class="hljs-title function_">setView</span>(<span class="hljs-strin
 editor.<span class="hljs-title function_">setView</span>(<span class="hljs-string">'html'</span>);   <span class="hljs-comment">// HTML only  </span>
 editor.<span class="hljs-title function_">setView</span>(<span class="hljs-string">'split'</span>);  <span class="hljs-comment">// Split view</span><span class="hljs-comment">// Toggle between views</span>
 editor.<span class="hljs-title function_">toggleView</span>();
-</code></pre></div><h2>Content Types</h2><p>SquibView supports multiple content types:</p><table><thead><tr><th>Type</th><th>Description</th><th>Example</th></tr></thead><tbody><tr><td><code>md</code></td><td>Markdown (default)</td><td><code># Title\n\n**Bold text**</code></td></tr><tr><td><code>html</code></td><td>Raw HTML</td><td><code>&lt;h1&gt;Title&lt;/h1&gt;&lt;p&gt;Text&lt;/p&gt;</code></td></tr><tr><td><code>csv</code></td><td>Comma-separated values</td><td><code>name,age\nJohn,25</code></td></tr><tr><td><code>tsv</code></td><td>Tab-separated values</td><td><code>name\tage\nJohn\t25</code></td></tr></tbody></table><h3>Markdown Features</h3><p>SquibView supports GitHub-Flavored Markdown including:</p><ul><li><strong>Headers</strong> (<code># ## ###</code>)</li><li><strong>Emphasis</strong> (<code>**bold**</code>, <code>*italic*</code>)</li><li><strong>Lists</strong> (ordered and unordered)</li><li><strong>Tables</strong> (with alignment)</li><li><strong>Code blocks</strong> (with syntax highlighting)</li><li><strong>Links and images</strong></li><li><strong>Blockquotes</strong></li></ul><h3>Special Content Blocks</h3><h4>Mermaid Diagrams</h4><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown">```mermaid
+</code></pre></div><h2>Content Types</h2><p>SquibView supports multiple content types:</p><table><thead><tr><th>Type</th><th>Description</th><th>Example</th></tr></thead><tbody><tr><td><code>md</code></td><td>Markdown (default)</td><td><code># Title\n\n**Bold text**</code></td></tr><tr><td><code>html</code></td><td>Raw HTML</td><td><code>&lt;h1&gt;Title&lt;/h1&gt;&lt;p&gt;Text&lt;/p&gt;</code></td></tr><tr><td><code>csv</code></td><td>Comma-separated values</td><td><code>name,age\nJohn,25</code></td></tr><tr><td><code>tsv</code></td><td>Tab-separated values</td><td><code>name\tage\nJohn\t25</code></td></tr></tbody></table><h3>Markdown Features</h3><p>SquibView supports GitHub-Flavored Markdown including:</p><ul><li><strong>Headers</strong> (<code># ## ###</code>)</li><li><strong>Emphasis</strong> (<code>**bold**</code>, <code>*italic*</code>)</li><li><strong>Lists</strong> (ordered and unordered)</li><li><strong>Tables</strong> (with alignment)</li><li><strong>Code blocks</strong> (with syntax highlighting)</li><li><strong>Links and images</strong></li><li><strong>Blockquotes</strong></li></ul><h3>Special Content Blocks</h3><h4>Mermaid Diagrams</h4><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown"><span class="hljs-code">```mermaid
 graph TD
     A[Start] --&gt; B{Decision}
     B --&gt;|Yes| C[Action 1]
     B --&gt;|No| D[Action 2]
-</code></pre></div><h4>Math Equations</h4><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown">Inline math: $E = mc^2$
+</span></code></pre></div><h4>Math Equations</h4><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown">Inline math: $E = mc^2$
 
 Block math:
 $$
 \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
 $$
-</code></pre></div><h4>Code with Syntax Highlighting</h4><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown">```javascript
+</code></pre></div><h4>Code with Syntax Highlighting</h4><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown"><span class="hljs-code">```javascript
 function hello() {
     console.log('Hello, World!');
 }
-</code></pre></div><h4>GeoJSON Maps</h4><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown">```geojson
+</span></code></pre></div><h4>GeoJSON Maps</h4><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown"><span class="hljs-code">```geojson
 {
   "type": "Feature",
   "geometry": {
@@ -255,7 +255,7 @@ function hello() {
     "name": "Statue of Liberty"
   }
 }
-</code></pre></div><h2>Event Handling</h2><p>SquibView uses an event system for communication:</p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Listen for content changes</span>
+</span></code></pre></div><h2>Event Handling</h2><p>SquibView uses an event system for communication:</p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Listen for content changes</span>
 editor.<span class="hljs-title function_">on</span>(<span class="hljs-string">'content-changed'</span>, <span class="hljs-function">(<span class="hljs-params">content, type</span>) =&gt;</span> {
     <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">'Content updated:'</span>, content);
 });

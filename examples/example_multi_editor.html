@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Editor Example with Autoload - SquibView</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
+
+  <!-- SquibView CSS -->
+  <link rel="stylesheet" href="../dist/squibview.min.css">
+
+  <!-- Base example styles -->
+  <link rel="stylesheet" href="examples.css">
+
+  <style>
+    /* Page layout for multiple editors */
+    .editors-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1rem;
+      height: calc(100vh - 200px);
+    }
+
+    .editor-box {
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .editor-title {
+      background: #f8f9fa;
+      padding: 0.5rem 1rem;
+      border-bottom: 1px solid #dee2e6;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #495057;
+    }
+
+    .editor-wrapper {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    #editor1, #editor2, #editor3, #editor4 {
+      height: 100%;
+    }
+
+    .headless-output {
+      padding: 1rem;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      margin: 1rem;
+      font-family: monospace;
+      white-space: pre-wrap;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    @media (max-width: 768px) {
+      .editors-container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="example-header">
+    <h1 class="example-title">Multiple Editors with Autoload</h1>
+    <div class="example-version">Version 1.0.18</div>
+    <p class="example-description">
+      Four SquibView instances on the same page with different configurations. All using autoload - libraries are loaded once and shared between all editors.
+    </p>
+  </div>
+
+  <div class="editors-container">
+    <!-- Editor 1: Source View Only -->
+    <div class="editor-box">
+      <div class="editor-title">Editor 1: Source View (Markdown editing)</div>
+      <div class="editor-wrapper">
+        <div id="editor1"></div>
+      </div>
+    </div>
+
+    <!-- Editor 2: Split View -->
+    <div class="editor-box">
+      <div class="editor-title">Editor 2: Split View (Live preview)</div>
+      <div class="editor-wrapper">
+        <div id="editor2"></div>
+      </div>
+    </div>
+
+    <!-- Editor 3: Rendered View Only -->
+    <div class="editor-box">
+      <div class="editor-title">Editor 3: Rendered View (Preview only)</div>
+      <div class="editor-wrapper">
+        <div id="editor3"></div>
+      </div>
+    </div>
+
+    <!-- Editor 4: Different Content (Math & Diagrams) -->
+    <div class="editor-box">
+      <div class="editor-title">Editor 4: Math & Diagrams Focus</div>
+      <div class="editor-wrapper">
+        <div id="editor4"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Headless Editor Output -->
+  <div style="margin: 1rem;">
+    <div class="editor-title">Headless Editor (No UI - Processing only)</div>
+    <div class="headless-output" id="headless-output">
+      Headless editor output will appear here...
+    </div>
+  </div>
+
+  <script type="module">
+    import SquibView from '../dist/squibview.esm.min.js';
+
+    // Sample content for different editors
+    const codeContent = `# Code Examples
+
+Here's some JavaScript code:
+
+\`\`\`javascript
+function fibonacci(n) {
+  if (n <= 1) return n;
+  return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+console.log(fibonacci(10));
+\`\`\`
+
+And some Python:
+
+\`\`\`python
+def quicksort(arr):
+    if len(arr) <= 1:
+        return arr
+    pivot = arr[len(arr) // 2]
+    left = [x for x in arr if x < pivot]
+    middle = [x for x in arr if x == pivot]
+    right = [x for x in arr if x > pivot]
+    return quicksort(left) + middle + quicksort(right)
+\`\`\`
+`;
+
+    const mathDiagramContent = `# Math & Diagrams
+
+## Mathematical Equations
+
+Einstein's famous equation:
+
+\`\`\`math
+E = mc^2
+\`\`\`
+
+Gaussian integral:
+
+\`\`\`math
+\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
+\`\`\`
+
+## Mermaid Diagram
+
+\`\`\`mermaid
+graph TD
+    A[Start] --> B{Is it working?}
+    B -->|Yes| C[Great!]
+    B -->|No| D[Debug]
+    D --> A
+\`\`\`
+
+## Maxwell's Equation
+
+\`\`\`math
+\\nabla \\times \\vec{B} = \\mu_0 \\vec{J} + \\mu_0 \\epsilon_0 \\frac{\\partial \\vec{E}}{\\partial t}
+\`\`\`
+`;
+
+    const init = async () => {
+      try {
+        // Load main sample content
+        let sampleContent;
+        try {
+          const response = await fetch('./sample-content.md');
+          sampleContent = await response.text();
+        } catch {
+          sampleContent = '# Sample Content\n\nEdit this markdown...';
+        }
+
+        // Editor 1: Source view only
+        const editor1 = new SquibView('#editor1', {
+          initialView: 'src',
+          showControls: true,
+          titleShow: false,
+          autoload_deps: { all: true }  // Enable autoload for all
+        });
+        editor1.setContent(codeContent, 'md');
+
+        // Editor 2: Split view (default)
+        const editor2 = new SquibView('#editor2', {
+          initialView: 'split',
+          showControls: true,
+          titleShow: false,
+          autoload_deps: { all: true }
+        });
+        editor2.setContent(sampleContent, 'md');
+
+        // Editor 3: Rendered view only
+        const editor3 = new SquibView('#editor3', {
+          initialView: 'html',
+          showControls: true,
+          titleShow: false,
+          autoload_deps: { all: true }
+        });
+        editor3.setContent(sampleContent, 'md');
+
+        // Editor 4: Math and diagrams focus
+        const editor4 = new SquibView('#editor4', {
+          initialView: 'split',
+          showControls: true,
+          titleShow: false,
+          autoload_deps: {
+            // Custom config - only load what we need
+            mermaid: 'ondemand',
+            mathjax: 'ondemand',
+            hljs: false,  // Don't need syntax highlighting
+            leaflet: false,  // Don't need maps
+            three: false  // Don't need 3D
+          }
+        });
+        editor4.setContent(mathDiagramContent, 'md');
+
+        // Headless editor - no DOM element, just processing
+        // Create a temporary hidden div
+        const hiddenDiv = document.createElement('div');
+        hiddenDiv.style.display = 'none';
+        document.body.appendChild(hiddenDiv);
+
+        const headlessEditor = new SquibView(hiddenDiv, {
+          showControls: false,
+          titleShow: false,
+          autoload_deps: { all: true }
+        });
+
+        // Process some markdown and get the HTML
+        const testMarkdown = `# Headless Processing
+
+This editor has no UI. It's just processing markdown to HTML.
+
+- Item 1
+- Item 2
+- **Bold text**
+- *Italic text*
+
+\`\`\`json
+{
+  "headless": true,
+  "visible": false
+}
+\`\`\`
+`;
+
+        headlessEditor.setContent(testMarkdown, 'md');
+
+        // Get the rendered HTML after a short delay to ensure rendering
+        setTimeout(() => {
+          const renderedHTML = headlessEditor.getHTMLSource();
+          document.getElementById('headless-output').innerHTML =
+            'Headless editor processed HTML:\n\n' +
+            renderedHTML.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }, 100);
+
+        // Make editors available globally for debugging
+        window.editors = { editor1, editor2, editor3, editor4, headlessEditor };
+
+        console.log('All editors initialized successfully with autoload enabled');
+        console.log('Libraries will be loaded once and shared between all editors');
+
+      } catch (error) {
+        console.error('Failed to initialize editors:', error);
+      }
+    };
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>

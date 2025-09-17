@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="../dist/squibview.min.css">
 
   <!-- Base example styles -->
-  <link rel="stylesheet" href="examples-base.css">
+  <link rel="stylesheet" href="examples.css">
 
   <!-- Pre-load Highlight.js with GitHub Dark theme -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
@@ -86,7 +86,9 @@
 &lt;script src=".../highlight.min.js"&gt;&lt;/script&gt;
 
 // SquibView will detect and use the pre-loaded library
-const editor = new SquibView('#editor1');
+const editor = new SquibView('#editor1', {
+  autoload_deps: { all: true }  // Enable autoloading
+});
     </div>
   </div>
   <div class="editor-demo">
@@ -100,8 +102,12 @@ const editor = new SquibView('#editor1');
     </div>
     <div class="demo-code">
 const editor = new SquibView('#editor2', {
-  autoload: {
+  autoload_deps: {
     mathjax: false,  // Disable MathJax
+    mermaid: 'ondemand',  // Use on-demand loading
+    hljs: 'ondemand',
+    leaflet: 'ondemand',
+    three: 'ondemand',
     cdnUrls: {
       mermaid: {
         script: 'https://cdn.jsdelivr.net/npm/mermaid@10/...'
@@ -118,7 +124,7 @@ const editor = new SquibView('#editor2', {
   <!-- Removed autoload status notification -->
 
   <script type="module">
-    import SquibView from '../dist/squibview.autoload.esm.min.js';
+    import SquibView from '../dist/squibview.esm.min.js';
 
     // Removed monitoring code - autoloading is now silent
 
@@ -132,8 +138,8 @@ const editor = new SquibView('#editor2', {
         const editor1 = new SquibView('#editor1', {
           initialView: 'split',
           showControls: true,
-          titleShow: false
-          // No autoload config needed - will detect pre-loaded hljs
+          titleShow: false,
+          autoload_deps: { all: true }  // Will detect pre-loaded hljs
         });
         editor1.setContent(content, 'md');
 
@@ -142,9 +148,13 @@ const editor = new SquibView('#editor2', {
           initialView: 'split',
           showControls: true,
           titleShow: false,
-          autoload: {
+          autoload_deps: {
             // Disable MathJax completely
             mathjax: false,
+            mermaid: 'ondemand',
+            hljs: 'ondemand',
+            leaflet: 'ondemand',
+            three: 'ondemand',
 
             // Use alternative CDN for Mermaid
             cdnUrls: {

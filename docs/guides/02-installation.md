@@ -4,13 +4,13 @@ SquibView provides multiple build types to fit different development environment
 
 ## Build Types Overview
 
-| Build Type | Best For | Dependencies | Size |
-|------------|----------|--------------|------|
-| **ESM** | Modern bundlers (Vite, Webpack) | markdown-it bundled | ~240KB |
-| **ESM-lean** | Advanced users managing deps | External | ~140KB |
-| **UMD** | Legacy browsers, global scripts | markdown-it bundled | ~250KB |
-| **UMD-lean** | Advanced users managing deps | External | ~140KB |
-| **Standalone** | Quick prototypes, CDN usage | Everything bundled | ~3.7MB |
+| Build Type | Best For | Dependencies | Size | Autoload Support |
+|------------|----------|--------------|------|-----------------|
+| **Standard (ESM/UMD)** | Most projects | markdown-it bundled | ~245KB | ✅ Yes |
+| **Lean (ESM/UMD)** | Custom bundlers | External | ~126KB | ✅ Yes |
+| **Standalone** | Offline/airgapped | Everything bundled | ~3.6MB | Not needed |
+
+All builds support the `autoload_deps` option for automatic library loading from CDN.
 
 ## NPM Installation
 
@@ -54,16 +54,35 @@ For projects without modern bundling:
 
 ## CDN Usage
 
-### Standalone Build (Easiest)
+### Standard Build with Autoload (Recommended)
 
-Everything bundled together - perfect for prototypes:
+Zero configuration with automatic library loading:
+
+```html
+<link rel="stylesheet" href="https://unpkg.com/squibview/dist/squibview.min.css">
+
+<script type="module">
+  import SquibView from 'https://unpkg.com/squibview/dist/squibview.esm.min.js';
+
+  const editor = new SquibView('#editor', {
+    initialContent: '# Hello\n\n```mermaid\ngraph TD\n  A --> B\n```',
+    autoload_deps: { all: true }  // Enable autoloading
+  });
+</script>
+```
+
+**When to use:** Most projects - libraries load from CDN only when content needs them.
+
+### Standalone Build (Offline-Ready)
+
+Everything bundled together - perfect for offline environments:
 
 ```html
 <link rel="stylesheet" href="https://unpkg.com/squibview/dist/squibview.min.css">
 <script src="https://unpkg.com/squibview/dist/squibview.standalone.min.js"></script>
 ```
 
-**When to use:** CodePen, quick prototypes, or when you want zero configuration.
+**When to use:** Offline apps, airgapped environments, or when CDN access is restricted.
 
 ### ESM Build (Default - v1.0.15+)
 
@@ -142,20 +161,25 @@ SquibView uses these external libraries for enhanced functionality:
 
 ### Choosing the Right Build
 
-**Default builds** (ESM/UMD) include markdown-it bundled (v1.0.15+):
-- No import map complexity for new users
-- Medium bundle size (~240-250KB)
-- Optional external dependencies for advanced features (highlight.js, mermaid, etc.)
+**Autoload builds** (v1.0.18+) - Recommended for most users:
+- Zero configuration - libraries load from CDN when needed
+- Fast initial load (~258KB), features load on-demand
+- Perfect balance of simplicity and performance
+
+**Standard builds** (ESM/UMD) include core dependencies:
+- Medium bundle size (~245KB)
+- No CDN dependency after initial load
+- Good for projects with custom bundling
 
 **Lean builds** (ESM-lean/UMD-lean) for advanced users:
-- Smallest bundle size (~140KB)
+- Smallest bundle size (~126KB)
 - Full control over dependency versions
 - Requires managing external dependencies
 
-**Standalone builds** include all dependencies:
-- Zero configuration needed
-- Guaranteed compatibility
-- Largest file size (~3.7MB)
+**Standalone builds** include everything:
+- Works completely offline
+- No external dependencies ever
+- Largest file size (~3.6MB)
 
 ## Next Steps
 

@@ -11,14 +11,14 @@ const distDir = path.join(__dirname, '..', 'dist');
 // Build configurations with descriptions
 const builds = [
   {
-    name: 'ESM Bundle',
+    name: 'ESM Standard',
     file: 'squibview.esm.min.js',
-    description: 'ES Module with all features bundled'
+    description: 'ES Module with autoload capability'
   },
   {
-    name: 'UMD Bundle',
+    name: 'UMD Standard',
     file: 'squibview.umd.min.js',
-    description: 'Universal Module Definition with all features'
+    description: 'Universal Module Definition with autoload capability'
   },
   {
     name: 'ESM Lean',
@@ -29,16 +29,6 @@ const builds = [
     name: 'UMD Lean',
     file: 'squibview.umd-lean.min.js',
     description: 'UMD without bundled libraries'
-  },
-  {
-    name: 'ESM Autoload',
-    file: 'squibview.autoload.esm.min.js',
-    description: 'ES Module with CDN autoloading'
-  },
-  {
-    name: 'UMD Autoload',
-    file: 'squibview.autoload.umd.min.js',
-    description: 'UMD with CDN autoloading'
   },
   {
     name: 'Standalone ESM',
@@ -98,25 +88,22 @@ function generateTable() {
 function generateComparison() {
   let comparison = '\n### Build Configuration Guide\n\n';
 
-  comparison += '**All configurations are available in both ESM and UMD formats:**\n\n';
+  comparison += '**All builds include autoload capability (v1.0.18+). Available in both ESM and UMD formats:**\n\n';
 
   comparison += '| Configuration | What It Does | When to Use | Libraries Included |\n';
   comparison += '|--------------|--------------|-------------|--------------------|\n';
-  comparison += '| **Standard** | Bundles core libraries for immediate use | Default choice for most projects | markdown-it, mermaid, highlight.js bundled |\n';
-  comparison += '| **Autoload** | Loads libraries from CDN when content needs them | Best for performance-conscious apps | Core only, loads mermaid/hljs/mathjax/leaflet/three.js on-demand |\n';
+  comparison += '| **Standard** | Includes autoload for CDN libraries | Default choice for most projects | Core editor with autoload capability |\n';
   comparison += '| **Lean** | Minimal build, you provide all dependencies | Advanced users with existing bundler setup | None - bring your own |\n';
-  comparison += '| **Standalone** | Everything bundled, no external dependencies | Offline/airgapped environments | All libraries pre-bundled (~3.8MB) |\n';
+  comparison += '| **Standalone** | Everything bundled, no external dependencies | Offline/airgapped environments | All libraries pre-bundled (~3.5MB) |\n';
 
   comparison += '\n### Quick Decision Guide\n\n';
 
   // Get sizes for key comparisons
   const standardSize = getFileSize(path.join(distDir, 'squibview.esm.min.js'));
-  const autoloadSize = getFileSize(path.join(distDir, 'squibview.autoload.esm.min.js'));
   const leanSize = getFileSize(path.join(distDir, 'squibview.esm-lean.min.js'));
   const standaloneSize = getFileSize(path.join(distDir, 'squibview.standalone.esm.min.js'));
 
-  comparison += '- **Need it to just work?** → Use **Standard** (' + standardSize + ' KB)\n';
-  comparison += '- **Want smaller initial load?** → Use **Autoload** (' + autoloadSize + ' KB, loads libraries as needed)\n';
+  comparison += '- **Need it to just work?** → Use **Standard** (' + standardSize + ' KB with autoload)\n';
   comparison += '- **Have a complex build system?** → Use **Lean** (' + leanSize + ' KB, you control dependencies)\n';
   comparison += '- **No internet/CDN access?** → Use **Standalone** (' + standaloneSize + ' KB, everything included)\n';
 

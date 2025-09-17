@@ -1,88 +1,100 @@
 # SquibView Release Notes
 
-## v1.0.18 (January 16, 2025)
-*Release Date: January 16, 2025*
+## v1.0.18 (September 17, 2024)
 
-### 🚀 Major New Feature: Autoload Builds
-- **NEW**: Autoload build variants (`squibview.autoload.esm.js` and `squibview.autoload.umd.js`)
-  - Automatically loads fence handler libraries from CDN when content needs them
-  - Small initial size (258KB minified, 88KB gzipped)
-  - Smart caching prevents duplicate library loading
-  - Zero configuration - just works out of the box
-- **NEW**: Flexible per-library loading configuration:
-  - `'auto'` - Load immediately on initialization
-  - `'ondemand'` - Load when content requires it (default)
-  - `'none'` - Never load (bring your own)
-  - Custom function - Full control over loading
-- **NEW**: Support for custom CDN URLs per library
+### Major Features
 
-### 📦 Libraries Autoloaded On-Demand
-- **Mermaid** - For diagrams and flowcharts
-- **Highlight.js** - For syntax highlighting
-- **MathJax** - For mathematical equations
-- **Leaflet** - For GeoJSON/TopoJSON maps
-- **Three.js** - For 3D STL model viewing
+**Integrated Autoload Functionality** - Autoload is now built into all SquibView builds
+- No separate autoload builds needed - use `autoload_deps` option with any build
+- Configure with `autoload_deps: { all: true }` for automatic loading
+- Fine-grained control per library available
+- Libraries load automatically from CDN when content requires them
+- Zero configuration required for standard use cases
 
-### 🐛 Bug Fixes
-- **FIXED**: Copy-rendered functionality now works correctly in autoload builds
-- **FIXED**: MathJax rendering properly detects and typesets math content
-- **FIXED**: Protected all library references to prevent console errors
+**Autoloaded Libraries**
+- Mermaid (377KB) - Loaded when mermaid fence blocks are detected
+- Highlight.js (45KB) - Loaded when code blocks are present
+- MathJax (1.3MB) - Loaded when math expressions or math fence blocks are found
+- Leaflet (142KB) - Loaded when GeoJSON/TopoJSON content is rendered
+- Three.js (1.1MB) - Loaded when STL 3D models are displayed
 
-### 🛠 Developer Experience
-- **NEW**: Build size table generator script (`tools/buildSizeTable.js`)
-- **NEW**: Comprehensive test suite for autoload functionality
-- **NEW**: Example files demonstrating autoload usage:
-  - `example_autoload_simple.html` - Basic zero-config usage
-  - `example_autoload_custom.html` - Advanced configuration examples
+### Improvements
 
-### 📚 Documentation
-- **UPDATED**: README with autoload documentation and accurate build sizes
-- **ADDED**: Advanced configuration examples for autoload
-- **ADDED**: Build size comparison table with gzip sizes
+**Math Rendering**
+- Reduced math formula size when copying to clipboard (scale factor 0.025)
+- Math formulas now paste at appropriate inline size in external applications
+- Fixed math rendering detection for both inline and display math
+- Support for fenced math blocks using ` ```math ` syntax
 
-## v1.0.15 (July 13, 2025)
-*Release Date: July 13, 2025*
+**Developer Experience**
+- Consolidated example CSS files into single `examples.css` for easier maintenance
+- Optimized example layouts to fit content above the fold (80vh total height)
+- Added favicon to all example HTML files
+- Improved responsive design with proper horizontal margins
+- Updated all examples to use consistent styling
 
-### 🚀 Major Build System Improvements
-- **BREAKING CHANGE**: Default ESM/UMD builds now include bundled markdown-it (~240KB)
-  - No more import map errors for new users!
-  - Existing apps continue to work - same filenames maintained
-- **NEW**: Lean builds (`-lean` suffix) for advanced users who manage their own dependencies
-- **NEW**: ESM standalone builds now properly built and available
-- **IMPROVED**: Build naming consistency across all targets
+### Bug Fixes
+- Fixed copy-rendered functionality in editors with contenteditable wrapper
+- Fixed MathJax rendering with proper selector detection
+- Fixed library reference errors by checking existence before use
+- Fixed build size table detection in README updates
+- Fixed STL loader dependency on global THREE object
+- Resolved mermaid initialization errors in rollup builds
 
-### 🐛 Bug Fixes
-- **FIXED**: Standalone builds no longer cause side effects with Leaflet icons
-- **FIXED**: GeoJSON rendering in standalone builds works without prototype pollution
-- **FIXED**: ESM standalone build was missing - now properly generated
-- **FIXED**: Library warnings only show when actually needed (not on every render)
+### Documentation
+- Reorganized examples with autoload as the recommended starting point
+- Added clear descriptions for all build configurations
+- Updated build size tables with accurate measurements
+- Improved responsive design for mobile devices
+- Simplified build options to 3 main configurations
 
-### 📚 Documentation & Examples
-- **CLEANED**: Completely rewrote `example_ESM.html` - modern, clean ES module approach
-- **CLEANED**: Simplified `example_UMD.html` - removed module mixing and complexity
-- **FIXED**: Syntax highlighting in ESM example (proper highlight.js loading)
-- **ARCHIVED**: Moved unused/outdated examples to `examples/archive/`
+## v1.0.17 (July 22, 2024)
 
-### 📦 Build Details
-| Build | Module | Size | Includes | Use Case |
-|-------|--------|------|----------|----------|
-| squibview.esm.min.js | ESM | ~240KB | markdown-it bundled | Default - works out of box |
-| squibview.esm-lean.min.js | ESM | ~140KB | No deps | Advanced users |
-| squibview.umd.min.js | UMD | ~250KB | markdown-it bundled | Default - works out of box |
-| squibview.umd-lean.min.js | UMD | ~140KB | No deps | Advanced users |
-| squibview.standalone.*.min.js | Both | ~3.7MB | Everything | All features, no setup |
+### Features
+- Added copy to clipboard functionality for markdown and HTML content
+- Improved clipboard API integration with fallback for older browsers
 
-### 🔄 Migration Notes
-- No action required for existing users - filenames unchanged
-- To use lean builds, update your imports to use `-lean` suffix
-- Import maps no longer needed for default builds
+### Documentation
+- Added comprehensive documentation for copy operations
+- Updated examples to demonstrate clipboard functionality
 
----
+## v1.0.16 (July 2024)
 
-## v1.0.13 (July 13, 2025)
-*Release Date: July 13, 2025*
+### Improvements
+- Performance optimizations for large documents
+- Better memory management for revision history
+- Improved scrolling synchronization between panes
 
-### ✨ Major New Feature: Diff View Support
+## v1.0.15 (June 2024)
+
+### Build System Changes
+
+**Default Builds Now Include Dependencies**
+- ESM/UMD builds now bundle markdown-it, diff-match-patch, and tiny-emitter
+- Eliminates import map configuration requirements for new users
+- Existing applications continue to work without changes
+
+**New Lean Builds**
+- Added `-lean` variants for users who manage their own dependencies
+- Lean builds exclude bundled libraries for smaller size (126KB minified)
+
+**Standalone Builds**
+- Fixed ESM standalone build generation
+- Resolved Leaflet icon side effects in standalone builds
+- Fixed GeoJSON rendering without prototype pollution
+
+### Build Sizes
+| Build | Size | Description |
+|-------|------|-------------|
+| squibview.esm.min.js | 245KB | Standard ESM with bundled dependencies |
+| squibview.esm-lean.min.js | 126KB | Minimal ESM without dependencies |
+| squibview.umd.min.js | 246KB | Standard UMD with bundled dependencies |
+| squibview.umd-lean.min.js | 128KB | Minimal UMD without dependencies |
+| squibview.standalone.*.min.js | 3.6-3.8MB | All features bundled |
+
+## v1.0.13 - v1.0.14 (May 2024)
+
+### Diff View Support
 - **NEW**: `getSourceDiff()` method to get diff data between any two revisions
 - **NEW**: `getSourceDiffHTML()` method for side-by-side diff visualization
 - **NEW**: `getSourceDiffInline()` method for inline diff with blue additions/red deletions

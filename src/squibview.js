@@ -66,7 +66,35 @@ class SquibView {
     preserveImageTags: true, // Changed default to true
     showLineNumbers: false,  // Enable/disable line numbers
     lineNumberStart: 1,      // Starting line number
-    lineNumberMinDigits: 2   // Minimum digits (e.g., 01, 02)
+    lineNumberMinDigits: 2,   // Minimum digits (e.g., 01, 02)
+    autoload_deps: null      // Default off, can be { all: true } or fine-grained control
+  };
+
+  // Default CDN URLs for autoloading dependencies
+  static DEFAULT_CDN_URLS = {
+    mermaid: {
+      script: 'https://unpkg.com/mermaid@10.6.1/dist/mermaid.min.js'
+    },
+    hljs: {
+      script: 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js',
+      css: 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css'
+    },
+    mathjax: {
+      script: 'https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js'
+    },
+    leaflet: {
+      script: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+      css: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+    },
+    three: {
+      script: 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'
+    },
+    stlLoader: {
+      script: 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js'
+    },
+    orbitControls: {
+      script: 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js'
+    }
   };
 
   static version = {
@@ -86,6 +114,7 @@ class SquibView {
    * @param {string} [options.titleContent=''] - Content for the title section
    * @param {string} [options.initialView='split'] - Initial view mode ('src', 'html', 'split')
    * @param {string} [options.baseClass='squibview'] - Base CSS class for styling
+   * @param {Object|null} [options.autoload_deps=null] - Configuration for autoloading dependencies. null = disabled (default), { all: true } = enable all, or fine-grained control per library
    * @throws {Error} Throws if the container element is not found
    */
   constructor(element, options = {}) {
@@ -96,6 +125,9 @@ class SquibView {
     if (!this.container) {
       throw new Error('Container element not found');
     }
+
+    // Initialize autoload configuration
+    this._initializeAutoload();
 
     // Initialize event emitter for plugin communication and selection events
     this.events = new TinyEmitter();
@@ -148,10 +180,314 @@ class SquibView {
       this.onReplaceSelectedText = this.options.onReplaceSelectedText;
     }
   }
-  
+
+  /**
+   * Initialize autoload configuration
+   * @private
+   */
+  _initializeAutoload() {
+    const autoloadConfig = this.options.autoload_deps;
+
+    // If autoload is disabled (null or false), do nothing
+    if (!autoloadConfig) {
+      this.autoloadConfig = null;
+      return;
+    }
+
+    // Parse the configuration
+    this.autoloadConfig = {
+      enabled: true,
+      cdnUrls: { ...SquibView.DEFAULT_CDN_URLS, ...(autoloadConfig.cdnUrls || {}) },
+      libraries: {}
+    };
+
+    // Helper to parse library config
+    const parseLibConfig = (libName, config) => {
+      // If 'all' is set, apply to all libraries
+      if (config.all === true) {
+        return { strategy: 'ondemand' };
+      } else if (config.all === 'auto') {
+        return { strategy: 'auto' };
+      } else if (config.all === false) {
+        return { strategy: 'none' };
+      }
+
+      // Check specific library config
+      const libConfig = config[libName];
+
+      if (libConfig === false || libConfig === 'none') {
+        return { strategy: 'none' };
+      } else if (libConfig === true || libConfig === 'ondemand') {
+        return { strategy: 'ondemand' };
+      } else if (libConfig === 'auto') {
+        return { strategy: 'auto' };
+      } else if (typeof libConfig === 'function') {
+        return { strategy: 'custom', handler: libConfig };
+      } else if (typeof libConfig === 'object') {
+        return libConfig;
+      }
+
+      // Default based on 'all' setting or ondemand
+      return config.all ? { strategy: 'ondemand' } : { strategy: 'none' };
+    };
+
+    // Configure each library
+    ['mermaid', 'hljs', 'mathjax', 'leaflet', 'three'].forEach(lib => {
+      this.autoloadConfig.libraries[lib] = parseLibConfig(lib, autoloadConfig);
+    });
+
+    // Track loaded libraries
+    this.loadedLibraries = new Set();
+    this.loadingPromises = {};
+
+    // Load 'auto' libraries immediately after init
+    setTimeout(() => this._loadAutoLibraries(), 0);
+  }
+
+  /**
+   * Load libraries configured with 'auto' strategy
+   * @private
+   */
+  async _loadAutoLibraries() {
+    if (!this.autoloadConfig || !this.autoloadConfig.enabled) return;
+
+    for (const [libName, config] of Object.entries(this.autoloadConfig.libraries)) {
+      if (config.strategy === 'auto') {
+        await this._autoloadLibrary(libName);
+      }
+    }
+  }
+
+  /**
+   * Load a script dynamically
+   * @private
+   */
+  _loadScript(src) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) {
+        resolve();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = resolve;
+      script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+      document.head.appendChild(script);
+    });
+  }
+
+  /**
+   * Load a CSS file dynamically
+   * @private
+   */
+  _loadCSS(href) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`link[href="${href}"]`)) {
+        resolve();
+        return;
+      }
+
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = href;
+      link.onload = resolve;
+      link.onerror = () => reject(new Error(`Failed to load CSS: ${href}`));
+      document.head.appendChild(link);
+    });
+  }
+
+  /**
+   * Autoload a specific library
+   * @private
+   */
+  async _autoloadLibrary(libName) {
+    if (!this.autoloadConfig || !this.autoloadConfig.enabled) return false;
+
+    const config = this.autoloadConfig.libraries[libName];
+    if (!config || config.strategy === 'none') return false;
+
+    // Check if already loaded
+    if (this.loadedLibraries.has(libName)) return true;
+
+    // Check if library is already available
+    if (this._isLibraryLoaded(libName)) {
+      this.loadedLibraries.add(libName);
+      return true;
+    }
+
+    // Handle custom loading strategy
+    if (config.strategy === 'custom' && config.handler) {
+      const result = await config.handler();
+      if (result) this.loadedLibraries.add(libName);
+      return result;
+    }
+
+    // Check if already loading
+    if (this.loadingPromises[libName]) {
+      return this.loadingPromises[libName];
+    }
+
+    // Start loading
+    const cdnConfig = this.autoloadConfig.cdnUrls[libName];
+    if (!cdnConfig) return false;
+
+    this.loadingPromises[libName] = this._loadLibraryAssets(libName, cdnConfig);
+
+    try {
+      const result = await this.loadingPromises[libName];
+      if (result) {
+        this.loadedLibraries.add(libName);
+        // Re-initialize if needed
+        if (libName === 'mermaid') {
+          this.initializeLibraries();
+        }
+      }
+      return result;
+    } finally {
+      delete this.loadingPromises[libName];
+    }
+  }
+
+  /**
+   * Load library assets (script and optional CSS)
+   * @private
+   */
+  async _loadLibraryAssets(libName, cdnConfig) {
+    try {
+      const promises = [];
+
+      if (cdnConfig.script) {
+        promises.push(this._loadScript(cdnConfig.script));
+      }
+
+      if (cdnConfig.css) {
+        promises.push(this._loadCSS(cdnConfig.css));
+      }
+
+      await Promise.all(promises);
+
+      // Wait for library to be available
+      await this._waitForLibrary(libName);
+
+      // Special handling for Three.js - load additional dependencies after THREE is available
+      if (libName === 'three' && window.THREE) {
+        // STLLoader and OrbitControls need THREE to be globally available
+        if (this.autoloadConfig.cdnUrls.stlLoader) {
+          await this._loadScript(this.autoloadConfig.cdnUrls.stlLoader.script);
+        }
+        if (this.autoloadConfig.cdnUrls.orbitControls) {
+          await this._loadScript(this.autoloadConfig.cdnUrls.orbitControls.script);
+        }
+      }
+
+      return this._isLibraryLoaded(libName);
+    } catch (err) {
+      if (this.autoloadConfig.debug) {
+        console.error(`Failed to load ${libName}:`, err);
+      }
+      return false;
+    }
+  }
+
+  /**
+   * Wait for a library to become available
+   * @private
+   */
+  _waitForLibrary(libName, maxAttempts = 20) {
+    return new Promise((resolve) => {
+      let attempts = 0;
+      const check = () => {
+        if (this._isLibraryLoaded(libName) || attempts >= maxAttempts) {
+          resolve();
+        } else {
+          attempts++;
+          setTimeout(check, 100);
+        }
+      };
+      check();
+    });
+  }
+
+  /**
+   * Check if a library is loaded
+   * @private
+   */
+  _isLibraryLoaded(libName) {
+    switch (libName) {
+      case 'mermaid':
+        return typeof window !== 'undefined' && typeof window.mermaid !== 'undefined';
+      case 'hljs':
+        return typeof window !== 'undefined' && typeof window.hljs !== 'undefined';
+      case 'mathjax':
+        return typeof window !== 'undefined' && typeof window.MathJax !== 'undefined';
+      case 'leaflet':
+        return typeof window !== 'undefined' && typeof window.L !== 'undefined';
+      case 'three':
+        return typeof window !== 'undefined' && typeof window.THREE !== 'undefined';
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Check content and autoload required libraries
+   * @private
+   */
+  async _checkAndAutoloadLibraries(content) {
+    if (!this.autoloadConfig || !this.autoloadConfig.enabled) return;
+
+    const promises = [];
+
+    // Check for mermaid diagrams
+    if (content.includes('```mermaid')) {
+      const config = this.autoloadConfig.libraries.mermaid;
+      if (config && config.strategy === 'ondemand') {
+        promises.push(this._autoloadLibrary('mermaid'));
+      }
+    }
+
+    // Check for code blocks (for syntax highlighting)
+    if (/```\w+/.test(content)) {
+      const config = this.autoloadConfig.libraries.hljs;
+      if (config && config.strategy === 'ondemand') {
+        promises.push(this._autoloadLibrary('hljs'));
+      }
+    }
+
+    // Check for math content
+    if (content.includes('$$') || content.includes('```math')) {
+      const config = this.autoloadConfig.libraries.mathjax;
+      if (config && config.strategy === 'ondemand') {
+        promises.push(this._autoloadLibrary('mathjax'));
+      }
+    }
+
+    // Check for GeoJSON/TopoJSON
+    if (content.includes('```geojson') || content.includes('```topojson')) {
+      const config = this.autoloadConfig.libraries.leaflet;
+      if (config && config.strategy === 'ondemand') {
+        promises.push(this._autoloadLibrary('leaflet'));
+      }
+    }
+
+    // Check for STL 3D models
+    if (content.includes('```stl')) {
+      const config = this.autoloadConfig.libraries.three;
+      if (config && config.strategy === 'ondemand') {
+        promises.push(this._autoloadLibrary('three'));
+      }
+    }
+
+    // Wait for all libraries to load
+    if (promises.length > 0) {
+      await Promise.all(promises);
+    }
+  }
+
   /**
    * Initialize the HTML to Markdown converter
-   * 
+   *
    * @private
    */
   async _initializeHtmlToMarkdown() {
@@ -190,17 +526,19 @@ class SquibView {
    * @private
    */
   initializeLibraries() {
-    // Initialize Mermaid for diagram rendering
-    mermaid.initialize({
-      startOnLoad: false,
-      securityLevel: 'loose',
-      theme: 'default',
-      errorCallback: function (error) {
-        console.warn("Mermaid error:", error);
-        return "<div class='mermaid-error'></div>";
-      }
-    });
-    mermaid.init(undefined, ".mermaid");
+    // Initialize Mermaid for diagram rendering if available
+    if (typeof window !== 'undefined' && window.mermaid) {
+      window.mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: 'loose',
+        theme: 'default',
+        errorCallback: function (error) {
+          console.warn("Mermaid error:", error);
+          return "<div class='mermaid-error'></div>";
+        }
+      });
+      window.mermaid.init(undefined, ".mermaid");
+    }
     
     // Initialize markdown-it with options and syntax highlighting
     this.md = new MarkdownIt({
@@ -963,6 +1301,11 @@ class SquibView {
    */
   async renderMarkdown(md) {
     const markdown = md || this.input.value;
+
+    // Check if we need to autoload libraries based on content
+    if (this.autoloadConfig && this.autoloadConfig.enabled) {
+      await this._checkAndAutoloadLibraries(markdown);
+    }
     const html = this.md.render(markdown);
     let processedHtml = html;
     if (this.linefeedViewEnabled) {
@@ -1027,7 +1370,9 @@ class SquibView {
     }
 
     // Initialize mermaid diagrams after all images are processed
-    mermaid.init(undefined, this.output.querySelectorAll('.mermaid'));
+    if (typeof window !== 'undefined' && window.mermaid) {
+      window.mermaid.init(undefined, this.output.querySelectorAll('.mermaid'));
+    }
 
     // Initialize GeoJSON/TopoJSON maps after content is rendered
     this.initializeGeoRenderers();
@@ -1049,6 +1394,18 @@ class SquibView {
   async ensureMathJaxAndTypeset() {
     const mathBlocks = this.output.querySelectorAll('div.math-display');
     if (!mathBlocks.length) return;
+
+    // Try autoloading first if configured
+    if (this.autoloadConfig && this.autoloadConfig.enabled) {
+      const config = this.autoloadConfig.libraries.mathjax;
+      if (config && config.strategy === 'ondemand') {
+        const loaded = await this._autoloadLibrary('mathjax');
+        if (loaded && typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+          return MathJax.typesetPromise(Array.from(mathBlocks));
+        }
+      }
+    }
+
     function typesetAll() {
       if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
         return MathJax.typesetPromise(Array.from(mathBlocks));
@@ -1101,12 +1458,29 @@ class SquibView {
    * Initializes GeoJSON and TopoJSON map renderers.
    * @private
    */
-  initializeGeoRenderers() {
+  async initializeGeoRenderers() {
     // Skip if output element not yet available (during initial setup)
     if (!this.output) return;
-    
-    // Initialize GeoJSON containers
+
+    // Check if we have geo content
     const geojsonContainers = this.output.querySelectorAll('.geojson-container');
+    const topojsonContainers = this.output.querySelectorAll('.topojson-container');
+
+    if (geojsonContainers.length === 0 && topojsonContainers.length === 0) return;
+
+    // Autoload Leaflet if needed and configured
+    if (this.autoloadConfig && this.autoloadConfig.enabled) {
+      const config = this.autoloadConfig.libraries.leaflet;
+      if (config && config.strategy === 'ondemand') {
+        const loaded = await this._autoloadLibrary('leaflet');
+        if (!loaded) return; // Can't render without Leaflet
+      }
+    }
+
+    // Check if Leaflet is available
+    if (typeof window === 'undefined' || !window.L) return;
+
+    // Initialize GeoJSON containers
     geojsonContainers.forEach(container => {
       if (!container.dataset.initialized) {
         this.renderGeoJSON(container);
@@ -1114,7 +1488,6 @@ class SquibView {
     });
 
     // Initialize TopoJSON containers
-    const topojsonContainers = this.output.querySelectorAll('.topojson-container');
     topojsonContainers.forEach(container => {
       if (!container.dataset.initialized) {
         this.renderTopoJSON(container);
@@ -1126,11 +1499,24 @@ class SquibView {
    * Initializes STL 3D model renderers.
    * @private
    */
-  initializeSTLRenderers() {
+  async initializeSTLRenderers() {
     // Skip if output element not yet available (during initial setup)
     if (!this.output) return;
-    
+
     const stlContainers = this.output.querySelectorAll('.stl-container');
+    if (stlContainers.length === 0) return;
+
+    // Autoload Three.js if needed and configured
+    if (this.autoloadConfig && this.autoloadConfig.enabled) {
+      const config = this.autoloadConfig.libraries.three;
+      if (config && config.strategy === 'ondemand') {
+        const loaded = await this._autoloadLibrary('three');
+        if (!loaded) return; // Can't render without Three.js
+      }
+    }
+
+    // Check if Three.js is available
+    if (typeof window === 'undefined' || !window.THREE) return;
     stlContainers.forEach(container => {
       if (!container.dataset.initialized) {
         this.renderSTL(container);

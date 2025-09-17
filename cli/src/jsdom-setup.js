@@ -47,6 +47,12 @@ export function createJSDOMEnvironment() {
   // Make highlight.js globally available for SquibView
   window.hljs = hljs;
   global.hljs = hljs;
+
+  // Add markdown-it to global scope (required for regular ESM build)
+  global.markdownit = () => ({
+    render: (md) => `<div>${md}</div>`,
+    use: () => {}
+  });
   
   // Handle navigator carefully - it might be read-only
   if (!global.navigator) {

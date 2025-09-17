@@ -14,10 +14,15 @@ import { createJSDOMEnvironment } from './jsdom-setup.js';
 export async function renderMarkdownToHTML(content, options = {}) {
   // Set up jsdom environment
   const { window, document } = createJSDOMEnvironment();
-  
+
+  // Set global window before importing
+  global.window = window;
+  global.document = document;
+
   try {
-    // Dynamically import SquibView using .js extension for standalone ESM build
-    const SquibViewModule = await import('../../dist/squibview.standalone.esm.min.js');
+    // Use regular ESM build instead of standalone
+    // The jsdom-setup already provides mocks for the required libraries
+    const SquibViewModule = await import('../../dist/squibview.esm.min.js');
     const SquibView = SquibViewModule.default;
     
     // Get the container element

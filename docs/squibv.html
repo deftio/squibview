@@ -263,7 +263,7 @@ find docs/ -name <span class="hljs-string">"*.md"</span> | \
 </code></pre></div><h2>Advanced Markdown Features</h2><p>SquibView CLI supports all the advanced features of the SquibView editor:</p><h3>Mathematical Expressions</h3><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown">Inline math: $E = mc^2$
 
 Display math:
-$$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$
+$$\int<span class="hljs-emphasis">_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$
 
 Fenced math blocks:
 \`\`\`math
@@ -272,32 +272,30 @@ a &amp; b \\\\
 c &amp; d
 \\end{pmatrix}
 \`\`\`
-</code></pre></div><h3>Mermaid Diagrams</h3><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown">\`\`\`mermaid
+</span></code></pre></div><h3>Mermaid Diagrams</h3><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown">\<span class="hljs-code">`\`</span>\`mermaid
 graph TD
-    A[Start] --&gt; B{Decision}
+<span class="hljs-code">    A[Start] --&gt; B{Decision}
     B --&gt; C[Option 1]
     B --&gt; D[Option 2]
 \`\`\`
-</code></pre></div><h3>Data Tables</h3><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown">\`\`\`csv
+</span></code></pre></div><h3>Data Tables</h3><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown">\<span class="hljs-code">`\`</span>\`csv
 Name,Age,City
 Alice,30,New York
 Bob,25,Los Angeles
-\`\`\`
+\<span class="hljs-code">`\`</span>\`
 
-\`\`\`tsv
+\<span class="hljs-code">`\`</span>\`tsv
 Name	Age	City
 Alice	30	New York
-\`\`\`
-</code></pre></div><h3>SVG Graphics</h3><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown">\`\`\`svg
-&lt;svg width="200" height="100"&gt;
-  &lt;circle cx="50" cy="50" r="40" fill="blue" /&gt;
-&lt;/svg&gt;
-\`\`\`
-</code></pre></div><h3>Code Highlighting</h3><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown">\`\`\`javascript
+\<span class="hljs-code">`\`</span>\`
+</code></pre></div><h3>SVG Graphics</h3><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown">\<span class="hljs-code">`\`</span>\`svg
+<span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">svg</span><span class="hljs-attr">width</span>=<span class="hljs-string">"200"</span><span class="hljs-attr">height</span>=<span class="hljs-string">"100"</span>&gt;</span></span><span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">circle</span><span class="hljs-attr">cx</span>=<span class="hljs-string">"50"</span><span class="hljs-attr">cy</span>=<span class="hljs-string">"50"</span><span class="hljs-attr">r</span>=<span class="hljs-string">"40"</span><span class="hljs-attr">fill</span>=<span class="hljs-string">"blue"</span> /&gt;</span></span><span class="language-xml"><span class="hljs-tag">&lt;/<span class="hljs-name">svg</span>&gt;</span></span>
+\<span class="hljs-code">`\`</span>\`
+</code></pre></div><h3>Code Highlighting</h3><div data-source-type="markdown"><pre><code class="hljs language-markdown" data-source-type="code" data-lang="markdown">\<span class="hljs-code">`\`</span>\`javascript
 function greet(name) {
-  console.log(\`Hello, \${name}!\`);
+  console.log(\<span class="hljs-code">`Hello, \${name}!\`</span>);
 }
-\`\`\`
+\<span class="hljs-code">`\`</span>\`
 </code></pre></div><h2>Output Modes</h2><h3>CDN Mode (Default)</h3><ul><li><strong>Size</strong>: Small (~7KB)</li><li><strong>Dependencies</strong>: Requires internet for MathJax/Mermaid</li><li><strong>Use Case</strong>: Online environments, smaller files</li><li><strong>Command</strong>: <code>squibv document.md</code></li></ul><h3>Offline Bundle Mode</h3><ul><li><strong>Size</strong>: Large (~5MB)</li><li><strong>Dependencies</strong>: Fully self-contained</li><li><strong>Use Case</strong>: Air-gapped systems, archival, reliability</li><li><strong>Command</strong>: <code>squibv document.md --bundle-offline</code></li></ul><h2>Styling and Customization</h2><h3>Default Styles</h3><p>SquibView CLI includes professional default styles:</p><ul><li>Clean typography with system fonts</li><li>Responsive design for mobile/desktop</li><li>Syntax highlighting for code blocks</li><li>Professional table styling</li><li>Print-optimized layouts</li></ul><h3>Custom CSS</h3><div data-source-type="bash"><pre><code class="hljs language-bash" data-source-type="code" data-lang="bash"><span class="hljs-comment"># Override with custom styles</span>
 squibv document.md --css my-theme.css
 </code></pre></div><p>Example custom CSS:</p><div data-source-type="css"><pre><code class="hljs language-css" data-source-type="code" data-lang="css"><span class="hljs-comment">/* Override default styles */</span><span class="hljs-selector-tag">body</span> {

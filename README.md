@@ -37,27 +37,28 @@ SquibView renders Markdown (or HTML) with live preview and allows editing in bot
 
 ## Quick Start
 
-### Browser - Zero Configuration with Autoload 
-Autoload config dynamically loads dependancies for mermaid, math, geojson, and more.  See the Build Options section below for more on configuring Squibview for your project.
+### Browser - Zero Configuration (Recommended)
+The easiest way to get started - fence libraries (math, mermaid, etc) load automatically from CDN when your content needs them.  Special care is taken to not load dependancies that may have already been provisioned so there is no double-loading.
 
 ```html
 <!-- SquibView CSS -->
 <link rel="stylesheet" href="https://unpkg.com/squibview/dist/squibview.min.css">
 
 <script type="module">
-  // Autoload build - libraries load automatically from CDN when needed!
-  import SquibView from 'https://unpkg.com/squibview/dist/squibview.autoload.esm.min.js';
+  import SquibView from 'https://unpkg.com/squibview/dist/squibview.esm.min.js';
 
   const editor = new SquibView('#editor', {
-    initialContent: '# Hello\nStart typing **markdown**...\n\n```mermaid\ngraph TD\n  A --> B\n```'
-    // Mermaid, syntax highlighting, math, maps all load automatically!
+    initialContent: '# Hello\nStart typing **markdown**...\n\n```mermaid\ngraph TD\n  A --> B\n```',
+    autoload_deps: { all: true }  // Enable autoloading of fence libraries (mermaid, math etc)
   });
 </script>
 
 <div id="editor"></div>
 ```
 
-> **New in v1.0.18**: Autoload build loads libraries from CDN only when content needs them. No setup required!
+With the autoload_deps config Mermaid, syntax highlighting, math rendering, and maps load automatically when you use them.  If you need more finegrain control our are using other libraries for rendering math/diagrams/etc leave autoload_deps off (default) and load your own libraries.  See examples for more.
+
+For those running in air_gapped or offline environments use the standalone builds (see docs) which have all major fences (mermaid, mathjax, threejs, etc) bundled in (note these buidls are 3.6MB).
 
 ### NPM Install
 ```bash
@@ -66,7 +67,16 @@ npm install squibview
 
 ```javascript
 import SquibView from 'squibview';
-const editor = new SquibView('#editor');
+
+// With autoload (recommended)
+const editor = new SquibView('#editor', {
+  autoload_deps: { all: true }
+});
+
+// Or manually manage dependencies
+const editor = new SquibView('#editor', {
+  autoload_deps: null  // Load dependencies yourself
+});
 ```
 
 ### CLI Tool
@@ -123,13 +133,13 @@ editor.exportHTML();   // Download as file
 ## Examples
 
 **Live Examples** (GitHub Pages)
-- [Basic Usage](https://deftio.github.io/squibview/examples/example_ESM.html) - Simple editor setup
+- [Basic Usage](https://deftio.github.io/squibview/examples/example_autoload_simple.html) - Simple editor setup
 - [Diff Viewer](https://deftio.github.io/squibview/examples/diff_view_inline.html) - Compare revisions
 - [Live Diff](https://deftio.github.io/squibview/examples/diff_view_live.html) - Track changes in real-time
 - [React Integration](https://deftio.github.io/squibview/examples/example_react.html) - Use with React
 
 **Local Examples** (after cloning repo)
-- [Basic Usage](./examples/example_ESM.html)
+- [Basic Usage](./examples/example_autoload_simple.html)
 - [Diff Viewer](./examples/diff_view_inline.html) 
 - [Live Diff](./examples/diff_view_live.html)
 - [All Examples](./examples/index.html)
@@ -149,14 +159,16 @@ editor.exportHTML();   // Download as file
 
 ## Build Options
 
-**Each configuration is available in both ESM (for modern bundlers) and UMD (for script tags) formats:**
+**All builds include integrated autoload capability (v1.0.18+). Each configuration is available in both ESM (for modern bundlers) and UMD (for script tags) formats:**
 
-| Configuration | What It Does | Best For | Size (min/gzip) | What's Included |
+| Configuration | What It Does | Best For | Size (minified) | What's Included |
 |--------------|--------------|----------|-----------------|------------------|
-| **Autoload**  | Zero config - just works! | Easiest setup | 257.8KB / 88.4KB | Core editor + auto-loads: diagrams, math, syntax highlighting, maps, 3D |
-| **Standard** | Pre-bundles common libraries | No CDN needed | 245.3KB / 85.2KB | Editor + diagram (mermaid) + syntax highlighting (hljs) |
-| **Lean** | Minimal - you add libraries | Custom bundlers | 126.2KB / 35.7KB | Editor only - bring your own libraries |
-| **Standalone** | Everything pre-bundled | Offline use | 3.5MB / 1MB | Everything - no external dependencies |
+| **Standard** 🚀 | Recommended - includes autoload | Most projects | 254KB | Core editor with autoload capability for all features |
+| **Lean** | Minimal - you add libraries | Custom bundlers | 135KB | Editor only - bring your own libraries |
+| **Standalone** | Everything pre-bundled | Offline use | 3.5MB | Everything included - no external dependencies |
+
+
+
 
 
 
@@ -164,34 +176,45 @@ editor.exportHTML();   // Download as file
 
 ### Quick Selection Guide
 
-- **Want it to just work?** → Use **Autoload** (`squibview.autoload.esm.min.js`) - Zero config, features load automatically
-- **Need offline/no CDN?** → Use **Standard** (`squibview.esm.min.js`) - Common features pre-bundled
+- **Want it to just work?** → Use **Standard** with `autoload_deps: { all: true }` - Features load automatically
 - **Custom build setup?** → Use **Lean** (`squibview.esm-lean.min.js`) - You control all dependencies
-- **Airgapped environment?** → Use **Standalone** (`squibview.standalone.esm.min.js`) - Everything included (3.5MB)
+- **Offline/airgapped?** → Use **Standalone** (`squibview.standalone.esm.min.js`) - Everything included (3.6MB)
 
 ### Complete File List
 
-| File | Module Format | Configuration | Size (min/gzip) |
+| File | Module Format | Configuration | Size (minified) |
 |------|--------------|---------------|-----------------|
-| `squibview.esm.min.js` | ESM | Standard | 245KB / 85KB |
-| `squibview.umd.min.js` | UMD | Standard | 246KB / 85KB |
-| `squibview.autoload.esm.min.js` | ESM | Autoload | 258KB / 88KB |
-| `squibview.autoload.umd.min.js` | UMD | Autoload | 258KB / 88KB |
-| `squibview.esm-lean.min.js` | ESM | Lean | 126KB / 36KB |
-| `squibview.umd-lean.min.js` | UMD | Lean | 128KB / 36KB |
-| `squibview.standalone.esm.min.js` | ESM | Standalone | 3.6MB / 982KB |
-| `squibview.standalone.umd.min.js` | UMD | Standalone | 3.8MB / 1MB |
-| `squibview.min.css` | - | Required for all | 23KB / 5KB |
+| `squibview.esm.min.js` | ESM | Standard | 254KB |
+| `squibview.umd.min.js` | UMD | Standard | 255KB |
+| `squibview.esm-lean.min.js` | ESM | Lean | 135KB |
+| `squibview.umd-lean.min.js` | UMD | Lean | 137KB |
+| `squibview.standalone.esm.min.js` | ESM | Standalone | 3.5MB |
+| `squibview.standalone.umd.min.js` | UMD | Standalone | 3.7MB |
+| `squibview.min.css` | - | Required for all | 23KB |
 
 > **v1.0.15+**: Default builds now include markdown-it, diff-match-patch, and tiny-emitter bundled. Use `-lean` builds if you need the old behavior.
 
-### Autoload Build (NEW in v1.0.18) - Recommended for Most Users
+### Autoload Configuration (v1.0.18+)
 
-The autoload build (`squibview.autoload.*.js`) gives you everything with zero configuration:
-- **Just works** - No setup needed, no libraries to install
-- **Smart loading** - Features load automatically when your content needs them
-- **Fast initial load** - 258KB to start, loads extras only when used
-- **No duplicate loading** - Libraries cached and shared between multiple editor instances if needed
+All SquibView builds now include autoload capability. Enable it with the `autoload_deps` option:
+
+```javascript
+// Enable autoloading for all libraries
+const editor = new SquibView('#editor', {
+  autoload_deps: { all: true }
+});
+
+// Fine-grained control
+const editor = new SquibView('#editor', {
+  autoload_deps: {
+    mermaid: 'ondemand',    // Load when mermaid blocks detected
+    hljs: 'auto',           // Load immediately on init
+    mathjax: false,         // Never load (disable)
+    leaflet: 'ondemand',    // Load when map blocks detected
+    three: 'ondemand'       // Load when STL blocks detected
+  }
+});
+```
 
 #### What Gets Auto-Loaded When Needed:
 
@@ -203,32 +226,17 @@ The autoload build (`squibview.autoload.*.js`) gives you everything with zero co
 | ` ```geojson ` | Leaflet (142KB) | Interactive maps |
 | ` ```stl3d ` | Three.js (1.1MB) | 3D model viewing |
 
-Everything loads from fast CDNs (cdnjs/jsdelivr) and caches locally.
-
-Example usage:
-```html
-<!-- Just use the autoload build - libraries load automatically -->
-<script type="module">
-  import SquibView from 'https://unpkg.com/squibview/dist/squibview.autoload.esm.min.js';
-
-  const editor = new SquibView('#editor', {
-    initialContent: '# Hello\n\n```mermaid\ngraph TD\n  A --> B\n```'
-    // Mermaid will load automatically when needed!
-  });
-</script>
-```
-
-#### Advanced Autoload Configuration
+#### Advanced Configuration
 
 Control loading behavior per library:
 
 ```javascript
 const editor = new SquibView('#editor', {
-  autoload: {
-    // Loading strategies: 'auto' | 'ondemand' | 'none' | function
+  autoload_deps: {
+    // Loading strategies: 'auto' | 'ondemand' | false | function
     mermaid: 'auto',        // Load immediately on init
     hljs: 'ondemand',       // Load when code blocks are detected (default)
-    mathjax: false,         // Never load (same as 'none')
+    mathjax: false,         // Never load
     leaflet: 'ondemand',    // Load when map blocks detected
     three: myCustomLoader,  // Use custom loading function
 

@@ -474,6 +474,15 @@ function _toPropertyKey(t) {
   var i = _toPrimitive(t, "string");
   return "symbol" == typeof i ? i : i + "";
 }
+function _typeof(o) {
+  "@babel/helpers - typeof";
+
+  return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) {
+    return typeof o;
+  } : function (o) {
+    return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
+  }, _typeof(o);
+}
 function _unsupportedIterableToArray(r, a) {
   if (r) {
     if ("string" == typeof r) return _arrayLikeToArray(r, a);
@@ -3215,6 +3224,7 @@ var SquibView = /*#__PURE__*/function () {
    * @param {string} [options.titleContent=''] - Content for the title section
    * @param {string} [options.initialView='split'] - Initial view mode ('src', 'html', 'split')
    * @param {string} [options.baseClass='squibview'] - Base CSS class for styling
+   * @param {Object|null} [options.autoload_deps=null] - Configuration for autoloading dependencies. null = disabled (default), { all: true } = enable all, or fine-grained control per library
    * @throws {Error} Throws if the container element is not found
    */
   function SquibView(element) {
@@ -3235,6 +3245,9 @@ var SquibView = /*#__PURE__*/function () {
     if (!this.container) {
       throw new Error('Container element not found');
     }
+
+    // Initialize autoload configuration
+    this._initializeAutoload();
 
     // Initialize event emitter for plugin communication and selection events
     this.events = new TinyEmitter();
@@ -3289,45 +3302,503 @@ var SquibView = /*#__PURE__*/function () {
   }
 
   /**
-   * Initialize the HTML to Markdown converter
-   * 
+   * Initialize autoload configuration
    * @private
    */
   return _createClass(SquibView, [{
-    key: "_initializeHtmlToMarkdown",
+    key: "_initializeAutoload",
+    value: function _initializeAutoload() {
+      var _this2 = this;
+      var autoloadConfig = this.options.autoload_deps;
+
+      // If autoload is disabled (null or false), do nothing
+      if (!autoloadConfig) {
+        this.autoloadConfig = null;
+        return;
+      }
+
+      // Parse the configuration
+      this.autoloadConfig = {
+        enabled: true,
+        cdnUrls: _objectSpread2(_objectSpread2({}, SquibView.DEFAULT_CDN_URLS), autoloadConfig.cdnUrls || {}),
+        libraries: {}
+      };
+
+      // Helper to parse library config
+      var parseLibConfig = function parseLibConfig(libName, config) {
+        // If 'all' is set, apply to all libraries
+        if (config.all === true) {
+          return {
+            strategy: 'ondemand'
+          };
+        } else if (config.all === 'auto') {
+          return {
+            strategy: 'auto'
+          };
+        } else if (config.all === false) {
+          return {
+            strategy: 'none'
+          };
+        }
+
+        // Check specific library config
+        var libConfig = config[libName];
+        if (libConfig === false || libConfig === 'none') {
+          return {
+            strategy: 'none'
+          };
+        } else if (libConfig === true || libConfig === 'ondemand') {
+          return {
+            strategy: 'ondemand'
+          };
+        } else if (libConfig === 'auto') {
+          return {
+            strategy: 'auto'
+          };
+        } else if (typeof libConfig === 'function') {
+          return {
+            strategy: 'custom',
+            handler: libConfig
+          };
+        } else if (_typeof(libConfig) === 'object') {
+          return libConfig;
+        }
+
+        // Default based on 'all' setting or ondemand
+        return config.all ? {
+          strategy: 'ondemand'
+        } : {
+          strategy: 'none'
+        };
+      };
+
+      // Configure each library
+      ['mermaid', 'hljs', 'mathjax', 'leaflet', 'three'].forEach(function (lib) {
+        _this2.autoloadConfig.libraries[lib] = parseLibConfig(lib, autoloadConfig);
+      });
+
+      // Track loaded libraries
+      this.loadedLibraries = new Set();
+      this.loadingPromises = {};
+
+      // Load 'auto' libraries immediately after init
+      setTimeout(function () {
+        return _this2._loadAutoLibraries();
+      }, 0);
+    }
+
+    /**
+     * Load libraries configured with 'auto' strategy
+     * @private
+     */
+  }, {
+    key: "_loadAutoLibraries",
     value: (function () {
-      var _initializeHtmlToMarkdown2 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
-        var module, HtmlToMarkdownClass;
+      var _loadAutoLibraries2 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
+        var _i, _Object$entries, _Object$entries$_i, libName, config;
         return _regeneratorRuntime().wrap(function _callee$(_context) {
           while (1) switch (_context.prev = _context.next) {
             case 0:
-              _context.prev = 0;
+              if (!(!this.autoloadConfig || !this.autoloadConfig.enabled)) {
+                _context.next = 2;
+                break;
+              }
+              return _context.abrupt("return");
+            case 2:
+              _i = 0, _Object$entries = Object.entries(this.autoloadConfig.libraries);
+            case 3:
+              if (!(_i < _Object$entries.length)) {
+                _context.next = 11;
+                break;
+              }
+              _Object$entries$_i = _slicedToArray(_Object$entries[_i], 2), libName = _Object$entries$_i[0], config = _Object$entries$_i[1];
+              if (!(config.strategy === 'auto')) {
+                _context.next = 8;
+                break;
+              }
+              _context.next = 8;
+              return this._autoloadLibrary(libName);
+            case 8:
+              _i++;
+              _context.next = 3;
+              break;
+            case 11:
+            case "end":
+              return _context.stop();
+          }
+        }, _callee, this);
+      }));
+      function _loadAutoLibraries() {
+        return _loadAutoLibraries2.apply(this, arguments);
+      }
+      return _loadAutoLibraries;
+    }()
+    /**
+     * Load a script dynamically
+     * @private
+     */
+    )
+  }, {
+    key: "_loadScript",
+    value: function _loadScript(src) {
+      return new Promise(function (resolve, reject) {
+        if (document.querySelector("script[src=\"".concat(src, "\"]"))) {
+          resolve();
+          return;
+        }
+        var script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = function () {
+          return reject(new Error("Failed to load script: ".concat(src)));
+        };
+        document.head.appendChild(script);
+      });
+    }
+
+    /**
+     * Load a CSS file dynamically
+     * @private
+     */
+  }, {
+    key: "_loadCSS",
+    value: function _loadCSS(href) {
+      return new Promise(function (resolve, reject) {
+        if (document.querySelector("link[href=\"".concat(href, "\"]"))) {
+          resolve();
+          return;
+        }
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = href;
+        link.onload = resolve;
+        link.onerror = function () {
+          return reject(new Error("Failed to load CSS: ".concat(href)));
+        };
+        document.head.appendChild(link);
+      });
+    }
+
+    /**
+     * Autoload a specific library
+     * @private
+     */
+  }, {
+    key: "_autoloadLibrary",
+    value: (function () {
+      var _autoloadLibrary2 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee2(libName) {
+        var config, result, cdnConfig, _result;
+        return _regeneratorRuntime().wrap(function _callee2$(_context2) {
+          while (1) switch (_context2.prev = _context2.next) {
+            case 0:
+              if (!(!this.autoloadConfig || !this.autoloadConfig.enabled)) {
+                _context2.next = 2;
+                break;
+              }
+              return _context2.abrupt("return", false);
+            case 2:
+              config = this.autoloadConfig.libraries[libName];
+              if (!(!config || config.strategy === 'none')) {
+                _context2.next = 5;
+                break;
+              }
+              return _context2.abrupt("return", false);
+            case 5:
+              if (!this.loadedLibraries.has(libName)) {
+                _context2.next = 7;
+                break;
+              }
+              return _context2.abrupt("return", true);
+            case 7:
+              if (!this._isLibraryLoaded(libName)) {
+                _context2.next = 10;
+                break;
+              }
+              this.loadedLibraries.add(libName);
+              return _context2.abrupt("return", true);
+            case 10:
+              if (!(config.strategy === 'custom' && config.handler)) {
+                _context2.next = 16;
+                break;
+              }
+              _context2.next = 13;
+              return config.handler();
+            case 13:
+              result = _context2.sent;
+              if (result) this.loadedLibraries.add(libName);
+              return _context2.abrupt("return", result);
+            case 16:
+              if (!this.loadingPromises[libName]) {
+                _context2.next = 18;
+                break;
+              }
+              return _context2.abrupt("return", this.loadingPromises[libName]);
+            case 18:
+              // Start loading
+              cdnConfig = this.autoloadConfig.cdnUrls[libName];
+              if (cdnConfig) {
+                _context2.next = 21;
+                break;
+              }
+              return _context2.abrupt("return", false);
+            case 21:
+              this.loadingPromises[libName] = this._loadLibraryAssets(libName, cdnConfig);
+              _context2.prev = 22;
+              _context2.next = 25;
+              return this.loadingPromises[libName];
+            case 25:
+              _result = _context2.sent;
+              if (_result) {
+                this.loadedLibraries.add(libName);
+                // Re-initialize if needed
+                if (libName === 'mermaid') {
+                  this.initializeLibraries();
+                }
+              }
+              return _context2.abrupt("return", _result);
+            case 28:
+              _context2.prev = 28;
+              delete this.loadingPromises[libName];
+              return _context2.finish(28);
+            case 31:
+            case "end":
+              return _context2.stop();
+          }
+        }, _callee2, this, [[22,, 28, 31]]);
+      }));
+      function _autoloadLibrary(_x) {
+        return _autoloadLibrary2.apply(this, arguments);
+      }
+      return _autoloadLibrary;
+    }()
+    /**
+     * Load library assets (script and optional CSS)
+     * @private
+     */
+    )
+  }, {
+    key: "_loadLibraryAssets",
+    value: (function () {
+      var _loadLibraryAssets2 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee3(libName, cdnConfig) {
+        var promises;
+        return _regeneratorRuntime().wrap(function _callee3$(_context3) {
+          while (1) switch (_context3.prev = _context3.next) {
+            case 0:
+              _context3.prev = 0;
+              promises = [];
+              if (cdnConfig.script) {
+                promises.push(this._loadScript(cdnConfig.script));
+              }
+              if (cdnConfig.css) {
+                promises.push(this._loadCSS(cdnConfig.css));
+              }
+              _context3.next = 6;
+              return Promise.all(promises);
+            case 6:
+              _context3.next = 8;
+              return this._waitForLibrary(libName);
+            case 8:
+              if (!(libName === 'three' && window.THREE)) {
+                _context3.next = 15;
+                break;
+              }
+              if (!this.autoloadConfig.cdnUrls.stlLoader) {
+                _context3.next = 12;
+                break;
+              }
+              _context3.next = 12;
+              return this._loadScript(this.autoloadConfig.cdnUrls.stlLoader.script);
+            case 12:
+              if (!this.autoloadConfig.cdnUrls.orbitControls) {
+                _context3.next = 15;
+                break;
+              }
+              _context3.next = 15;
+              return this._loadScript(this.autoloadConfig.cdnUrls.orbitControls.script);
+            case 15:
+              return _context3.abrupt("return", this._isLibraryLoaded(libName));
+            case 18:
+              _context3.prev = 18;
+              _context3.t0 = _context3["catch"](0);
+              if (this.autoloadConfig.debug) {
+                console.error("Failed to load ".concat(libName, ":"), _context3.t0);
+              }
+              return _context3.abrupt("return", false);
+            case 22:
+            case "end":
+              return _context3.stop();
+          }
+        }, _callee3, this, [[0, 18]]);
+      }));
+      function _loadLibraryAssets(_x2, _x3) {
+        return _loadLibraryAssets2.apply(this, arguments);
+      }
+      return _loadLibraryAssets;
+    }()
+    /**
+     * Wait for a library to become available
+     * @private
+     */
+    )
+  }, {
+    key: "_waitForLibrary",
+    value: function _waitForLibrary(libName) {
+      var _this3 = this;
+      var maxAttempts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 20;
+      return new Promise(function (resolve) {
+        var attempts = 0;
+        var _check = function check() {
+          if (_this3._isLibraryLoaded(libName) || attempts >= maxAttempts) {
+            resolve();
+          } else {
+            attempts++;
+            setTimeout(_check, 100);
+          }
+        };
+        _check();
+      });
+    }
+
+    /**
+     * Check if a library is loaded
+     * @private
+     */
+  }, {
+    key: "_isLibraryLoaded",
+    value: function _isLibraryLoaded(libName) {
+      switch (libName) {
+        case 'mermaid':
+          return typeof window !== 'undefined' && typeof window.mermaid !== 'undefined';
+        case 'hljs':
+          return typeof window !== 'undefined' && typeof window.hljs !== 'undefined';
+        case 'mathjax':
+          return typeof window !== 'undefined' && typeof window.MathJax !== 'undefined';
+        case 'leaflet':
+          return typeof window !== 'undefined' && typeof window.L !== 'undefined';
+        case 'three':
+          return typeof window !== 'undefined' && typeof window.THREE !== 'undefined';
+        default:
+          return false;
+      }
+    }
+
+    /**
+     * Check content and autoload required libraries
+     * @private
+     */
+  }, {
+    key: "_checkAndAutoloadLibraries",
+    value: (function () {
+      var _checkAndAutoloadLibraries2 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee4(content) {
+        var promises, config, _config, _config2, _config3, _config4;
+        return _regeneratorRuntime().wrap(function _callee4$(_context4) {
+          while (1) switch (_context4.prev = _context4.next) {
+            case 0:
+              if (!(!this.autoloadConfig || !this.autoloadConfig.enabled)) {
+                _context4.next = 2;
+                break;
+              }
+              return _context4.abrupt("return");
+            case 2:
+              promises = []; // Check for mermaid diagrams
+              if (content.includes('```mermaid')) {
+                config = this.autoloadConfig.libraries.mermaid;
+                if (config && config.strategy === 'ondemand') {
+                  promises.push(this._autoloadLibrary('mermaid'));
+                }
+              }
+
+              // Check for code blocks (for syntax highlighting)
+              if (/```\w+/.test(content)) {
+                _config = this.autoloadConfig.libraries.hljs;
+                if (_config && _config.strategy === 'ondemand') {
+                  promises.push(this._autoloadLibrary('hljs'));
+                }
+              }
+
+              // Check for math content
+              if (content.includes('$$') || content.includes('```math')) {
+                _config2 = this.autoloadConfig.libraries.mathjax;
+                if (_config2 && _config2.strategy === 'ondemand') {
+                  promises.push(this._autoloadLibrary('mathjax'));
+                }
+              }
+
+              // Check for GeoJSON/TopoJSON
+              if (content.includes('```geojson') || content.includes('```topojson')) {
+                _config3 = this.autoloadConfig.libraries.leaflet;
+                if (_config3 && _config3.strategy === 'ondemand') {
+                  promises.push(this._autoloadLibrary('leaflet'));
+                }
+              }
+
+              // Check for STL 3D models
+              if (content.includes('```stl')) {
+                _config4 = this.autoloadConfig.libraries.three;
+                if (_config4 && _config4.strategy === 'ondemand') {
+                  promises.push(this._autoloadLibrary('three'));
+                }
+              }
+
+              // Wait for all libraries to load
+              if (!(promises.length > 0)) {
+                _context4.next = 11;
+                break;
+              }
+              _context4.next = 11;
+              return Promise.all(promises);
+            case 11:
+            case "end":
+              return _context4.stop();
+          }
+        }, _callee4, this);
+      }));
+      function _checkAndAutoloadLibraries(_x4) {
+        return _checkAndAutoloadLibraries2.apply(this, arguments);
+      }
+      return _checkAndAutoloadLibraries;
+    }()
+    /**
+     * Initialize the HTML to Markdown converter
+     *
+     * @private
+     */
+    )
+  }, {
+    key: "_initializeHtmlToMarkdown",
+    value: (function () {
+      var _initializeHtmlToMarkdown2 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee5() {
+        var module, HtmlToMarkdownClass;
+        return _regeneratorRuntime().wrap(function _callee5$(_context5) {
+          while (1) switch (_context5.prev = _context5.next) {
+            case 0:
+              _context5.prev = 0;
               if (!(typeof HtmlToMarkdown !== 'undefined')) {
-                _context.next = 5;
+                _context5.next = 5;
                 break;
               }
               // If HtmlToMarkdown is already available globally (e.g., in UMD build)
               this._htmlToMarkdownConverter = new HtmlToMarkdown({
                 cacheSize: 20 // Cache up to 20 recent conversions for better performance
               });
-              _context.next = 10;
+              _context5.next = 10;
               break;
             case 5:
-              _context.next = 7;
+              _context5.next = 7;
               return Promise.resolve().then(function () { return HtmlToMarkdown$1; });
             case 7:
-              module = _context.sent;
+              module = _context5.sent;
               HtmlToMarkdownClass = module["default"];
               this._htmlToMarkdownConverter = new HtmlToMarkdownClass({
                 cacheSize: 20
               });
             case 10:
-              _context.next = 16;
+              _context5.next = 16;
               break;
             case 12:
-              _context.prev = 12;
-              _context.t0 = _context["catch"](0);
-              console.error('Failed to load HtmlToMarkdown module:', _context.t0);
+              _context5.prev = 12;
+              _context5.t0 = _context5["catch"](0);
+              console.error('Failed to load HtmlToMarkdown module:', _context5.t0);
               // Provide a minimal fallback implementation
               this._htmlToMarkdownConverter = {
                 convert: function convert(html) {
@@ -3338,9 +3809,9 @@ var SquibView = /*#__PURE__*/function () {
               };
             case 16:
             case "end":
-              return _context.stop();
+              return _context5.stop();
           }
-        }, _callee, this, [[0, 12]]);
+        }, _callee5, this, [[0, 12]]);
       }));
       function _initializeHtmlToMarkdown() {
         return _initializeHtmlToMarkdown2.apply(this, arguments);
@@ -3357,18 +3828,20 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "initializeLibraries",
     value: function initializeLibraries() {
-      var _this2 = this;
-      // Initialize Mermaid for diagram rendering
-      mermaid.initialize({
-        startOnLoad: false,
-        securityLevel: 'loose',
-        theme: 'default',
-        errorCallback: function errorCallback(error) {
-          console.warn("Mermaid error:", error);
-          return "<div class='mermaid-error'></div>";
-        }
-      });
-      mermaid.init(undefined, ".mermaid");
+      var _this4 = this;
+      // Initialize Mermaid for diagram rendering if available
+      if (typeof window !== 'undefined' && window.mermaid) {
+        window.mermaid.initialize({
+          startOnLoad: false,
+          securityLevel: 'loose',
+          theme: 'default',
+          errorCallback: function errorCallback(error) {
+            console.warn("Mermaid error:", error);
+            return "<div class='mermaid-error'></div>";
+          }
+        });
+        window.mermaid.init(undefined, ".mermaid");
+      }
 
       // Initialize markdown-it with options and syntax highlighting
       this.md = new MarkdownIt({
@@ -3401,7 +3874,7 @@ var SquibView = /*#__PURE__*/function () {
 
         // Handle Mermaid diagrams
         if (info === 'mermaid') {
-          var escapedContent = _this2.md.utils.escapeHtml(content);
+          var escapedContent = _this4.md.utils.escapeHtml(content);
           return "<div class=\"mermaid\" data-source-type=\"mermaid\">".concat(escapedContent, "</div>");
         }
 
@@ -3416,22 +3889,22 @@ var SquibView = /*#__PURE__*/function () {
 
         // Handle GeoJSON maps
         if (info === 'geojson') {
-          var _escapedContent = _this2.md.utils.escapeHtml(content);
-          var _escapedSource = _this2.md.utils.escapeHtml(content);
+          var _escapedContent = _this4.md.utils.escapeHtml(content);
+          var _escapedSource = _this4.md.utils.escapeHtml(content);
           return "<div class=\"geojson-container\" data-source-type=\"geojson\" data-original-source=\"".concat(_escapedSource, "\">").concat(_escapedContent, "</div>");
         }
 
         // Handle TopoJSON maps  
         if (info === 'topojson') {
-          var _escapedContent2 = _this2.md.utils.escapeHtml(content);
-          var _escapedSource2 = _this2.md.utils.escapeHtml(content);
+          var _escapedContent2 = _this4.md.utils.escapeHtml(content);
+          var _escapedSource2 = _this4.md.utils.escapeHtml(content);
           return "<div class=\"topojson-container\" data-source-type=\"topojson\" data-original-source=\"".concat(_escapedSource2, "\">").concat(_escapedContent2, "</div>");
         }
 
         // Handle STL 3D models
         if (info === 'stl') {
-          var _escapedContent3 = _this2.md.utils.escapeHtml(content);
-          var _escapedSource3 = _this2.md.utils.escapeHtml(content);
+          var _escapedContent3 = _this4.md.utils.escapeHtml(content);
+          var _escapedSource3 = _this4.md.utils.escapeHtml(content);
           return "<div class=\"stl-container\" data-source-type=\"stl\" data-original-source=\"".concat(_escapedSource3, "\">").concat(_escapedContent3, "</div>");
         }
 
@@ -3445,7 +3918,7 @@ var SquibView = /*#__PURE__*/function () {
 
         // Default fence renderer (for code blocks)
         var langName = token.info.trim().split(/\s+/)[0] || '';
-        var escapedLangName = _this2.md.utils.escapeHtml(langName);
+        var escapedLangName = _this4.md.utils.escapeHtml(langName);
         var tableLangs = ['csv', 'tsv', 'psv'];
         if (tableLangs.includes(langName)) {
           try {
@@ -3461,11 +3934,11 @@ var SquibView = /*#__PURE__*/function () {
               var errorMessages = parsedData.errors.map(function (err) {
                 return "".concat(err.type, ": ").concat(err.message, " (Row: ").concat(err.row, ")");
               }).join('\n');
-              return "<pre class=\"squibview-error\" data-source-type=\"".concat(escapedLangName, "\">Error parsing ").concat(langName, " data:\n").concat(_this2.md.utils.escapeHtml(errorMessages), "</pre>");
+              return "<pre class=\"squibview-error\" data-source-type=\"".concat(escapedLangName, "\">Error parsing ").concat(langName, " data:\n").concat(_this4.md.utils.escapeHtml(errorMessages), "</pre>");
             }
-            return "<div data-source-type=\"".concat(escapedLangName, "\">").concat(_this2._dataToHtmlTable(parsedData.data), "</div>");
+            return "<div data-source-type=\"".concat(escapedLangName, "\">").concat(_this4._dataToHtmlTable(parsedData.data), "</div>");
           } catch (e) {
-            return "<pre class=\"squibview-error\" data-source-type=\"".concat(escapedLangName, "\">Could not render ").concat(_this2.md.utils.escapeHtml(langName), " table.</pre>");
+            return "<pre class=\"squibview-error\" data-source-type=\"".concat(escapedLangName, "\">Could not render ").concat(_this4.md.utils.escapeHtml(langName), " table.</pre>");
           }
         }
         var codeHtml;
@@ -3482,7 +3955,7 @@ var SquibView = /*#__PURE__*/function () {
           }
         }
         if (!codeHtml) {
-          var _escapedContent4 = _this2.md.utils.escapeHtml(content);
+          var _escapedContent4 = _this4.md.utils.escapeHtml(content);
           codeHtml = "<pre><code class=\"hljs language-".concat(escapedLangName, "\" data-source-type=\"code\" data-lang=\"").concat(escapedLangName, "\">").concat(_escapedContent4, "</code></pre>");
         }
         return "<div data-source-type=\"".concat(escapedLangName || 'code', "\">").concat(codeHtml, "</div>");
@@ -3499,7 +3972,7 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "_dataToHtmlTable",
     value: function _dataToHtmlTable(rows) {
-      var _this3 = this;
+      var _this5 = this;
       if (!rows || rows.length === 0) {
         return '<p class="squibview-info">No data to display.</p>';
       }
@@ -3509,7 +3982,7 @@ var SquibView = /*#__PURE__*/function () {
       var headerCells = rows[0];
       html += '<thead><tr>';
       headerCells.forEach(function (cell) {
-        html += "<th>".concat(_this3.md.utils.escapeHtml(String(cell)), "</th>");
+        html += "<th>".concat(_this5.md.utils.escapeHtml(String(cell)), "</th>");
       });
       html += '</tr></thead>';
 
@@ -3563,35 +4036,35 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "registerDefaultRenderers",
     value: function registerDefaultRenderers() {
-      var _this4 = this;
+      var _this6 = this;
       // Markdown renderer
       this.registerRenderer('md', {
         render: function render(source) {
-          return _this4.renderMarkdown(source);
+          return _this6.renderMarkdown(source);
         },
         sourceToOutput: function sourceToOutput(source) {
-          return _this4.md.render(source);
+          return _this6.md.render(source);
         },
         outputToSource: function outputToSource(output) {
           var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-          return _this4.htmlToMarkdown(output, options);
+          return _this6.htmlToMarkdown(output, options);
         },
         operations: {
           increaseHeadings: function increaseHeadings(src) {
-            return _this4.markdownAdjustHeadings(src, 1);
+            return _this6.markdownAdjustHeadings(src, 1);
           },
           decreaseHeadings: function decreaseHeadings(src) {
-            return _this4.markdownAdjustHeadings(src, -1);
+            return _this6.markdownAdjustHeadings(src, -1);
           },
           removeHR: function removeHR(src) {
             return src.replace(/---/g, '');
           },
           fixLinefeeds: function fixLinefeeds(src) {
-            return _this4.fixLinefeedsInMarkdown(src);
+            return _this6.fixLinefeedsInMarkdown(src);
           },
           toggleLinefeedView: function toggleLinefeedView() {
-            _this4.toggleLinefeedView();
-            return _this4.getContent();
+            _this6.toggleLinefeedView();
+            return _this6.getContent();
           }
         },
         buttons: [{
@@ -3616,7 +4089,7 @@ var SquibView = /*#__PURE__*/function () {
       // HTML renderer
       this.registerRenderer('html', {
         render: function render(source) {
-          return _this4.renderHTML(source);
+          return _this6.renderHTML(source);
         },
         sourceToOutput: function sourceToOutput(source) {
           return source;
@@ -3631,10 +4104,10 @@ var SquibView = /*#__PURE__*/function () {
       // RevealJS renderer
       this.registerRenderer('reveal', {
         render: function render(source) {
-          return _this4.renderHTML(_this4.makeRevealJSFullPage(source));
+          return _this6.renderHTML(_this6.makeRevealJSFullPage(source));
         },
         sourceToOutput: function sourceToOutput(source) {
-          return _this4.makeRevealJSFullPage(source);
+          return _this6.makeRevealJSFullPage(source);
         },
         outputToSource: function outputToSource(output) {
           return output;
@@ -3646,14 +4119,14 @@ var SquibView = /*#__PURE__*/function () {
       // CSV renderer
       this.registerRenderer('csv', {
         render: function render(source) {
-          var markdownTable = _this4.csvOrTsvToMarkdownTable(source, ',');
-          _this4.renderMarkdown(markdownTable);
+          var markdownTable = _this6.csvOrTsvToMarkdownTable(source, ',');
+          _this6.renderMarkdown(markdownTable);
         },
         sourceToOutput: function sourceToOutput(source) {
-          return _this4.csvOrTsvToMarkdownTable(source, ',');
+          return _this6.csvOrTsvToMarkdownTable(source, ',');
         },
         outputToSource: function outputToSource(output) {
-          return _this4.tableToCSV(output);
+          return _this6.tableToCSV(output);
         },
         operations: {},
         buttons: []
@@ -3662,14 +4135,14 @@ var SquibView = /*#__PURE__*/function () {
       // TSV renderer
       this.registerRenderer('tsv', {
         render: function render(source) {
-          var markdownTable = _this4.csvOrTsvToMarkdownTable(source, '\t');
-          _this4.renderMarkdown(markdownTable);
+          var markdownTable = _this6.csvOrTsvToMarkdownTable(source, '\t');
+          _this6.renderMarkdown(markdownTable);
         },
         sourceToOutput: function sourceToOutput(source) {
-          return _this4.csvOrTsvToMarkdownTable(source, '\t');
+          return _this6.csvOrTsvToMarkdownTable(source, '\t');
         },
         outputToSource: function outputToSource(output) {
-          return _this4.tableToCSV(output, '\t');
+          return _this6.tableToCSV(output, '\t');
         },
         operations: {},
         buttons: []
@@ -3678,14 +4151,14 @@ var SquibView = /*#__PURE__*/function () {
       // Semicolon separated values renderer
       this.registerRenderer('semisv', {
         render: function render(source) {
-          var markdownTable = _this4.csvOrTsvToMarkdownTable(source, ';');
-          _this4.renderMarkdown(markdownTable);
+          var markdownTable = _this6.csvOrTsvToMarkdownTable(source, ';');
+          _this6.renderMarkdown(markdownTable);
         },
         sourceToOutput: function sourceToOutput(source) {
-          return _this4.csvOrTsvToMarkdownTable(source, ';');
+          return _this6.csvOrTsvToMarkdownTable(source, ';');
         },
         outputToSource: function outputToSource(output) {
-          return _this4.tableToCSV(output, ';');
+          return _this6.tableToCSV(output, ';');
         },
         operations: {},
         buttons: []
@@ -3694,14 +4167,14 @@ var SquibView = /*#__PURE__*/function () {
       // Space separated values renderer
       this.registerRenderer('ssv', {
         render: function render(source) {
-          var markdownTable = _this4.csvOrTsvToMarkdownTable(source, ' ');
-          _this4.renderMarkdown(markdownTable);
+          var markdownTable = _this6.csvOrTsvToMarkdownTable(source, ' ');
+          _this6.renderMarkdown(markdownTable);
         },
         sourceToOutput: function sourceToOutput(source) {
-          return _this4.csvOrTsvToMarkdownTable(source, ' ');
+          return _this6.csvOrTsvToMarkdownTable(source, ' ');
         },
         outputToSource: function outputToSource(output) {
-          return _this4.tableToCSV(output, ' ');
+          return _this6.tableToCSV(output, ' ');
         },
         operations: {},
         buttons: []
@@ -3742,7 +4215,7 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "updateTypeButtons",
     value: function updateTypeButtons() {
-      var _this5 = this;
+      var _this7 = this;
       // Clear current buttons
       this.typeButtonsContainer.innerHTML = '';
 
@@ -3757,11 +4230,11 @@ var SquibView = /*#__PURE__*/function () {
           }
           btn.addEventListener('click', function () {
             if (renderer.operations && renderer.operations[button.action]) {
-              var newContent = renderer.operations[button.action](_this5.getContent());
-              _this5.setContent(newContent, _this5.inputContentType);
+              var newContent = renderer.operations[button.action](_this7.getContent());
+              _this7.setContent(newContent, _this7.inputContentType);
             }
           });
-          _this5.typeButtonsContainer.appendChild(btn);
+          _this7.typeButtonsContainer.appendChild(btn);
         });
       }
     }
@@ -3775,33 +4248,33 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "initializeEventHandlers",
     value: function initializeEventHandlers() {
-      var _this6 = this;
+      var _this8 = this;
       // View buttons
       this.controls.querySelectorAll('button[data-view]').forEach(function (button) {
         button.addEventListener('click', function () {
-          return _this6.setView(button.dataset.view);
+          return _this8.setView(button.dataset.view);
         });
       });
 
       // Copy buttons
       this.controls.querySelector('.copy-src-button').addEventListener('click', function () {
-        return _this6.copySource();
+        return _this8.copySource();
       });
       this.controls.querySelector('.copy-html-button').addEventListener('click', function () {
-        return _this6.copyHTML();
+        return _this8.copyHTML();
       });
 
       // Undo/redo buttons
       this.controls.querySelector('.revision-undo').addEventListener('click', function () {
-        return _this6.revisionUndo();
+        return _this8.revisionUndo();
       });
       this.controls.querySelector('.revision-redo').addEventListener('click', function () {
-        return _this6.revisionRedo();
+        return _this8.revisionRedo();
       });
 
       // Input source change event
       this.input.addEventListener('input', function () {
-        _this6.setContent();
+        _this8.setContent();
       });
 
       // Text selection event in source panel
@@ -3812,12 +4285,12 @@ var SquibView = /*#__PURE__*/function () {
             panel: 'source',
             text: selection.toString(),
             range: {
-              start: _this6.input.selectionStart,
-              end: _this6.input.selectionEnd
+              start: _this8.input.selectionStart,
+              end: _this8.input.selectionEnd
             }
           };
-          _this6.lastSelectionData = selectionData;
-          _this6.events.emit('text:selected', selectionData);
+          _this8.lastSelectionData = selectionData;
+          _this8.events.emit('text:selected', selectionData);
         }
       });
 
@@ -3828,8 +4301,8 @@ var SquibView = /*#__PURE__*/function () {
       // Create a map to store special content blocks
       this.specialContentBlocks = new Map();
       this.output.addEventListener('input', function () {
-        if (_this6.currentView === 'html' || _this6.currentView === 'split') {
-          var editableContent = _this6.output.querySelector('[contenteditable="true"]');
+        if (_this8.currentView === 'html' || _this8.currentView === 'split') {
+          var editableContent = _this8.output.querySelector('[contenteditable="true"]');
           if (editableContent) {
             // Clear any existing timer
             if (editDebounceTimer) {
@@ -3839,10 +4312,10 @@ var SquibView = /*#__PURE__*/function () {
             // Set a new timer to process the edit after a short delay (300ms)
             editDebounceTimer = setTimeout(function () {
               var renderedContent = editableContent.innerHTML;
-              var renderer = _this6.renderers[_this6.inputContentType];
+              var renderer = _this8.renderers[_this8.inputContentType];
               if (renderer && renderer.outputToSource) {
                 // Get the original source markdown
-                var originalSource = _this6.input.value;
+                var originalSource = _this8.input.value;
 
                 // Process the HTML back to markdown, passing original source for context
                 var newSource = renderer.outputToSource(renderedContent, {
@@ -3850,13 +4323,13 @@ var SquibView = /*#__PURE__*/function () {
                 });
 
                 // Update source without triggering render cycle
-                _this6.input.value = newSource;
+                _this8.input.value = newSource;
 
                 // Only save revision after editing stops for a moment
-                _this6.revisionManager.addRevision(newSource, _this6.inputContentType);
+                _this8.revisionManager.addRevision(newSource, _this8.inputContentType);
 
                 // Emit content change event
-                _this6.events.emit('content:change', newSource, _this6.inputContentType);
+                _this8.events.emit('content:change', newSource, _this8.inputContentType);
               }
 
               // Clear the timer reference
@@ -3875,10 +4348,10 @@ var SquibView = /*#__PURE__*/function () {
             panel: 'rendered',
             text: selection.toString(),
             range: range,
-            element: _this6.output.querySelector('[contenteditable="true"]')
+            element: _this8.output.querySelector('[contenteditable="true"]')
           };
-          _this6.lastSelectionData = selectionData;
-          _this6.events.emit('text:selected', selectionData);
+          _this8.lastSelectionData = selectionData;
+          _this8.events.emit('text:selected', selectionData);
         }
       });
     }
@@ -4001,15 +4474,15 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "initializeResizeObserver",
     value: function initializeResizeObserver() {
-      var _this7 = this;
+      var _this9 = this;
       var resizeObserver = new ResizeObserver(function (entries) {
         var _iterator = _createForOfIteratorHelper(entries),
           _step;
         try {
           for (_iterator.s(); !(_step = _iterator.n()).done;) {
             var entry = _step.value;
-            if (entry.target === _this7.container) {
-              _this7.adjustLayout();
+            if (entry.target === _this9.container) {
+              _this9.adjustLayout();
             }
           }
         } catch (err) {
@@ -4215,13 +4688,20 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "renderMarkdown",
     value: (function () {
-      var _renderMarkdown = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee2(md) {
-        var _this8 = this;
+      var _renderMarkdown = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee6(md) {
+        var _this10 = this;
         var markdown, html, processedHtml, contentDiv, images, _iterator2, _step2, _loop;
-        return _regeneratorRuntime().wrap(function _callee2$(_context3) {
-          while (1) switch (_context3.prev = _context3.next) {
+        return _regeneratorRuntime().wrap(function _callee6$(_context7) {
+          while (1) switch (_context7.prev = _context7.next) {
             case 0:
-              markdown = md || this.input.value;
+              markdown = md || this.input.value; // Check if we need to autoload libraries based on content
+              if (!(this.autoloadConfig && this.autoloadConfig.enabled)) {
+                _context7.next = 4;
+                break;
+              }
+              _context7.next = 4;
+              return this._checkAndAutoloadLibraries(markdown);
+            case 4:
               html = this.md.render(markdown);
               processedHtml = html;
               if (this.linefeedViewEnabled) {
@@ -4245,25 +4725,25 @@ var SquibView = /*#__PURE__*/function () {
               contentDiv = this.output.querySelector('div[contenteditable="true"]');
               images = contentDiv.querySelectorAll('img'); // render images to data urls
               _iterator2 = _createForOfIteratorHelper(images);
-              _context3.prev = 8;
+              _context7.prev = 11;
               _loop = /*#__PURE__*/_regeneratorRuntime().mark(function _loop() {
                 var img, originalSrc, canvas, ctx, tempImg;
-                return _regeneratorRuntime().wrap(function _loop$(_context2) {
-                  while (1) switch (_context2.prev = _context2.next) {
+                return _regeneratorRuntime().wrap(function _loop$(_context6) {
+                  while (1) switch (_context6.prev = _context6.next) {
                     case 0:
                       img = _step2.value;
-                      _context2.prev = 1;
+                      _context6.prev = 1;
                       // Store original src if we need to preserve it
                       originalSrc = img.src; // Only convert to data URL if not preserving tags
-                      if (_this8.options.preserveImageTags) {
-                        _context2.next = 10;
+                      if (_this10.options.preserveImageTags) {
+                        _context6.next = 10;
                         break;
                       }
                       canvas = document.createElement('canvas');
                       ctx = canvas.getContext('2d'); // Create new image and wait for it to load
                       tempImg = new Image();
                       tempImg.crossOrigin = 'anonymous';
-                      _context2.next = 10;
+                      _context6.next = 10;
                       return new Promise(function (resolve, reject) {
                         tempImg.onload = function () {
                           // Set canvas size to match image
@@ -4284,42 +4764,44 @@ var SquibView = /*#__PURE__*/function () {
                         tempImg.src = originalSrc;
                       });
                     case 10:
-                      _context2.next = 15;
+                      _context6.next = 15;
                       break;
                     case 12:
-                      _context2.prev = 12;
-                      _context2.t0 = _context2["catch"](1);
-                      console.error('Failed to convert image:', _context2.t0);
+                      _context6.prev = 12;
+                      _context6.t0 = _context6["catch"](1);
+                      console.error('Failed to convert image:', _context6.t0);
                     case 15:
                     case "end":
-                      return _context2.stop();
+                      return _context6.stop();
                   }
                 }, _loop, null, [[1, 12]]);
               });
               _iterator2.s();
-            case 11:
+            case 14:
               if ((_step2 = _iterator2.n()).done) {
-                _context3.next = 15;
+                _context7.next = 18;
                 break;
               }
-              return _context3.delegateYield(_loop(), "t0", 13);
-            case 13:
-              _context3.next = 11;
+              return _context7.delegateYield(_loop(), "t0", 16);
+            case 16:
+              _context7.next = 14;
               break;
-            case 15:
-              _context3.next = 20;
+            case 18:
+              _context7.next = 23;
               break;
-            case 17:
-              _context3.prev = 17;
-              _context3.t1 = _context3["catch"](8);
-              _iterator2.e(_context3.t1);
             case 20:
-              _context3.prev = 20;
-              _iterator2.f();
-              return _context3.finish(20);
+              _context7.prev = 20;
+              _context7.t1 = _context7["catch"](11);
+              _iterator2.e(_context7.t1);
             case 23:
+              _context7.prev = 23;
+              _iterator2.f();
+              return _context7.finish(23);
+            case 26:
               // Initialize mermaid diagrams after all images are processed
-              mermaid.init(undefined, this.output.querySelectorAll('.mermaid'));
+              if (typeof window !== 'undefined' && window.mermaid) {
+                window.mermaid.init(undefined, this.output.querySelectorAll('.mermaid'));
+              }
 
               // Initialize GeoJSON/TopoJSON maps after content is rendered
               this.initializeGeoRenderers();
@@ -4328,18 +4810,18 @@ var SquibView = /*#__PURE__*/function () {
               this.initializeSTLRenderers();
 
               // Ensure MathJax is loaded and typeset all math blocks
-              _context3.next = 28;
+              _context7.next = 31;
               return this.ensureMathJaxAndTypeset();
-            case 28:
+            case 31:
               // Emit markdown:rendered event
               this.events.emit('markdown:rendered', markdown, html);
-            case 29:
+            case 32:
             case "end":
-              return _context3.stop();
+              return _context7.stop();
           }
-        }, _callee2, this, [[8, 17, 20, 23]]);
+        }, _callee6, this, [[11, 20, 23, 26]]);
       }));
-      function renderMarkdown(_x) {
+      function renderMarkdown(_x5) {
         return _renderMarkdown.apply(this, arguments);
       }
       return renderMarkdown;
@@ -4352,10 +4834,10 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "ensureMathJaxAndTypeset",
     value: (function () {
-      var _ensureMathJaxAndTypeset = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee3() {
-        var mathBlocks, typesetAll;
-        return _regeneratorRuntime().wrap(function _callee3$(_context4) {
-          while (1) switch (_context4.prev = _context4.next) {
+      var _ensureMathJaxAndTypeset = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee7() {
+        var mathBlocks, config, loaded, typesetAll;
+        return _regeneratorRuntime().wrap(function _callee7$(_context8) {
+          while (1) switch (_context8.prev = _context8.next) {
             case 0:
               typesetAll = function _typesetAll2() {
                 if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
@@ -4364,23 +4846,42 @@ var SquibView = /*#__PURE__*/function () {
               };
               mathBlocks = this.output.querySelectorAll('div.math-display');
               if (mathBlocks.length) {
-                _context4.next = 4;
+                _context8.next = 4;
                 break;
               }
-              return _context4.abrupt("return");
+              return _context8.abrupt("return");
             case 4:
+              if (!(this.autoloadConfig && this.autoloadConfig.enabled)) {
+                _context8.next = 12;
+                break;
+              }
+              config = this.autoloadConfig.libraries.mathjax;
+              if (!(config && config.strategy === 'ondemand')) {
+                _context8.next = 12;
+                break;
+              }
+              _context8.next = 9;
+              return this._autoloadLibrary('mathjax');
+            case 9:
+              loaded = _context8.sent;
+              if (!(loaded && typeof MathJax !== 'undefined' && MathJax.typesetPromise)) {
+                _context8.next = 12;
+                break;
+              }
+              return _context8.abrupt("return", MathJax.typesetPromise(Array.from(mathBlocks)));
+            case 12:
               if (!(typeof MathJax === 'undefined')) {
-                _context4.next = 11;
+                _context8.next = 19;
                 break;
               }
               if (!window.mathJaxLoading) {
-                _context4.next = 7;
+                _context8.next = 15;
                 break;
               }
-              return _context4.abrupt("return");
-            case 7:
+              return _context8.abrupt("return");
+            case 15:
               window.mathJaxLoading = true;
-              return _context4.abrupt("return", new Promise(function (resolve, reject) {
+              return _context8.abrupt("return", new Promise(function (resolve, reject) {
                 // Configure MathJax before loading script to ensure SVG output
                 if (!window.MathJax) {
                   window.MathJax = {
@@ -4425,13 +4926,13 @@ var SquibView = /*#__PURE__*/function () {
                 };
                 document.head.appendChild(script);
               }));
-            case 11:
-              return _context4.abrupt("return", typesetAll());
-            case 12:
+            case 19:
+              return _context8.abrupt("return", typesetAll());
+            case 20:
             case "end":
-              return _context4.stop();
+              return _context8.stop();
           }
-        }, _callee3, this);
+        }, _callee7, this);
       }));
       function ensureMathJaxAndTypeset() {
         return _ensureMathJaxAndTypeset.apply(this, arguments);
@@ -4445,51 +4946,151 @@ var SquibView = /*#__PURE__*/function () {
     )
   }, {
     key: "initializeGeoRenderers",
-    value: function initializeGeoRenderers() {
-      var _this9 = this;
-      // Skip if output element not yet available (during initial setup)
-      if (!this.output) return;
+    value: (function () {
+      var _initializeGeoRenderers = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee8() {
+        var _this11 = this;
+        var geojsonContainers, topojsonContainers, config, loaded;
+        return _regeneratorRuntime().wrap(function _callee8$(_context9) {
+          while (1) switch (_context9.prev = _context9.next) {
+            case 0:
+              if (this.output) {
+                _context9.next = 2;
+                break;
+              }
+              return _context9.abrupt("return");
+            case 2:
+              // Check if we have geo content
+              geojsonContainers = this.output.querySelectorAll('.geojson-container');
+              topojsonContainers = this.output.querySelectorAll('.topojson-container');
+              if (!(geojsonContainers.length === 0 && topojsonContainers.length === 0)) {
+                _context9.next = 6;
+                break;
+              }
+              return _context9.abrupt("return");
+            case 6:
+              if (!(this.autoloadConfig && this.autoloadConfig.enabled)) {
+                _context9.next = 14;
+                break;
+              }
+              config = this.autoloadConfig.libraries.leaflet;
+              if (!(config && config.strategy === 'ondemand')) {
+                _context9.next = 14;
+                break;
+              }
+              _context9.next = 11;
+              return this._autoloadLibrary('leaflet');
+            case 11:
+              loaded = _context9.sent;
+              if (loaded) {
+                _context9.next = 14;
+                break;
+              }
+              return _context9.abrupt("return");
+            case 14:
+              if (!(typeof window === 'undefined' || !window.L)) {
+                _context9.next = 16;
+                break;
+              }
+              return _context9.abrupt("return");
+            case 16:
+              // Initialize GeoJSON containers
+              geojsonContainers.forEach(function (container) {
+                if (!container.dataset.initialized) {
+                  _this11.renderGeoJSON(container);
+                }
+              });
 
-      // Initialize GeoJSON containers
-      var geojsonContainers = this.output.querySelectorAll('.geojson-container');
-      geojsonContainers.forEach(function (container) {
-        if (!container.dataset.initialized) {
-          _this9.renderGeoJSON(container);
-        }
-      });
-
-      // Initialize TopoJSON containers
-      var topojsonContainers = this.output.querySelectorAll('.topojson-container');
-      topojsonContainers.forEach(function (container) {
-        if (!container.dataset.initialized) {
-          _this9.renderTopoJSON(container);
-        }
-      });
-    }
-
+              // Initialize TopoJSON containers
+              topojsonContainers.forEach(function (container) {
+                if (!container.dataset.initialized) {
+                  _this11.renderTopoJSON(container);
+                }
+              });
+            case 18:
+            case "end":
+              return _context9.stop();
+          }
+        }, _callee8, this);
+      }));
+      function initializeGeoRenderers() {
+        return _initializeGeoRenderers.apply(this, arguments);
+      }
+      return initializeGeoRenderers;
+    }()
     /**
      * Initializes STL 3D model renderers.
      * @private
      */
+    )
   }, {
     key: "initializeSTLRenderers",
-    value: function initializeSTLRenderers() {
-      var _this10 = this;
-      // Skip if output element not yet available (during initial setup)
-      if (!this.output) return;
-      var stlContainers = this.output.querySelectorAll('.stl-container');
-      stlContainers.forEach(function (container) {
-        if (!container.dataset.initialized) {
-          _this10.renderSTL(container);
-        }
-      });
-    }
-
+    value: (function () {
+      var _initializeSTLRenderers = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee9() {
+        var _this12 = this;
+        var stlContainers, config, loaded;
+        return _regeneratorRuntime().wrap(function _callee9$(_context10) {
+          while (1) switch (_context10.prev = _context10.next) {
+            case 0:
+              if (this.output) {
+                _context10.next = 2;
+                break;
+              }
+              return _context10.abrupt("return");
+            case 2:
+              stlContainers = this.output.querySelectorAll('.stl-container');
+              if (!(stlContainers.length === 0)) {
+                _context10.next = 5;
+                break;
+              }
+              return _context10.abrupt("return");
+            case 5:
+              if (!(this.autoloadConfig && this.autoloadConfig.enabled)) {
+                _context10.next = 13;
+                break;
+              }
+              config = this.autoloadConfig.libraries.three;
+              if (!(config && config.strategy === 'ondemand')) {
+                _context10.next = 13;
+                break;
+              }
+              _context10.next = 10;
+              return this._autoloadLibrary('three');
+            case 10:
+              loaded = _context10.sent;
+              if (loaded) {
+                _context10.next = 13;
+                break;
+              }
+              return _context10.abrupt("return");
+            case 13:
+              if (!(typeof window === 'undefined' || !window.THREE)) {
+                _context10.next = 15;
+                break;
+              }
+              return _context10.abrupt("return");
+            case 15:
+              stlContainers.forEach(function (container) {
+                if (!container.dataset.initialized) {
+                  _this12.renderSTL(container);
+                }
+              });
+            case 16:
+            case "end":
+              return _context10.stop();
+          }
+        }, _callee9, this);
+      }));
+      function initializeSTLRenderers() {
+        return _initializeSTLRenderers.apply(this, arguments);
+      }
+      return initializeSTLRenderers;
+    }()
     /**
      * Renders a GeoJSON map in the given container.
      * @param {HTMLElement} container - The container element
      * @private
      */
+    )
   }, {
     key: "renderGeoJSON",
     value: function renderGeoJSON(container) {
@@ -4975,24 +5576,24 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "copySource",
     value: (function () {
-      var _copySource = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee4() {
+      var _copySource = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee10() {
         var copyButton, markdownText, textarea;
-        return _regeneratorRuntime().wrap(function _callee4$(_context5) {
-          while (1) switch (_context5.prev = _context5.next) {
+        return _regeneratorRuntime().wrap(function _callee10$(_context11) {
+          while (1) switch (_context11.prev = _context11.next) {
             case 0:
               copyButton = this.controls.querySelector('.copy-src-button');
               copyButton.textContent = 'Copying...';
-              _context5.prev = 2;
+              _context11.prev = 2;
               markdownText = this.getMarkdownSource();
-              _context5.prev = 4;
-              _context5.next = 7;
+              _context11.prev = 4;
+              _context11.next = 7;
               return navigator.clipboard.writeText(markdownText);
             case 7:
-              _context5.next = 18;
+              _context11.next = 18;
               break;
             case 9:
-              _context5.prev = 9;
-              _context5.t0 = _context5["catch"](4);
+              _context11.prev = 9;
+              _context11.t0 = _context11["catch"](4);
               textarea = document.createElement('textarea');
               textarea.value = markdownText;
               textarea.style.position = 'fixed';
@@ -5002,12 +5603,12 @@ var SquibView = /*#__PURE__*/function () {
               document.body.removeChild(textarea);
             case 18:
               copyButton.textContent = 'Copied!';
-              _context5.next = 25;
+              _context11.next = 25;
               break;
             case 21:
-              _context5.prev = 21;
-              _context5.t1 = _context5["catch"](2);
-              console.error('Copy Markdown failed:', _context5.t1);
+              _context11.prev = 21;
+              _context11.t1 = _context11["catch"](2);
+              console.error('Copy Markdown failed:', _context11.t1);
               copyButton.textContent = 'Copy failed';
             case 25:
               setTimeout(function () {
@@ -5015,9 +5616,9 @@ var SquibView = /*#__PURE__*/function () {
               }, 2000);
             case 26:
             case "end":
-              return _context5.stop();
+              return _context11.stop();
           }
-        }, _callee4, this, [[2, 21], [4, 9]]);
+        }, _callee10, this, [[2, 21], [4, 9]]);
       }));
       function copySource() {
         return _copySource.apply(this, arguments);
@@ -5338,7 +5939,7 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "onTextSelected",
     value: function onTextSelected(callback) {
-      var _this11 = this;
+      var _this13 = this;
       if (typeof callback !== 'function') {
         throw new Error('Callback must be a function');
       }
@@ -5346,7 +5947,7 @@ var SquibView = /*#__PURE__*/function () {
 
       // Return unsubscribe function
       return function () {
-        _this11.events.off('text:selected', callback);
+        _this13.events.off('text:selected', callback);
       };
     }
 
@@ -5613,9 +6214,9 @@ var SquibView = /*#__PURE__*/function () {
      * @returns {Function|null} The current handler function or null if none is set
      */
     function get() {
-      var _this12 = this;
+      var _this14 = this;
       return this._onTextReplacementHandler ? function (selectionData) {
-        var result = _this12._onTextReplacementHandler(selectionData);
+        var result = _this14._onTextReplacementHandler(selectionData);
         return result;
       } : null;
     }
@@ -5625,7 +6226,7 @@ var SquibView = /*#__PURE__*/function () {
      * Processes code blocks, SVG elements, and images to ensure they copy correctly.
      */,
     set: function set(handler) {
-      var _this13 = this;
+      var _this15 = this;
       if (handler !== null && typeof handler !== 'function') {
         throw new Error('onReplaceSelectedText handler must be a function or null');
       }
@@ -5643,7 +6244,7 @@ var SquibView = /*#__PURE__*/function () {
 
           // If the handler returns a string, use it to replace the selected text
           if (typeof result === 'string') {
-            _this13.replaceSelectedText(result, selectionData);
+            _this15.replaceSelectedText(result, selectionData);
           }
         };
 
@@ -5654,18 +6255,18 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "copyHTML",
     value: (function () {
-      var _copyHTML = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee5() {
-        var _this14 = this;
+      var _copyHTML = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee11() {
+        var _this16 = this;
         var copyButton, contentDiv, clone, images, _iterator6, _step6, _loop3, svgElements, _iterator7, _step7, _loop4, mathElements, _iterator8, _step8, _loop2, geojsonContainers, _iterator9, _step9, container, originalSource, originalContainer, allOriginalContainers, _iterator11, _step11, candidate, dataUrl, img, placeholder, _placeholder, stlContainers, _iterator10, _step10, _container, _originalSource, _originalContainer, _allOriginalContainers, _iterator12, _step12, _candidate, canvas, renderer, scene, camera, _dataUrl, _img, _placeholder2, _placeholder3, htmlContent, platform, tempDiv, selection, range, successful;
-        return _regeneratorRuntime().wrap(function _callee5$(_context9) {
-          while (1) switch (_context9.prev = _context9.next) {
+        return _regeneratorRuntime().wrap(function _callee11$(_context15) {
+          while (1) switch (_context15.prev = _context15.next) {
             case 0:
               copyButton = this.controls.querySelector('.copy-html-button');
               copyButton.textContent = 'Copying...';
-              _context9.prev = 2;
+              _context15.prev = 2;
               contentDiv = this.output.querySelector('div[contenteditable="true"]');
               if (contentDiv) {
-                _context9.next = 6;
+                _context15.next = 6;
                 break;
               }
               throw new Error('Content div not found');
@@ -5693,19 +6294,19 @@ var SquibView = /*#__PURE__*/function () {
               // Convert all images to data URLs for copying
               images = clone.querySelectorAll('img');
               _iterator6 = _createForOfIteratorHelper(images);
-              _context9.prev = 10;
+              _context15.prev = 10;
               _loop3 = /*#__PURE__*/_regeneratorRuntime().mark(function _loop3() {
                 var img, canvas, ctx, tempImg, width, height;
-                return _regeneratorRuntime().wrap(function _loop3$(_context7) {
-                  while (1) switch (_context7.prev = _context7.next) {
+                return _regeneratorRuntime().wrap(function _loop3$(_context13) {
+                  while (1) switch (_context13.prev = _context13.next) {
                     case 0:
                       img = _step6.value;
-                      _context7.prev = 1;
+                      _context13.prev = 1;
                       canvas = document.createElement('canvas');
                       ctx = canvas.getContext('2d'); // Create new image and wait for it to load
                       tempImg = new Image();
                       tempImg.crossOrigin = 'anonymous';
-                      _context7.next = 8;
+                      _context13.next = 8;
                       return new Promise(function (resolve, reject) {
                         tempImg.onload = function () {
                           // Get intended display dimensions from HTML attributes or CSS
@@ -5752,12 +6353,12 @@ var SquibView = /*#__PURE__*/function () {
                         tempImg.src = img.src;
                       });
                     case 8:
-                      _context7.next = 14;
+                      _context13.next = 14;
                       break;
                     case 10:
-                      _context7.prev = 10;
-                      _context7.t0 = _context7["catch"](1);
-                      console.error('Failed to convert image for copying:', _context7.t0);
+                      _context13.prev = 10;
+                      _context13.t0 = _context13["catch"](1);
+                      console.error('Failed to convert image for copying:', _context13.t0);
                       // Preserve the original image source if conversion fails (e.g., for external badges)
                       // This ensures badges from services like shields.io still work when copied
                       if (img.src) {
@@ -5769,54 +6370,54 @@ var SquibView = /*#__PURE__*/function () {
                       }
                     case 14:
                     case "end":
-                      return _context7.stop();
+                      return _context13.stop();
                   }
                 }, _loop3, null, [[1, 10]]);
               });
               _iterator6.s();
             case 13:
               if ((_step6 = _iterator6.n()).done) {
-                _context9.next = 17;
+                _context15.next = 17;
                 break;
               }
-              return _context9.delegateYield(_loop3(), "t0", 15);
+              return _context15.delegateYield(_loop3(), "t0", 15);
             case 15:
-              _context9.next = 13;
+              _context15.next = 13;
               break;
             case 17:
-              _context9.next = 22;
+              _context15.next = 22;
               break;
             case 19:
-              _context9.prev = 19;
-              _context9.t1 = _context9["catch"](10);
-              _iterator6.e(_context9.t1);
+              _context15.prev = 19;
+              _context15.t1 = _context15["catch"](10);
+              _iterator6.e(_context15.t1);
             case 22:
-              _context9.prev = 22;
+              _context15.prev = 22;
               _iterator6.f();
-              return _context9.finish(22);
+              return _context15.finish(22);
             case 25:
               // Convert SVG elements to PNG (excluding math SVGs which are handled separately)
               svgElements = clone.querySelectorAll('svg');
               _iterator7 = _createForOfIteratorHelper(svgElements);
-              _context9.prev = 27;
+              _context15.prev = 27;
               _loop4 = /*#__PURE__*/_regeneratorRuntime().mark(function _loop4() {
                 var svg, pngBlob, dataUrl, img, isMermaidSvg, hasExplicitDimensions, imgWidth, imgHeight;
-                return _regeneratorRuntime().wrap(function _loop4$(_context8) {
-                  while (1) switch (_context8.prev = _context8.next) {
+                return _regeneratorRuntime().wrap(function _loop4$(_context14) {
+                  while (1) switch (_context14.prev = _context14.next) {
                     case 0:
                       svg = _step7.value;
                       if (!svg.closest('.math-display')) {
-                        _context8.next = 3;
+                        _context14.next = 3;
                         break;
                       }
-                      return _context8.abrupt("return", 1);
+                      return _context14.abrupt("return", 1);
                     case 3:
-                      _context8.prev = 3;
-                      _context8.next = 6;
-                      return _this14.svgToPng(svg);
+                      _context14.prev = 3;
+                      _context14.next = 6;
+                      return _this16.svgToPng(svg);
                     case 6:
-                      pngBlob = _context8.sent;
-                      _context8.next = 9;
+                      pngBlob = _context14.sent;
+                      _context14.next = 9;
                       return new Promise(function (resolve) {
                         var reader = new FileReader();
                         reader.onloadend = function () {
@@ -5825,7 +6426,7 @@ var SquibView = /*#__PURE__*/function () {
                         reader.readAsDataURL(pngBlob);
                       });
                     case 9:
-                      dataUrl = _context8.sent;
+                      dataUrl = _context14.sent;
                       img = document.createElement('img');
                       img.src = dataUrl;
 
@@ -5854,68 +6455,68 @@ var SquibView = /*#__PURE__*/function () {
                       img.setAttribute('v:shapes', 'image' + Math.random().toString(36).substr(2, 9));
                       img.alt = "Converted diagram";
                       svg.parentNode.replaceChild(img, svg);
-                      _context8.next = 31;
+                      _context14.next = 31;
                       break;
                     case 28:
-                      _context8.prev = 28;
-                      _context8.t0 = _context8["catch"](3);
-                      console.error('Failed to convert SVG:', _context8.t0);
+                      _context14.prev = 28;
+                      _context14.t0 = _context14["catch"](3);
+                      console.error('Failed to convert SVG:', _context14.t0);
                     case 31:
                     case "end":
-                      return _context8.stop();
+                      return _context14.stop();
                   }
                 }, _loop4, null, [[3, 28]]);
               });
               _iterator7.s();
             case 30:
               if ((_step7 = _iterator7.n()).done) {
-                _context9.next = 36;
+                _context15.next = 36;
                 break;
               }
-              return _context9.delegateYield(_loop4(), "t2", 32);
+              return _context15.delegateYield(_loop4(), "t2", 32);
             case 32:
-              if (!_context9.t2) {
-                _context9.next = 34;
+              if (!_context15.t2) {
+                _context15.next = 34;
                 break;
               }
-              return _context9.abrupt("continue", 34);
+              return _context15.abrupt("continue", 34);
             case 34:
-              _context9.next = 30;
+              _context15.next = 30;
               break;
             case 36:
-              _context9.next = 41;
+              _context15.next = 41;
               break;
             case 38:
-              _context9.prev = 38;
-              _context9.t3 = _context9["catch"](27);
-              _iterator7.e(_context9.t3);
+              _context15.prev = 38;
+              _context15.t3 = _context15["catch"](27);
+              _iterator7.e(_context15.t3);
             case 41:
-              _context9.prev = 41;
+              _context15.prev = 41;
               _iterator7.f();
-              return _context9.finish(41);
+              return _context15.finish(41);
             case 44:
               // Convert Math elements to PNG images using the copy-as-image approach from math-test.html
               mathElements = Array.from(clone.querySelectorAll('.math-display'));
               if (!(mathElements.length > 0)) {
-                _context9.next = 64;
+                _context15.next = 64;
                 break;
               }
               _iterator8 = _createForOfIteratorHelper(mathElements);
-              _context9.prev = 47;
+              _context15.prev = 47;
               _loop2 = /*#__PURE__*/_regeneratorRuntime().mark(function _loop2() {
                 var mathEl, svg, serializer, svgStr, svgBlob, url, img, dataUrl, imgElement;
-                return _regeneratorRuntime().wrap(function _loop2$(_context6) {
-                  while (1) switch (_context6.prev = _context6.next) {
+                return _regeneratorRuntime().wrap(function _loop2$(_context12) {
+                  while (1) switch (_context12.prev = _context12.next) {
                     case 0:
                       mathEl = _step8.value;
-                      _context6.prev = 1;
+                      _context12.prev = 1;
                       svg = mathEl.querySelector('svg');
                       if (svg) {
-                        _context6.next = 6;
+                        _context12.next = 6;
                         break;
                       }
                       console.warn('No SVG found in math element, skipping');
-                      return _context6.abrupt("return", 1);
+                      return _context12.abrupt("return", 1);
                     case 6:
                       // Convert SVG to PNG data URL using the exact approach from math-test.html
                       serializer = new XMLSerializer();
@@ -5925,7 +6526,7 @@ var SquibView = /*#__PURE__*/function () {
                       });
                       url = URL.createObjectURL(svgBlob);
                       img = new Image();
-                      _context6.next = 13;
+                      _context12.next = 13;
                       return new Promise(function (resolve, reject) {
                         img.onload = function () {
                           var canvas = document.createElement('canvas');
@@ -6003,70 +6604,70 @@ var SquibView = /*#__PURE__*/function () {
                         img.src = url;
                       });
                     case 13:
-                      dataUrl = _context6.sent;
+                      dataUrl = _context12.sent;
                       // Replace math element with img tag containing the PNG data URL
                       imgElement = document.createElement('img');
                       imgElement.src = dataUrl;
                       imgElement.style.cssText = 'display:block;margin:0.5em 0;max-width:100%;height:auto;';
                       imgElement.alt = 'Math equation';
                       mathEl.parentNode.replaceChild(imgElement, mathEl);
-                      _context6.next = 24;
+                      _context12.next = 24;
                       break;
                     case 21:
-                      _context6.prev = 21;
-                      _context6.t0 = _context6["catch"](1);
-                      console.error('Failed to convert math element to image:', _context6.t0);
+                      _context12.prev = 21;
+                      _context12.t0 = _context12["catch"](1);
+                      console.error('Failed to convert math element to image:', _context12.t0);
                       // Keep the original element if conversion fails
                     case 24:
                     case "end":
-                      return _context6.stop();
+                      return _context12.stop();
                   }
                 }, _loop2, null, [[1, 21]]);
               });
               _iterator8.s();
             case 50:
               if ((_step8 = _iterator8.n()).done) {
-                _context9.next = 56;
+                _context15.next = 56;
                 break;
               }
-              return _context9.delegateYield(_loop2(), "t4", 52);
+              return _context15.delegateYield(_loop2(), "t4", 52);
             case 52:
-              if (!_context9.t4) {
-                _context9.next = 54;
+              if (!_context15.t4) {
+                _context15.next = 54;
                 break;
               }
-              return _context9.abrupt("continue", 54);
+              return _context15.abrupt("continue", 54);
             case 54:
-              _context9.next = 50;
+              _context15.next = 50;
               break;
             case 56:
-              _context9.next = 61;
+              _context15.next = 61;
               break;
             case 58:
-              _context9.prev = 58;
-              _context9.t5 = _context9["catch"](47);
-              _iterator8.e(_context9.t5);
+              _context15.prev = 58;
+              _context15.t5 = _context15["catch"](47);
+              _iterator8.e(_context15.t5);
             case 61:
-              _context9.prev = 61;
+              _context15.prev = 61;
               _iterator8.f();
-              return _context9.finish(61);
+              return _context15.finish(61);
             case 64:
               // Handle GeoJSON containers - convert canvas to image
               geojsonContainers = clone.querySelectorAll('.geojson-container');
               _iterator9 = _createForOfIteratorHelper(geojsonContainers);
-              _context9.prev = 66;
+              _context15.prev = 66;
               _iterator9.s();
             case 68:
               if ((_step9 = _iterator9.n()).done) {
-                _context9.next = 130;
+                _context15.next = 130;
                 break;
               }
               container = _step9.value;
-              _context9.prev = 70;
+              _context15.prev = 70;
               // Find the corresponding GeoJSON container in the original DOM by searching with proper escaping
               originalSource = container.getAttribute('data-original-source');
               if (originalSource) {
-                _context9.next = 75;
+                _context15.next = 75;
                 break;
               }
               console.warn('No original source found for GeoJSON container');
@@ -6076,46 +6677,46 @@ var SquibView = /*#__PURE__*/function () {
               originalContainer = null;
               allOriginalContainers = this.output.querySelectorAll('.geojson-container');
               _iterator11 = _createForOfIteratorHelper(allOriginalContainers);
-              _context9.prev = 78;
+              _context15.prev = 78;
               _iterator11.s();
             case 80:
               if ((_step11 = _iterator11.n()).done) {
-                _context9.next = 87;
+                _context15.next = 87;
                 break;
               }
               candidate = _step11.value;
               if (!(candidate.getAttribute('data-original-source') === originalSource)) {
-                _context9.next = 85;
+                _context15.next = 85;
                 break;
               }
               originalContainer = candidate;
-              return _context9.abrupt("break", 87);
+              return _context15.abrupt("break", 87);
             case 85:
-              _context9.next = 80;
+              _context15.next = 80;
               break;
             case 87:
-              _context9.next = 92;
+              _context15.next = 92;
               break;
             case 89:
-              _context9.prev = 89;
-              _context9.t6 = _context9["catch"](78);
-              _iterator11.e(_context9.t6);
+              _context15.prev = 89;
+              _context15.t6 = _context15["catch"](78);
+              _iterator11.e(_context15.t6);
             case 92:
-              _context9.prev = 92;
+              _context15.prev = 92;
               _iterator11.f();
-              return _context9.finish(92);
+              return _context15.finish(92);
             case 95:
               if (!originalContainer) {
-                _context9.next = 114;
+                _context15.next = 114;
                 break;
               }
-              _context9.prev = 96;
-              _context9.next = 99;
+              _context15.prev = 96;
+              _context15.next = 99;
               return this.divToDataUrl(originalContainer);
             case 99:
-              dataUrl = _context9.sent;
+              dataUrl = _context15.sent;
               if (!dataUrl) {
-                _context9.next = 107;
+                _context15.next = 107;
                 break;
               }
               img = document.createElement('img');
@@ -6125,16 +6726,16 @@ var SquibView = /*#__PURE__*/function () {
 
               // Replace the container with the image
               container.parentNode.replaceChild(img, container);
-              return _context9.abrupt("continue", 128);
+              return _context15.abrupt("continue", 128);
             case 107:
-              _context9.next = 112;
+              _context15.next = 112;
               break;
             case 109:
-              _context9.prev = 109;
-              _context9.t7 = _context9["catch"](96);
-              console.warn('Failed to convert GeoJSON container to image:', _context9.t7);
+              _context15.prev = 109;
+              _context15.t7 = _context15["catch"](96);
+              console.warn('Failed to convert GeoJSON container to image:', _context15.t7);
             case 112:
-              _context9.next = 115;
+              _context15.next = 115;
               break;
             case 114:
               console.warn('Could not find original GeoJSON container');
@@ -6144,31 +6745,31 @@ var SquibView = /*#__PURE__*/function () {
               placeholder.style.cssText = 'padding: 12px; background-color: #f0f0f0; border: 1px solid #ccc; text-align: center; margin: 0.5em 0;';
               placeholder.textContent = '[GeoJSON Map - Interactive content not available in copy]';
               container.parentNode.replaceChild(placeholder, container);
-              _context9.next = 128;
+              _context15.next = 128;
               break;
             case 121:
-              _context9.prev = 121;
-              _context9.t8 = _context9["catch"](70);
-              console.error('Error processing GeoJSON container for copy:', _context9.t8);
+              _context15.prev = 121;
+              _context15.t8 = _context15["catch"](70);
+              console.error('Error processing GeoJSON container for copy:', _context15.t8);
               // Fallback to placeholder
               _placeholder = document.createElement('div');
               _placeholder.style.cssText = 'padding: 12px; background-color: #f0f0f0; border: 1px solid #ccc; text-align: center; margin: 0.5em 0;';
               _placeholder.textContent = '[GeoJSON Map - Interactive content not available in copy]';
               container.parentNode.replaceChild(_placeholder, container);
             case 128:
-              _context9.next = 68;
+              _context15.next = 68;
               break;
             case 130:
-              _context9.next = 135;
+              _context15.next = 135;
               break;
             case 132:
-              _context9.prev = 132;
-              _context9.t9 = _context9["catch"](66);
-              _iterator9.e(_context9.t9);
+              _context15.prev = 132;
+              _context15.t9 = _context15["catch"](66);
+              _iterator9.e(_context15.t9);
             case 135:
-              _context9.prev = 135;
+              _context15.prev = 135;
               _iterator9.f();
-              return _context9.finish(135);
+              return _context15.finish(135);
             case 138:
               // Handle TopoJSON containers - convert to structured data tables
               clone.querySelectorAll('.topojson-container').forEach(function (container) {
@@ -6212,19 +6813,19 @@ var SquibView = /*#__PURE__*/function () {
               // Handle STL containers - convert canvas to image
               stlContainers = clone.querySelectorAll('.stl-container');
               _iterator10 = _createForOfIteratorHelper(stlContainers);
-              _context9.prev = 141;
+              _context15.prev = 141;
               _iterator10.s();
             case 143:
               if ((_step10 = _iterator10.n()).done) {
-                _context9.next = 211;
+                _context15.next = 211;
                 break;
               }
               _container = _step10.value;
-              _context9.prev = 145;
+              _context15.prev = 145;
               // Find the corresponding STL container in the original DOM by searching with proper escaping
               _originalSource = _container.getAttribute('data-original-source');
               if (_originalSource) {
-                _context9.next = 150;
+                _context15.next = 150;
                 break;
               }
               console.warn('No original source found for STL container');
@@ -6234,46 +6835,46 @@ var SquibView = /*#__PURE__*/function () {
               _originalContainer = null;
               _allOriginalContainers = this.output.querySelectorAll('.stl-container');
               _iterator12 = _createForOfIteratorHelper(_allOriginalContainers);
-              _context9.prev = 153;
+              _context15.prev = 153;
               _iterator12.s();
             case 155:
               if ((_step12 = _iterator12.n()).done) {
-                _context9.next = 162;
+                _context15.next = 162;
                 break;
               }
               _candidate = _step12.value;
               if (!(_candidate.getAttribute('data-original-source') === _originalSource)) {
-                _context9.next = 160;
+                _context15.next = 160;
                 break;
               }
               _originalContainer = _candidate;
-              return _context9.abrupt("break", 162);
+              return _context15.abrupt("break", 162);
             case 160:
-              _context9.next = 155;
+              _context15.next = 155;
               break;
             case 162:
-              _context9.next = 167;
+              _context15.next = 167;
               break;
             case 164:
-              _context9.prev = 164;
-              _context9.t10 = _context9["catch"](153);
-              _iterator12.e(_context9.t10);
+              _context15.prev = 164;
+              _context15.t10 = _context15["catch"](153);
+              _iterator12.e(_context15.t10);
             case 167:
-              _context9.prev = 167;
+              _context15.prev = 167;
               _iterator12.f();
-              return _context9.finish(167);
+              return _context15.finish(167);
             case 170:
               if (!_originalContainer) {
-                _context9.next = 195;
+                _context15.next = 195;
                 break;
               }
               // Look for canvas element in the original container (Three.js WebGL canvas)
               canvas = _originalContainer.querySelector('canvas');
               if (!(canvas && canvas.width > 0 && canvas.height > 0)) {
-                _context9.next = 192;
+                _context15.next = 192;
                 break;
               }
-              _context9.prev = 173;
+              _context15.prev = 173;
               // Ensure the Three.js scene is rendered before capturing
               // The renderer should be accessible through the canvas or container
               renderer = canvas._threeRenderer || _originalContainer._threeRenderer;
@@ -6292,18 +6893,18 @@ var SquibView = /*#__PURE__*/function () {
 
               // Replace the container with the image
               _container.parentNode.replaceChild(_img, _container);
-              return _context9.abrupt("continue", 209);
+              return _context15.abrupt("continue", 209);
             case 187:
-              _context9.prev = 187;
-              _context9.t11 = _context9["catch"](173);
-              console.warn('Failed to convert STL canvas to image (likely WebGL context issue):', _context9.t11);
+              _context15.prev = 187;
+              _context15.t11 = _context15["catch"](173);
+              console.warn('Failed to convert STL canvas to image (likely WebGL context issue):', _context15.t11);
             case 190:
-              _context9.next = 193;
+              _context15.next = 193;
               break;
             case 192:
               console.warn('No valid canvas found in STL container');
             case 193:
-              _context9.next = 196;
+              _context15.next = 196;
               break;
             case 195:
               console.warn('Could not find original STL container');
@@ -6313,40 +6914,40 @@ var SquibView = /*#__PURE__*/function () {
               _placeholder2.style.cssText = 'padding: 12px; background-color: #f0f0f0; border: 1px solid #ccc; text-align: center; margin: 0.5em 0;';
               _placeholder2.textContent = '[STL 3D Model - Interactive content not available in copy]';
               _container.parentNode.replaceChild(_placeholder2, _container);
-              _context9.next = 209;
+              _context15.next = 209;
               break;
             case 202:
-              _context9.prev = 202;
-              _context9.t12 = _context9["catch"](145);
-              console.error('Error processing STL container for copy:', _context9.t12);
+              _context15.prev = 202;
+              _context15.t12 = _context15["catch"](145);
+              console.error('Error processing STL container for copy:', _context15.t12);
               // Fallback to placeholder
               _placeholder3 = document.createElement('div');
               _placeholder3.style.cssText = 'padding: 12px; background-color: #f0f0f0; border: 1px solid #ccc; text-align: center; margin: 0.5em 0;';
               _placeholder3.textContent = '[STL 3D Model - Interactive content not available in copy]';
               _container.parentNode.replaceChild(_placeholder3, _container);
             case 209:
-              _context9.next = 143;
+              _context15.next = 143;
               break;
             case 211:
-              _context9.next = 216;
+              _context15.next = 216;
               break;
             case 213:
-              _context9.prev = 213;
-              _context9.t13 = _context9["catch"](141);
-              _iterator10.e(_context9.t13);
+              _context15.prev = 213;
+              _context15.t13 = _context15["catch"](141);
+              _iterator10.e(_context15.t13);
             case 216:
-              _context9.prev = 216;
+              _context15.prev = 216;
               _iterator10.f();
-              return _context9.finish(216);
+              return _context15.finish(216);
             case 219:
               htmlContent = "\n          <html xmlns:v=\"urn:schemas-microsoft-com:vml\"\n                xmlns:o=\"urn:schemas-microsoft-com:office:office\"\n                xmlns:w=\"urn:schemas-microsoft-com:office:word\">\n            <head>\n              <meta charset=\"utf-8\">\n              <style>\n                table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }\n                th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }\n                th { background-color: #f0f0f0; font-weight: bold; }\n\n                /* Code block styling */\n                .hljs { display: block; overflow-x: auto; padding: 1em; }\n                .hljs-keyword { color: #0033B3; }\n                .hljs-string { color: #067D17; }\n                .hljs-comment { color: #8C8C8C; }\n                .hljs-function { color: #00627A; }\n                .hljs-number { color: #1750EB; }\n                .hljs-operator { color: #687687; }\n                .hljs-punctuation { color: #000000; }\n\n                /* Word-specific image handling */\n                img { display: block; max-width: none; }\n              </style>\n            </head>\n            <body>\n              ".concat(clone.innerHTML, "\n            </body>\n          </html>");
               platform = this.getPlatform();
               if (!(platform === 'macos')) {
-                _context9.next = 233;
+                _context15.next = 233;
                 break;
               }
-              _context9.prev = 222;
-              _context9.next = 225;
+              _context15.prev = 222;
+              _context15.next = 225;
               return navigator.clipboard.write([new ClipboardItem({
                 'text/html': new Blob([htmlContent], {
                   type: 'text/html'
@@ -6356,18 +6957,18 @@ var SquibView = /*#__PURE__*/function () {
                 })
               })]);
             case 225:
-              _context9.next = 231;
+              _context15.next = 231;
               break;
             case 227:
-              _context9.prev = 227;
-              _context9.t14 = _context9["catch"](222);
+              _context15.prev = 227;
+              _context15.t14 = _context15["catch"](222);
               if (this.copyToClipboard(htmlContent)) {
-                _context9.next = 231;
+                _context15.next = 231;
                 break;
               }
               throw new Error('Fallback copy failed');
             case 231:
-              _context9.next = 257;
+              _context15.next = 257;
               break;
             case 233:
               // Windows/Linux approach
@@ -6377,8 +6978,8 @@ var SquibView = /*#__PURE__*/function () {
               tempDiv.style.top = '0';
               tempDiv.innerHTML = htmlContent;
               document.body.appendChild(tempDiv);
-              _context9.prev = 239;
-              _context9.next = 242;
+              _context15.prev = 239;
+              _context15.next = 242;
               return navigator.clipboard.write([new ClipboardItem({
                 'text/html': new Blob([htmlContent], {
                   type: 'text/html'
@@ -6388,11 +6989,11 @@ var SquibView = /*#__PURE__*/function () {
                 })
               })]);
             case 242:
-              _context9.next = 254;
+              _context15.next = 254;
               break;
             case 244:
-              _context9.prev = 244;
-              _context9.t15 = _context9["catch"](239);
+              _context15.prev = 244;
+              _context15.t15 = _context15["catch"](239);
               selection = window.getSelection();
               range = document.createRange();
               range.selectNodeContents(tempDiv);
@@ -6400,24 +7001,24 @@ var SquibView = /*#__PURE__*/function () {
               selection.addRange(range);
               successful = document.execCommand('copy');
               if (successful) {
-                _context9.next = 254;
+                _context15.next = 254;
                 break;
               }
               throw new Error('Fallback copy failed');
             case 254:
-              _context9.prev = 254;
+              _context15.prev = 254;
               if (tempDiv && tempDiv.parentNode) {
                 document.body.removeChild(tempDiv);
               }
-              return _context9.finish(254);
+              return _context15.finish(254);
             case 257:
               copyButton.textContent = 'Copied!';
-              _context9.next = 264;
+              _context15.next = 264;
               break;
             case 260:
-              _context9.prev = 260;
-              _context9.t16 = _context9["catch"](2);
-              console.error('Copy HTML failed:', _context9.t16);
+              _context15.prev = 260;
+              _context15.t16 = _context15["catch"](2);
+              console.error('Copy HTML failed:', _context15.t16);
               copyButton.textContent = 'Copy failed';
             case 264:
               setTimeout(function () {
@@ -6425,9 +7026,9 @@ var SquibView = /*#__PURE__*/function () {
               }, 2000);
             case 265:
             case "end":
-              return _context9.stop();
+              return _context15.stop();
           }
-        }, _callee5, this, [[2, 260], [10, 19, 22, 25], [27, 38, 41, 44], [47, 58, 61, 64], [66, 132, 135, 138], [70, 121], [78, 89, 92, 95], [96, 109], [141, 213, 216, 219], [145, 202], [153, 164, 167, 170], [173, 187], [222, 227], [239, 244, 254, 257]]);
+        }, _callee11, this, [[2, 260], [10, 19, 22, 25], [27, 38, 41, 44], [47, 58, 61, 64], [66, 132, 135, 138], [70, 121], [78, 89, 92, 95], [96, 109], [141, 213, 216, 219], [145, 202], [153, 164, 167, 170], [173, 187], [222, 227], [239, 244, 254, 257]]);
       }));
       function copyHTML() {
         return _copyHTML.apply(this, arguments);
@@ -6633,11 +7234,11 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "mathToPng",
     value: (function () {
-      var _mathToPng = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee6(mathElement) {
-        return _regeneratorRuntime().wrap(function _callee6$(_context10) {
-          while (1) switch (_context10.prev = _context10.next) {
+      var _mathToPng = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee12(mathElement) {
+        return _regeneratorRuntime().wrap(function _callee12$(_context16) {
+          while (1) switch (_context16.prev = _context16.next) {
             case 0:
-              return _context10.abrupt("return", new Promise(function (resolve, reject) {
+              return _context16.abrupt("return", new Promise(function (resolve, reject) {
                 try {
                   var svg = mathElement.querySelector('svg');
                   if (!svg) {
@@ -6683,11 +7284,11 @@ var SquibView = /*#__PURE__*/function () {
               }));
             case 1:
             case "end":
-              return _context10.stop();
+              return _context16.stop();
           }
-        }, _callee6);
+        }, _callee12);
       }));
-      function mathToPng(_x2) {
+      function mathToPng(_x6) {
         return _mathToPng.apply(this, arguments);
       }
       return mathToPng;
@@ -6717,20 +7318,20 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "mathCHTMLToPng",
     value: (function () {
-      var _mathCHTMLToPng = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee7(chtmlContainer) {
+      var _mathCHTMLToPng = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee13(chtmlContainer) {
         var rect, padding, canvas, ctx, scale, canvasWidth, canvasHeight, foreignObject, svgBlob, url;
-        return _regeneratorRuntime().wrap(function _callee7$(_context11) {
-          while (1) switch (_context11.prev = _context11.next) {
+        return _regeneratorRuntime().wrap(function _callee13$(_context17) {
+          while (1) switch (_context17.prev = _context17.next) {
             case 0:
-              _context11.prev = 0;
+              _context17.prev = 0;
               // Get container bounds
               rect = chtmlContainer.getBoundingClientRect();
               if (!(rect.width === 0 || rect.height === 0)) {
-                _context11.next = 5;
+                _context17.next = 5;
                 break;
               }
               console.warn('CHTML container has zero dimensions');
-              return _context11.abrupt("return", null);
+              return _context17.abrupt("return", null);
             case 5:
               // Create canvas
               padding = 8;
@@ -6755,7 +7356,7 @@ var SquibView = /*#__PURE__*/function () {
                 type: 'image/svg+xml;charset=utf-8'
               });
               url = URL.createObjectURL(svgBlob);
-              return _context11.abrupt("return", new Promise(function (resolve, reject) {
+              return _context17.abrupt("return", new Promise(function (resolve, reject) {
                 var img = new Image();
                 img.onload = function () {
                   try {
@@ -6774,17 +7375,17 @@ var SquibView = /*#__PURE__*/function () {
                 img.src = url;
               }));
             case 24:
-              _context11.prev = 24;
-              _context11.t0 = _context11["catch"](0);
-              console.error('CHTML to PNG conversion failed:', _context11.t0);
-              return _context11.abrupt("return", null);
+              _context17.prev = 24;
+              _context17.t0 = _context17["catch"](0);
+              console.error('CHTML to PNG conversion failed:', _context17.t0);
+              return _context17.abrupt("return", null);
             case 28:
             case "end":
-              return _context11.stop();
+              return _context17.stop();
           }
-        }, _callee7, null, [[0, 24]]);
+        }, _callee13, null, [[0, 24]]);
       }));
-      function mathCHTMLToPng(_x3) {
+      function mathCHTMLToPng(_x7) {
         return _mathCHTMLToPng.apply(this, arguments);
       }
       return mathCHTMLToPng;
@@ -6977,12 +7578,12 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "divToDataUrl",
     value: (function () {
-      var _divToDataUrl = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee8(element) {
-        var _this15 = this;
-        return _regeneratorRuntime().wrap(function _callee8$(_context12) {
-          while (1) switch (_context12.prev = _context12.next) {
+      var _divToDataUrl = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee14(element) {
+        var _this17 = this;
+        return _regeneratorRuntime().wrap(function _callee14$(_context18) {
+          while (1) switch (_context18.prev = _context18.next) {
             case 0:
-              return _context12.abrupt("return", new Promise(function (resolve, reject) {
+              return _context18.abrupt("return", new Promise(function (resolve, reject) {
                 try {
                   // Get the element's dimensions
                   var rect = element.getBoundingClientRect();
@@ -7148,7 +7749,7 @@ var SquibView = /*#__PURE__*/function () {
                     }
                     if (bestSvg) {
                       try {
-                        _this15.svgToPng(bestSvg).then(function (pngBlob) {
+                        _this17.svgToPng(bestSvg).then(function (pngBlob) {
                           var reader = new FileReader();
                           reader.onloadend = function () {
                             return resolve(reader.result);
@@ -7186,11 +7787,11 @@ var SquibView = /*#__PURE__*/function () {
               }));
             case 1:
             case "end":
-              return _context12.stop();
+              return _context18.stop();
           }
-        }, _callee8);
+        }, _callee14);
       }));
-      function divToDataUrl(_x4) {
+      function divToDataUrl(_x8) {
         return _divToDataUrl.apply(this, arguments);
       }
       return divToDataUrl;
@@ -7203,7 +7804,7 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "initializeLineNumbers",
     value: function initializeLineNumbers() {
-      var _this16 = this;
+      var _this18 = this;
       // Create line mirror for measuring line heights
       this.lineMirror = document.createElement('div');
       this.lineMirror.className = "".concat(this.options.baseClass, "-line-mirror");
@@ -7218,7 +7819,7 @@ var SquibView = /*#__PURE__*/function () {
 
       // Store bound handler for cleanup
       this._lineNumberInputHandler = function () {
-        _this16.updateLineNumbersIfNeeded();
+        _this18.updateLineNumbersIfNeeded();
       };
 
       // Update line numbers on input
@@ -7269,11 +7870,11 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "setupLineNumberScrollSync",
     value: function setupLineNumberScrollSync() {
-      var _this17 = this;
+      var _this19 = this;
       if (!this.lineGutter) return;
       this.input.addEventListener('scroll', function () {
-        if (_this17.lineGutter) {
-          _this17.lineGutter.scrollTop = _this17.input.scrollTop;
+        if (_this19.lineGutter) {
+          _this19.lineGutter.scrollTop = _this19.input.scrollTop;
         }
       });
     }
@@ -7299,7 +7900,7 @@ var SquibView = /*#__PURE__*/function () {
      * @private
      */
     function updateLineNumbers() {
-      var _this18 = this;
+      var _this20 = this;
       if (!this.options.showLineNumbers || !this.lineGutter) return;
       var lines = this.input.value.split('\n');
       var totalLines = lines.length;
@@ -7313,19 +7914,19 @@ var SquibView = /*#__PURE__*/function () {
 
       // Create line number elements
       lines.forEach(function (line, index) {
-        var lineNum = _this18.options.lineNumberStart + index;
+        var lineNum = _this20.options.lineNumberStart + index;
         var lineNumStr = String(lineNum).padStart(minDigits, '0');
 
         // Measure line height
-        var lineHeight = _this18.measureLineHeight(line);
+        var lineHeight = _this20.measureLineHeight(line);
 
         // Create line number element
         var gutterLine = document.createElement('div');
-        gutterLine.className = "".concat(_this18.options.baseClass, "-gutter-line");
+        gutterLine.className = "".concat(_this20.options.baseClass, "-gutter-line");
         gutterLine.textContent = lineNumStr;
         gutterLine.style.height = lineHeight + 'px';
         gutterLine.style.lineHeight = lineHeight + 'px';
-        _this18.lineGutter.appendChild(gutterLine);
+        _this20.lineGutter.appendChild(gutterLine);
       });
     }
 
@@ -7358,11 +7959,11 @@ var SquibView = /*#__PURE__*/function () {
   }, {
     key: "syncMirrorStyles",
     value: function syncMirrorStyles() {
-      var _this19 = this;
+      var _this21 = this;
       var computed = window.getComputedStyle(this.input);
       var stylesToCopy = ['fontFamily', 'fontSize', 'lineHeight', 'letterSpacing', 'paddingTop', 'paddingBottom', 'paddingLeft', 'paddingRight', 'borderTopWidth', 'borderBottomWidth', 'borderLeftWidth', 'borderRightWidth', 'boxSizing', 'whiteSpace', 'wordWrap', 'wordBreak', 'overflowWrap'];
       stylesToCopy.forEach(function (prop) {
-        _this19.lineMirror.style[prop] = computed[prop];
+        _this21.lineMirror.style[prop] = computed[prop];
       });
 
       // Match textarea content width exactly
@@ -7471,7 +8072,35 @@ _defineProperty(SquibView, "defaultOptions", {
   // Enable/disable line numbers
   lineNumberStart: 1,
   // Starting line number
-  lineNumberMinDigits: 2 // Minimum digits (e.g., 01, 02)
+  lineNumberMinDigits: 2,
+  // Minimum digits (e.g., 01, 02)
+  autoload_deps: null // Default off, can be { all: true } or fine-grained control
+});
+// Default CDN URLs for autoloading dependencies
+_defineProperty(SquibView, "DEFAULT_CDN_URLS", {
+  mermaid: {
+    script: 'https://unpkg.com/mermaid@10.6.1/dist/mermaid.min.js'
+  },
+  hljs: {
+    script: 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js',
+    css: 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css'
+  },
+  mathjax: {
+    script: 'https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js'
+  },
+  leaflet: {
+    script: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+    css: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+  },
+  three: {
+    script: 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'
+  },
+  stlLoader: {
+    script: 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js'
+  },
+  orbitControls: {
+    script: 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js'
+  }
 });
 _defineProperty(SquibView, "version", {
   version: VERSION,

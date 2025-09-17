@@ -24,23 +24,48 @@ npm install squibview
 
 ### CDN
 ```html
-<!-- Latest version -->
-<script src="https://unpkg.com/squibview/dist/squibview.standalone.min.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/squibview/dist/squibview.css">
+<!-- Autoload build (recommended) - libraries load automatically when needed -->
+<script type="module">
+  import SquibView from 'https://unpkg.com/squibview/dist/squibview.autoload.esm.min.js';
+  const editor = new SquibView('#editor');
+</script>
+<link rel="stylesheet" href="https://unpkg.com/squibview/dist/squibview.min.css">
 ```
 
 ## Build Formats
 
 SquibView is available in multiple formats:
 
-### ESM (ES Modules) - Default Build (v1.0.15+)
+### Autoload Build (v1.0.18+) - Recommended
+The autoload build provides zero-configuration setup with automatic loading of libraries from CDN when content requires them.
+
+```html
+<link rel="stylesheet" href="https://unpkg.com/squibview/dist/squibview.min.css">
+<script type="module">
+  import SquibView from 'https://unpkg.com/squibview/dist/squibview.autoload.esm.min.js';
+
+  const editor = new SquibView('#editor', {
+    initialContent: '# Hello\n\n```mermaid\ngraph TD\n  A --> B\n```'
+    // Mermaid loads automatically when needed!
+  });
+</script>
+```
+
+**What loads automatically:**
+- Mermaid (377KB) - When using ` ```mermaid ` blocks
+- Highlight.js (45KB) - When using code blocks
+- MathJax (1.3MB) - When using `$$math$$` or ` ```math ` blocks
+- Leaflet (142KB) - When using ` ```geojson ` or ` ```topojson `
+- Three.js (1.1MB) - When using ` ```stl3d `
+
+### ESM (ES Modules) - Standard Build (v1.0.15+)
 ```html
 <!-- Optional dependencies for advanced features -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
 <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
 
 <!-- SquibView (markdown-it is now bundled!) -->
-<link rel="stylesheet" href="../dist/squibview.css">
+<link rel="stylesheet" href="../dist/squibview.min.css">
 <script type="module">
   import SquibView from '../dist/squibview.esm.min.js';
   const editor = new SquibView('#editor');
@@ -77,7 +102,7 @@ SquibView is available in multiple formats:
 <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
 
 <!-- SquibView (markdown-it is now bundled!) -->
-<link rel="stylesheet" href="../dist/squibview.css">
+<link rel="stylesheet" href="../dist/squibview.min.css">
 <script src="../dist/squibview.umd.min.js"></script>
 <script>
   const editor = new SquibView('#editor');
@@ -104,7 +129,7 @@ SquibView is available in multiple formats:
 ### Standalone (All Dependencies Bundled)
 ```html
 <!-- SquibView -->
-<link rel="stylesheet" href="../dist/squibview.css">
+<link rel="stylesheet" href="../dist/squibview.min.css">
 <script src="../dist/squibview.standalone.min.js"></script>
 <script>
   const editor = new SquibView('#editor');
@@ -156,6 +181,30 @@ const editor = new SquibView('#editorContainer', {
   titleContent: '',            // Content for the title section
   initialView: 'split',        // Initial view mode ('src', 'html', 'split')
   baseClass: 'squibview',      // Base CSS class for styling
+});
+```
+
+### Autoload Configuration (v1.0.18+)
+```javascript
+const editor = new SquibView('#editor', {
+  autoload: {
+    // Loading strategies: 'auto' | 'ondemand' | 'none' | function
+    mermaid: 'ondemand',    // Load when mermaid blocks detected (default)
+    hljs: 'ondemand',       // Load when code blocks detected (default)
+    mathjax: 'ondemand',    // Load when math detected (default)
+    leaflet: 'ondemand',    // Load when map blocks detected (default)
+    three: 'ondemand',      // Load when STL blocks detected (default)
+
+    // Use custom CDN URLs
+    cdnUrls: {
+      mermaid: {
+        script: 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js'
+      }
+    },
+
+    // Enable debug logging (silent by default)
+    debug: false
+  }
 });
 ```
 

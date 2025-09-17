@@ -26,28 +26,31 @@ npx squibv sample.md
 
 ## Component Quick Start
 
-For web applications, use the standalone UMD build from CDN:
+For web applications, the easiest setup uses autoload:
 
 ```html
 <!DOCTYPE html>
 <html>
 <head>
     <title>SquibView Example</title>
-    <script src="https://unpkg.com/squibview/dist/squibview.standalone.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/squibview/dist/squibview.min.css">
 </head>
 <body>
     <div id="editor" style="height: 500px;"></div>
-    
-    <script>
-        const editor = new SquibView({
-            element: document.getElementById('editor'),
-            content: '# Hello World\n\nThis is **SquibView** in action!'
+
+    <script type="module">
+        import SquibView from 'https://unpkg.com/squibview/dist/squibview.esm.min.js';
+
+        const editor = new SquibView('#editor', {
+            initialContent: '# Hello World\n\nThis is **SquibView** in action!\n\n```mermaid\ngraph TD\n  A --> B\n```',
+            autoload_deps: { all: true }  // Enable autoloading
         });
     </script>
 </body>
 </html>
 ```
+
+Libraries like Mermaid, MathJax, and syntax highlighting load automatically when needed!
 
 ## Next Steps
 

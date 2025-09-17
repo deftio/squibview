@@ -127,6 +127,22 @@
             flex-shrink: 0;
         }
 
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 4px;
+            margin-left: 0.5rem;
+            background: var(--success);
+            color: white;
+            text-transform: uppercase;
+        }
+
+        .badge.new {
+            background: var(--accent);
+        }
+
         .example-link {
             display: inline-block;
             padding: 0.375rem 0.75rem;
@@ -214,12 +230,12 @@
 
     <div class="container">
         <div class="section">
-            <h2 class="section-title">Quick Start - Autoload Build</h2>
+            <h2 class="section-title">Getting Started - Autoload Examples (Recommended)</h2>
             <div class="examples-grid">
                 <div class="example">
                     <div class="example-header">
                         <div>
-                            <div class="example-title">Simple Autoload</div>
+                            <div class="example-title">Simple Autoload <span class="badge">RECOMMENDED</span></div>
                             <div class="example-description">Zero configuration - libraries load from CDN automatically when needed</div>
                         </div>
                         <div class="example-links">
@@ -232,8 +248,8 @@
                 <div class="example">
                     <div class="example-header">
                         <div>
-                            <div class="example-title">Custom Autoload</div>
-                            <div class="example-description">Configure custom CDNs, strategies, or mix with your own libraries</div>
+                            <div class="example-title">Custom Autoload Configuration</div>
+                            <div class="example-description">Fine-grained control: custom CDNs, loading strategies, selective libraries</div>
                         </div>
                         <div class="example-links">
                             <a href="example_autoload_custom.html" class="example-link">ESM</a>
@@ -241,21 +257,33 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="example">
+                    <div class="example-header">
+                        <div>
+                            <div class="example-title">Multiple Editors <span class="badge new">NEW</span></div>
+                            <div class="example-description">Four editors on one page with different views - libraries load once and share</div>
+                        </div>
+                        <div class="example-links">
+                            <a href="example_multi_editor.html" class="example-link">View</a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div class="section">
-            <h2 class="section-title">Standard Builds</h2>
+            <h2 class="section-title">Manual Dependency Management</h2>
             <div class="examples-grid">
                 <div class="example">
                     <div class="example-header">
                         <div>
-                            <div class="example-title">Standard Build</div>
-                            <div class="example-description">Pre-bundled with mermaid and highlight.js - no CDN needed</div>
+                            <div class="example-title">Bring Your Own Dependencies</div>
+                            <div class="example-description">Load all libraries manually for full control over versions and bundling</div>
                         </div>
                         <div class="example-links">
                             <a href="example_ESM.html" class="example-link">ESM</a>
-                            <a href="example_umd.html" class="example-link">UMD</a>
+                            <a href="example_UMD.html" class="example-link">UMD</a>
                         </div>
                     </div>
                 </div>

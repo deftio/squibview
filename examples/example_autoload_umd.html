@@ -4,17 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simple Autoload Example - SquibView</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
 
     <!-- SquibView CSS -->
     <link rel="stylesheet" href="../dist/squibview.min.css">
 
     <!-- Base example styles -->
-    <link rel="stylesheet" href="examples-base.css">
+    <link rel="stylesheet" href="examples.css">
 
     <style>
-        /* Page-specific overrides */
+        /* Page-specific overrides - 80vh total for all content */
+        .example-header {
+            margin-bottom: 5px;
+        }
         #editor {
-            height: calc(100vh - 180px);
+            height: calc(80vh - 140px); /* 80vh minus header and controls space */
         }
     </style>
 </head>
@@ -39,8 +43,8 @@
         <div id="editor"></div>
     </div>
 
-    <!-- Load SquibView Autoload UMD build -->
-    <script src="../dist/squibview.autoload.umd.min.js"></script>
+    <!-- Load standard SquibView UMD build - autoload is now built-in! -->
+    <script src="../dist/squibview.umd.min.js"></script>
 
     <script>
         // Initialize SquibView with autoload
@@ -51,7 +55,8 @@
                 const editor = new SquibView('#editor', {
                     initialContent: content,
                     view: 'split',
-                    showControls: false  // Controls are in HTML
+                    showControls: false,  // Controls are in HTML
+                    autoload_deps: { all: true }  // Enable autoloading for all libraries
                 });
 
                 // Make editor available globally
@@ -62,7 +67,8 @@
                 const editor = new SquibView('#editor', {
                     initialContent: '# SquibView Autoload Example\n\nEdit this content to test autoloading of libraries.',
                     view: 'split',
-                    showControls: false
+                    showControls: false,
+                    autoload_deps: { all: true }  // Enable autoloading for all libraries
                 });
                 window.editor = editor;
             });
