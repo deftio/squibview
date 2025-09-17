@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-BSD_2--Clause-orange.svg)](LICENSE)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/deftio/squibview/ci.yml?branch=main&style=flat&logo=github&label=Build&color=blue)](https://github.com/deftio/squibview/actions/workflows/ci.yml)
 
-JavaScript editor/viewer for Markdown and HTML with live preview, bidirectional editing, and rich content support.
+Markdown editor/viewer with live preview, bidirectional editing, and rich content support (code highlighting, diagrams, math, maps, csv/psv/tsv, 3D and more).
 
 **GitHub:** [**Live Demo**](https://deftio.github.io/squibview/examples/example_ESM.html) | [**Examples**](https://deftio.github.io/squibview/examples/) | [**Documentation**](https://deftio.github.io/squibview/docs/home.html) | [**API Reference**](https://deftio.github.io/squibview/docs/programmers-guide.html)  
 **Local:** [**Live Demo**](./examples/example_ESM.html) | [**Examples**](./examples/) | [**Documentation**](./docs/) | [**Source**](./src/)
@@ -35,28 +35,25 @@ SquibView renders Markdown (or HTML) with live preview and allows editing in bot
 
 ## Quick Start
 
-### Browser (ESM) - Now with Bundled Dependencies! 🎉
+### Browser - Zero Configuration with Autoload! 🚀
 ```html
 <!-- SquibView CSS -->
 <link rel="stylesheet" href="https://unpkg.com/squibview/dist/squibview.min.css">
 
-<!-- Optional: Only needed for syntax highlighting and diagrams -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
-<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-
 <script type="module">
-  // SquibView ESM build - markdown-it is now bundled! No import maps needed!
-  import SquibView from 'https://unpkg.com/squibview/dist/squibview.esm.min.js';
-  
+  // Autoload build - libraries load automatically from CDN when needed!
+  import SquibView from 'https://unpkg.com/squibview/dist/squibview.autoload.esm.min.js';
+
   const editor = new SquibView('#editor', {
-    initialContent: '# Hello\nStart typing **markdown**...'
+    initialContent: '# Hello\nStart typing **markdown**...\n\n```mermaid\ngraph TD\n  A --> B\n```'
+    // Mermaid, syntax highlighting, math, maps all load automatically!
   });
 </script>
 
 <div id="editor"></div>
 ```
 
-> **New in v1.0.15**: Default builds now include markdown-it bundled. No more import map errors! For advanced users who want to manage dependencies, use the `-lean` builds.
+> **New in v1.0.18**: Autoload build loads libraries from CDN only when content needs them. No setup required!
 
 ### NPM Install
 ```bash
@@ -148,32 +145,59 @@ editor.exportHTML();   // Download as file
 
 ## Build Options
 
-| Build | When to Use | Size | What's Included |
-|-------|-------------|------|-----------------|
-| `squibview.esm.min.js` | Modern bundlers (webpack, vite) | ~240KB | markdown-it bundled |
-| `squibview.autoload.esm.min.js` | **NEW: Autoloads fence handlers** | ~240KB | Core bundled, autoloads extras |
-| `squibview.esm-lean.min.js` | When you manage markdown-it | ~140KB | No dependencies |
-| `squibview.umd.min.js` | Script tags | ~250KB | markdown-it bundled |
-| `squibview.autoload.umd.min.js` | **NEW: Autoloads fence handlers** | ~250KB | Core bundled, autoloads extras |
-| `squibview.umd-lean.min.js` | Legacy with own dependencies | ~140KB | No dependencies |
-| `squibview.standalone.umd.min.js` | Zero setup needed | ~3.7MB | Everything bundled |
+**Each configuration is available in both ESM (for modern bundlers) and UMD (for script tags) formats:**
 
-> **v1.0.15 Change**: Default builds now include markdown-it, diff-match-patch, and tiny-emitter bundled. Use `-lean` builds if you need the old behavior.
+| Configuration | What It Does | Best For | Size (min/gzip) | What's Included |
+|--------------|--------------|----------|-----------------|------------------|
+| **Autoload** 🚀 | Zero config - just works! | Easiest setup | 257.8KB / 88.4KB | Core editor + auto-loads: diagrams, math, syntax highlighting, maps, 3D |
+| **Standard** | Pre-bundles common libraries | No CDN needed | 245.3KB / 85.2KB | Editor + diagram (mermaid) + syntax highlighting (hljs) |
+| **Lean** | Minimal - you add libraries | Custom bundlers | 126.2KB / 35.7KB | Editor only - bring your own libraries |
+| **Standalone** | Everything pre-bundled | Offline use | 3.5MB / 1MB | Everything - no external dependencies |
 
-### Autoload Build (NEW) - Best for Easy Deployment
 
-The autoload build variant (`squibview.autoload.*.js`) provides the best developer experience:
-- **Small initial download** - Only ~240KB with core functionality
-- **Automatic loading** - Libraries load from CDN when needed
-- **Zero configuration** - Works out of the box
-- **Smart caching** - Libraries only load once, even with multiple editors
 
-Libraries autoloaded on-demand:
-- **Mermaid** - For diagrams and flowcharts
-- **Highlight.js** - For syntax highlighting
-- **MathJax** - For math equations
-- **Leaflet** - For GeoJSON/TopoJSON maps
-- **Three.js** - For 3D STL models
+### Quick Selection Guide
+
+- **Want it to just work?** → Use **Autoload** (`squibview.autoload.esm.min.js`) - Zero config, features load automatically
+- **Need offline/no CDN?** → Use **Standard** (`squibview.esm.min.js`) - Common features pre-bundled
+- **Custom build setup?** → Use **Lean** (`squibview.esm-lean.min.js`) - You control all dependencies
+- **Airgapped environment?** → Use **Standalone** (`squibview.standalone.esm.min.js`) - Everything included (3.5MB)
+
+### Complete File List
+
+| File | Module Format | Configuration | Size (min/gzip) |
+|------|--------------|---------------|-----------------|
+| `squibview.esm.min.js` | ESM | Standard | 245KB / 85KB |
+| `squibview.umd.min.js` | UMD | Standard | 246KB / 85KB |
+| `squibview.autoload.esm.min.js` | ESM | Autoload | 258KB / 88KB |
+| `squibview.autoload.umd.min.js` | UMD | Autoload | 258KB / 88KB |
+| `squibview.esm-lean.min.js` | ESM | Lean | 126KB / 36KB |
+| `squibview.umd-lean.min.js` | UMD | Lean | 128KB / 36KB |
+| `squibview.standalone.esm.min.js` | ESM | Standalone | 3.6MB / 982KB |
+| `squibview.standalone.umd.min.js` | UMD | Standalone | 3.8MB / 1MB |
+| `squibview.min.css` | - | Required for all | 23KB / 5KB |
+
+> **v1.0.15+**: Default builds now include markdown-it, diff-match-patch, and tiny-emitter bundled. Use `-lean` builds if you need the old behavior.
+
+### Autoload Build (NEW in v1.0.18) - Recommended for Most Users
+
+The autoload build (`squibview.autoload.*.js`) gives you everything with zero configuration:
+- **Just works** - No setup needed, no libraries to install
+- **Smart loading** - Features load automatically when your content needs them
+- **Fast initial load** - 258KB to start, loads extras only when used
+- **No duplicate loading** - Libraries cached and shared between editors
+
+#### What Gets Auto-Loaded When Needed:
+
+| When you type... | What loads | For |
+|------------------|------------|-----|
+| ` ```mermaid ` | Mermaid (377KB) | Diagrams, flowcharts, graphs |
+| ` ```javascript ` | Highlight.js (45KB) | Syntax highlighting for code |
+| `$$x^2$$` or ` ```math ` | MathJax (1.3MB) | Mathematical equations |
+| ` ```geojson ` | Leaflet (142KB) | Interactive maps |
+| ` ```stl3d ` | Three.js (1.1MB) | 3D model viewing |
+
+Everything loads from fast CDNs (cdnjs/jsdelivr) and caches locally.
 
 Example usage:
 ```html
@@ -186,6 +210,33 @@ Example usage:
     // Mermaid will load automatically when needed!
   });
 </script>
+```
+
+#### Advanced Autoload Configuration
+
+Control loading behavior per library:
+
+```javascript
+const editor = new SquibView('#editor', {
+  autoload: {
+    // Loading strategies: 'auto' | 'ondemand' | 'none' | function
+    mermaid: 'auto',        // Load immediately on init
+    hljs: 'ondemand',       // Load when code blocks are detected (default)
+    mathjax: false,         // Never load (same as 'none')
+    leaflet: 'ondemand',    // Load when map blocks detected
+    three: myCustomLoader,  // Use custom loading function
+
+    // Use custom CDN
+    cdnUrls: {
+      mermaid: {
+        script: 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js'
+      }
+    },
+
+    // Enable debug logging (silent by default)
+    debug: true  // Shows library loading in console
+  }
+});
 ```
 
 ### Standalone Build - Best for Offline/Secure Environments

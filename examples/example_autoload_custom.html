@@ -3,125 +3,127 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SquibView Custom Autoload Example</title>
+  <title>Custom Autoload Example - SquibView</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
 
   <!-- SquibView CSS -->
   <link rel="stylesheet" href="../dist/squibview.min.css">
 
-  <!-- Common example styles -->
-  <link rel="stylesheet" href="examples-common.css">
+  <!-- Base example styles -->
+  <link rel="stylesheet" href="examples-base.css">
 
-  <!-- Pre-load Highlight.js with custom theme (GitHub Dark) -->
+  <!-- Pre-load Highlight.js with GitHub Dark theme -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/rust.min.js"></script>
 
   <style>
     /* Page-specific styles */
-    .editor-container {
-      height: calc(50vh - 80px);
-      margin-bottom: 20px;
+    .demo-section {
+      margin: 1.5rem 2rem;
     }
 
-    .config-info {
-      background: #f0f0f0;
-      padding: 15px;
-      margin-bottom: 10px;
-      border-radius: 6px;
-      font-size: 14px;
+    .demo-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #212529;
+      margin-bottom: 0.5rem;
     }
 
-    .config-info h3 {
-      margin: 0 0 10px;
-      font-size: 16px;
-      color: #333;
+    .demo-description {
+      font-size: 0.9rem;
+      color: #495057;
+      margin-bottom: 1rem;
     }
 
-    .config-info code {
-      background: white;
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-family: monospace;
+    .demo-code {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 0.875rem;
+      color: #495057;
+      border: 1px solid #dee2e6;
     }
 
-    .autoload-status {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      background: rgba(33, 150, 243, 0.9);
-      color: white;
-      padding: 10px 15px;
-      border-radius: 6px;
-      font-size: 14px;
-      z-index: 1000;
-      opacity: 0;
-      transition: opacity 0.3s;
+    .editor-demo {
+      margin: 0 2rem 2rem 2rem;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      overflow: hidden;
+      height: 400px;
     }
 
-    .autoload-status.show {
-      opacity: 1;
+    #editor1, #editor2 {
+      height: 100%;
+    }
+
+    /* Code blocks with GitHub Dark theme will show in editor */
+    .hljs {
+      background: #0d1117 !important;
+      color: #e6edf3 !important;
     }
   </style>
 </head>
 <body>
-  <div class="config-info">
-    <h3>Configuration Example 1: Pre-loaded Highlight.js</h3>
-    We've loaded <code>highlight.js</code> with GitHub Dark theme before SquibView.
-    The autoloader detects it and won't reload it.
+  <div class="example-header">
+    <h1 class="example-title">SquibView Custom Autoload Example (ESM)</h1>
+    <div class="example-version">Version 1.0.18a</div>
+    <p class="example-description">
+      Demonstrates custom autoload configurations: bring your own libraries, use custom CDNs, disable specific libraries.
+    </p>
   </div>
-  <div id="editor1" class="editor-container"></div>
 
-  <div class="config-info">
-    <h3>Configuration Example 2: Custom CDN & Disabled Libraries</h3>
-    Using custom Mermaid CDN (jsDelivr) and disabled MathJax autoloading via:
-    <code>autoload: { mathjax: false, cdnUrls: { mermaid: {...} } }</code>
+  <div class="demo-section">
+    <div class="demo-title">Example 1: Pre-loaded Highlight.js with GitHub Dark Theme</div>
+    <div class="demo-description">
+      Highlight.js is loaded before SquibView with GitHub Dark theme. The autoloader detects this and uses the existing instance.
+    </div>
+    <div class="demo-code">
+&lt;!-- Load highlight.js with custom theme before SquibView --&gt;
+&lt;link rel="stylesheet" href=".../github-dark.min.css"&gt;
+&lt;script src=".../highlight.min.js"&gt;&lt;/script&gt;
+
+// SquibView will detect and use the pre-loaded library
+const editor = new SquibView('#editor1');
+    </div>
   </div>
-  <div id="editor2" class="editor-container"></div>
+  <div class="editor-demo">
+    <div id="editor1"></div>
+  </div>
 
-  <div id="autoload-status" class="autoload-status"></div>
+  <div class="demo-section">
+    <div class="demo-title">Example 2: Custom CDN URLs & Disabled Libraries</div>
+    <div class="demo-description">
+      Uses jsDelivr CDN for Mermaid instead of default CDN, and disables MathJax autoloading completely.
+    </div>
+    <div class="demo-code">
+const editor = new SquibView('#editor2', {
+  autoload: {
+    mathjax: false,  // Disable MathJax
+    cdnUrls: {
+      mermaid: {
+        script: 'https://cdn.jsdelivr.net/npm/mermaid@10/...'
+      }
+    }
+  }
+});
+    </div>
+  </div>
+  <div class="editor-demo">
+    <div id="editor2"></div>
+  </div>
+
+  <!-- Removed autoload status notification -->
 
   <script type="module">
     import SquibView from '../dist/squibview.autoload.esm.min.js';
 
-    // Monitor autoloading for both editors
-    const monitorAutoloading = () => {
-      const status = document.getElementById('autoload-status');
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          mutation.addedNodes.forEach((node) => {
-            if (node.tagName === 'SCRIPT' || node.tagName === 'LINK') {
-              const url = node.src || node.href || '';
-              let message = '';
-
-              if (url.includes('mermaid')) {
-                message = url.includes('jsdelivr')
-                  ? '🎯 Loaded Mermaid from custom CDN (jsDelivr)'
-                  : '📦 Loaded Mermaid from default CDN';
-              } else if (url.includes('leaflet')) {
-                message = '🗺️ Autoloaded Leaflet for maps';
-              } else if (url.includes('three')) {
-                message = '🎮 Autoloaded Three.js for 3D';
-              }
-
-              if (message) {
-                status.textContent = message;
-                status.classList.add('show');
-                setTimeout(() => status.classList.remove('show'), 3000);
-                console.log(message, url);
-              }
-            }
-          });
-        });
-      });
-
-      observer.observe(document.head, { childList: true });
-    };
+    // Removed monitoring code - autoloading is now silent
 
     const init = async () => {
       try {
-        monitorAutoloading();
-
         // Load sample content
         const response = await fetch('./sample-content.md');
         const content = await response.text();
@@ -130,8 +132,7 @@
         const editor1 = new SquibView('#editor1', {
           initialView: 'split',
           showControls: true,
-          titleShow: true,
-          titleContent: 'Editor 1: Using Pre-loaded Highlight.js (GitHub Dark)'
+          titleShow: false
           // No autoload config needed - will detect pre-loaded hljs
         });
         editor1.setContent(content, 'md');
@@ -140,8 +141,7 @@
         const editor2 = new SquibView('#editor2', {
           initialView: 'split',
           showControls: true,
-          titleShow: true,
-          titleContent: 'Editor 2: Custom CDN + MathJax Disabled',
+          titleShow: false,
           autoload: {
             // Disable MathJax completely
             mathjax: false,
@@ -161,9 +161,9 @@
         window.editor1 = editor1;
         window.editor2 = editor2;
 
-        console.log('✅ Custom autoload configuration examples initialized');
-        console.log('📦 Editor 1: Using pre-loaded Highlight.js');
-        console.log('⚙️ Editor 2: Custom Mermaid CDN, MathJax disabled');
+        // Custom autoload configuration examples initialized
+        // Editor 1 uses pre-loaded Highlight.js
+        // Editor 2 uses custom Mermaid CDN with MathJax disabled
 
       } catch (error) {
         console.error('Failed to initialize:', error);

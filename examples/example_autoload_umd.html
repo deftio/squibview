@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Autoload Example - SquibView</title>
+
+    <!-- SquibView CSS -->
+    <link rel="stylesheet" href="../dist/squibview.min.css">
+
+    <!-- Base example styles -->
+    <link rel="stylesheet" href="examples-base.css">
+
+    <style>
+        /* Page-specific overrides */
+        #editor {
+            height: calc(100vh - 180px);
+        }
+    </style>
+</head>
+<body>
+    <div class="example-header">
+        <h1 class="example-title">SquibView Autoload Example (UMD)</h1>
+        <div class="example-version">Version 1.0.18a</div>
+        <p class="example-description">
+            Simple editor setup with autoloading of fence handler libraries (mermaid, highlight.js, MathJax, Leaflet, Three.js) from CDN on demand.
+        </p>
+    </div>
+
+    <div class="controls">
+        <button onclick="editor.setView('split')">Split View</button>
+        <button onclick="editor.setView('src')">Source Only</button>
+        <button onclick="editor.setView('html')">Preview Only</button>
+        <button onclick="editor.copyHTML()">Copy HTML</button>
+        <button onclick="editor.exportHTML()">Export HTML</button>
+    </div>
+
+    <div class="editor-container">
+        <div id="editor"></div>
+    </div>
+
+    <!-- Load SquibView Autoload UMD build -->
+    <script src="../dist/squibview.autoload.umd.min.js"></script>
+
+    <script>
+        // Initialize SquibView with autoload
+        fetch('./sample-content.md')
+            .then(response => response.text())
+            .then(content => {
+                // Create SquibView instance
+                const editor = new SquibView('#editor', {
+                    initialContent: content,
+                    view: 'split',
+                    showControls: false  // Controls are in HTML
+                });
+
+                // Make editor available globally
+                window.editor = editor;
+            })
+            .catch(error => {
+                // Fallback if sample-content.md is not available
+                const editor = new SquibView('#editor', {
+                    initialContent: '# SquibView Autoload Example\n\nEdit this content to test autoloading of libraries.',
+                    view: 'split',
+                    showControls: false
+                });
+                window.editor = editor;
+            });
+    </script>
+</body>
+</html>

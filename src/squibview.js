@@ -2434,37 +2434,48 @@ class SquibView {
                 
                 
                 // Scale down math images to reasonable size for documents
-                // MathJax SVGs often have large coordinate systems, scale them down
-                const targetMaxWidth = 300;   // Target max width for math images  
-                const targetMaxHeight = 100;  // Target max height for math images
-                
-                // Apply a base scale factor for MathJax SVGs which tend to be oversized
-                let scaleFactor = 0.10; // Start with a smaller base scale
-                
+                // MathJax SVGs often have large coordinate systems, scale them down aggressively
+                const targetMaxWidth = 100;   // Even smaller target max width for truly compact math
+                const targetMaxHeight = 30;   // Even smaller target max height for inline-like appearance
+
+                // Apply an even smaller base scale factor for very compact output
+                let scaleFactor = 0.025; // Even smaller base scale for very compact math
+
+                // Calculate scaled dimensions
+                let scaledWidth = width * scaleFactor;
+                let scaledHeight = height * scaleFactor;
+
                 // If still too large after base scaling, scale down further
-                const scaledWidth = width * scaleFactor;
-                const scaledHeight = height * scaleFactor;
-                
                 if (scaledWidth > targetMaxWidth || scaledHeight > targetMaxHeight) {
                   const scaleX = targetMaxWidth / scaledWidth;
                   const scaleY = targetMaxHeight / scaledHeight;
-                  scaleFactor *= Math.min(scaleX, scaleY);
+                  const additionalScale = Math.min(scaleX, scaleY);
+                  scaleFactor *= additionalScale;
+                  scaledWidth *= additionalScale;
+                  scaledHeight *= additionalScale;
                 }
-                
-                width *= scaleFactor;
-                height *= scaleFactor;
-                
-                
-                canvas.width = width;
-                canvas.height = height;
+
+                width = scaledWidth;
+                height = scaledHeight;
+
+                // Use a fixed DPR of 2 for crisp rendering on all displays
+                const dpr = 2;
+
+                // Set canvas size with device pixel ratio for crisp rendering
+                canvas.width = width * dpr;
+                canvas.height = height * dpr;
+                canvas.style.width = width + 'px';
+                canvas.style.height = height + 'px';
+
                 const ctx = canvas.getContext('2d');
-                
+                ctx.scale(dpr, dpr);
+
                 // White background
                 ctx.fillStyle = "#FFFFFF";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                // Draw the SVG image
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                ctx.fillRect(0, 0, width, height);
+
+                // Draw the SVG image with proper scaling
+                ctx.drawImage(img, 0, 0, width, height);
                 
                 // Clean up URL
                 URL.revokeObjectURL(url);

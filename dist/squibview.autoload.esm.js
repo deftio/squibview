@@ -16703,33 +16703,46 @@ var SquibView = /*#__PURE__*/function () {
                           }
 
                           // Scale down math images to reasonable size for documents
-                          // MathJax SVGs often have large coordinate systems, scale them down
-                          var targetMaxWidth = 300; // Target max width for math images  
-                          var targetMaxHeight = 100; // Target max height for math images
+                          // MathJax SVGs often have large coordinate systems, scale them down aggressively
+                          var targetMaxWidth = 100; // Even smaller target max width for truly compact math
+                          var targetMaxHeight = 30; // Even smaller target max height for inline-like appearance
 
-                          // Apply a base scale factor for MathJax SVGs which tend to be oversized
-                          var scaleFactor = 0.10; // Start with a smaller base scale
+                          // Apply an even smaller base scale factor for very compact output
+                          var scaleFactor = 0.025; // Even smaller base scale for very compact math
 
-                          // If still too large after base scaling, scale down further
+                          // Calculate scaled dimensions
                           var scaledWidth = width * scaleFactor;
                           var scaledHeight = height * scaleFactor;
+
+                          // If still too large after base scaling, scale down further
                           if (scaledWidth > targetMaxWidth || scaledHeight > targetMaxHeight) {
                             var scaleX = targetMaxWidth / scaledWidth;
                             var scaleY = targetMaxHeight / scaledHeight;
-                            scaleFactor *= Math.min(scaleX, scaleY);
+                            var additionalScale = Math.min(scaleX, scaleY);
+                            scaleFactor *= additionalScale;
+                            scaledWidth *= additionalScale;
+                            scaledHeight *= additionalScale;
                           }
-                          width *= scaleFactor;
-                          height *= scaleFactor;
-                          canvas.width = width;
-                          canvas.height = height;
+                          width = scaledWidth;
+                          height = scaledHeight;
+
+                          // Use a fixed DPR of 2 for crisp rendering on all displays
+                          var dpr = 2;
+
+                          // Set canvas size with device pixel ratio for crisp rendering
+                          canvas.width = width * dpr;
+                          canvas.height = height * dpr;
+                          canvas.style.width = width + 'px';
+                          canvas.style.height = height + 'px';
                           var ctx = canvas.getContext('2d');
+                          ctx.scale(dpr, dpr);
 
                           // White background
                           ctx.fillStyle = "#FFFFFF";
-                          ctx.fillRect(0, 0, canvas.width, canvas.height);
+                          ctx.fillRect(0, 0, width, height);
 
-                          // Draw the SVG image
-                          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                          // Draw the SVG image with proper scaling
+                          ctx.drawImage(img, 0, 0, width, height);
 
                           // Clean up URL
                           URL.revokeObjectURL(url);
@@ -18347,7 +18360,10 @@ function _autoloadLibrary() {
                 case 9:
                   _context7.prev = 9;
                   _context7.t0 = _context7["catch"](0);
-                  console.error("SquibView: Failed to load ".concat(name, ":"), _context7.t0);
+                  // Silently fail unless debug mode is on
+                  if (window._squibviewAutoloadDebug) {
+                    console.error("SquibView: Failed to load ".concat(name, ":"), _context7.t0);
+                  }
                   return _context7.abrupt("return", false);
                 case 13:
                   _context7.prev = 13;
@@ -18389,7 +18405,7 @@ SquibView.prototype.initializeLibraries = function () {
             language: lang
           }).value;
         } catch (e) {
-          console.warn('Highlight.js error:', e);
+          // Silently handle error unless debug mode
         }
       }
       return ''; // Use default
@@ -18439,7 +18455,7 @@ SquibView.prototype.initializeLibraries = function () {
       securityLevel: 'loose',
       theme: 'default',
       errorCallback: function errorCallback(error) {
-        console.warn("Mermaid error:", error);
+        // Silently handle mermaid errors
         return "<div class='mermaid-error'></div>";
       }
     });
@@ -18455,6 +18471,9 @@ var SquibViewAutoload = /*#__PURE__*/function (_OriginalSquibView) {
     _classCallCheck(this, SquibViewAutoload);
     // Extract autoload options before passing to parent
     var autoloadConfig = options.autoload || {};
+
+    // Store debug mode in a variable first (can't use 'this' before super())
+    var debugMode = autoloadConfig.debug === true || options.debug === 'autoload';
 
     // Parse library configurations with support for multiple formats
     var parseLibraryConfig = function parseLibraryConfig(libConfig) {
@@ -18520,9 +18539,16 @@ var SquibViewAutoload = /*#__PURE__*/function (_OriginalSquibView) {
     // Initialize parent (now safe because we overrode initializeLibraries)
     _this2 = _callSuper(this, SquibViewAutoload, [selector, options]);
 
-    // Store config after parent init
+    // Store config and debug mode after parent init
     _this2.autoloadConfig = autoloadSettings;
     _this2.loadedLibraries = new Set();
+    _this2.debugAutoload = debugMode;
+
+    // Set global debug flag if debug mode is on
+    if (_this2.debugAutoload) {
+      window._squibviewAutoloadDebug = true;
+      console.log('SquibView Autoload: Debug mode enabled');
+    }
 
     // Handle auto-loading strategies
     if (_this2.autoloadConfig.enabled) {
@@ -18607,11 +18633,14 @@ var SquibViewAutoload = /*#__PURE__*/function (_OriginalSquibView) {
               };
               scriptUrl = cdnConfig.script || cdnConfig;
               cssUrl = cdnConfig.css;
-              _context2.next = 8;
+              if (this.debugAutoload) {
+                console.log("SquibView Autoload: Loading ".concat(libName, " from ").concat(scriptUrl));
+              }
+              _context2.next = 9;
               return autoloadLibrary(libName, checkFunctions[libName], scriptUrl, cssUrl);
-            case 8:
-              return _context2.abrupt("return", _context2.sent);
             case 9:
+              return _context2.abrupt("return", _context2.sent);
+            case 10:
             case "end":
               return _context2.stop();
           }
@@ -18685,7 +18714,9 @@ var SquibViewAutoload = /*#__PURE__*/function (_OriginalSquibView) {
             case 20:
               _context3.prev = 20;
               _context3.t0 = _context3["catch"](12);
-              console.error('Failed to convert image:', _context3.t0);
+              if (this.debugAutoload) {
+                console.error('Failed to convert image:', _context3.t0);
+              }
             case 23:
               _context3.next = 10;
               break;
@@ -18845,11 +18876,15 @@ var SquibViewAutoload = /*#__PURE__*/function (_OriginalSquibView) {
                       element.innerHTML = result.svg;
                       element.removeAttribute('data-processed');
                     })["catch"](function (err) {
-                      console.error('Mermaid render error:', err);
+                      if (_this3.debugAutoload) {
+                        console.error('Mermaid render error:', err);
+                      }
                       element.innerHTML = '<pre style="color: red;">Error rendering diagram</pre>';
                     });
                   } catch (err) {
-                    console.error('Mermaid processing error:', err);
+                    if (_this3.debugAutoload) {
+                      console.error('Mermaid processing error:', err);
+                    }
                   }
                 });
               }

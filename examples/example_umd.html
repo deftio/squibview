@@ -8,9 +8,9 @@
 
   <!-- SquibView CSS -->
   <link rel="stylesheet" href="../dist/squibview.min.css">
-  
-  <!-- Common example styles -->
-  <link rel="stylesheet" href="examples-common.css">
+
+  <!-- Base example styles -->
+  <link rel="stylesheet" href="examples-base.css">
 
   <!-- External dependencies for advanced features -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
@@ -19,12 +19,22 @@
   <style>
     /* Page-specific styles */
     #editor {
-      height: calc(100vh - 40px);
+      height: calc(100vh - 120px);
     }
   </style>
 </head>
 <body>
-  <div id="editor"></div>
+  <div class="example-header">
+    <h1 class="example-title">SquibView Standard Example (UMD)</h1>
+    <div class="example-version">Version 1.0.18a</div>
+    <p class="example-description">
+      Standard build with mermaid and highlight.js pre-bundled. No CDN required.
+    </p>
+  </div>
+
+  <div class="editor-container">
+    <div id="editor"></div>
+  </div>
 
   <!-- External libraries (loaded before SquibView) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -57,8 +67,7 @@
         const editor = new SquibView('#editor', {
           initialView: 'split',
           showControls: true,
-          titleShow: true,
-          titleContent: `SquibView UMD Example v${SquibView.version.version}`
+          titleShow: false
         });
 
         // Load sample content

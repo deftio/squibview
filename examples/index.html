@@ -13,181 +13,382 @@
     <title>SquibView Examples</title>
     <style>
         :root {
-            --primary: #113aa1;
-            --primary-light: #e8edff;
-            --text: #333;
-            --text-light: #666;
-            --border: #eee;
-            --hover: #f5f7ff;
+            --primary: #0066cc;
+            --primary-hover: #0052a3;
+            --accent: #f57c00;
+            --bg: #ffffff;
+            --bg-alt: #f8f9fa;
+            --text: #212529;
+            --text-light: #6c757d;
+            --border: #dee2e6;
+            --success: #28a745;
+            --badge-bg: #e9ecef;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            margin: 0;
-            padding: 2rem 1rem;
-            max-width: 90vw;
-            margin: 0 auto;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-alt);
             color: var(--text);
-            line-height: 1.5;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+            padding: 2rem 0;
+            margin: -2rem -2rem 2rem -2rem;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
         }
 
         h1 {
-            color: var(--primary);
-            margin-bottom: 1rem;
-            font-size: 2rem;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.5rem;
         }
 
-        .description {
+        .tagline {
             color: var(--text-light);
-            margin-bottom: 2rem;
             font-size: 1.1rem;
         }
 
-        .examples {
+        .section {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .examples-grid {
             display: flex;
             flex-direction: column;
-            gap: 1rem;
-            padding: 0;
+            gap: 0.75rem;
         }
 
         .example {
-            padding: 1rem 0;
-            border-bottom: 1px solid var(--border);
-            transition: background-color 0.2s ease;
-        }
-
-        .example:hover {
-            background: var(--hover);
-        }
-
-        .example h2 {
-            margin: 0;
-            font-size: 1.2rem;
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .example p {
-            margin: 0.5rem 0 0;
-            color: var(--text-light);
-            font-size: 0.9rem;
-        }
-
-        .example a {
-            color: var(--primary);
-            text-decoration: none;
-            padding: 0.25rem 0.75rem;
-            border-radius: 4px;
-            background: var(--primary-light);
-            font-size: 0.9rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
             transition: all 0.2s ease;
         }
 
-        .example a:hover {
+        .example:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+        }
+
+        .example-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            gap: 1rem;
+        }
+
+        .example-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.25rem;
+        }
+
+        .example-description {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            flex: 1;
+        }
+
+        .example-links {
+            display: flex;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .example-link {
+            display: inline-block;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--primary);
+            background: var(--bg);
+            border: 1px solid var(--primary);
+            border-radius: 4px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .example-link:hover {
             background: var(--primary);
             color: white;
         }
 
+        .example-link.recommended {
+            background: var(--primary);
+            color: white;
+        }
+
+        .example-link.recommended:hover {
+            background: var(--primary-hover);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: var(--badge-bg);
+            color: var(--text);
+            border-radius: 3px;
+            margin-left: 0.5rem;
+        }
+
+        .badge.new {
+            background: var(--success);
+            color: white;
+        }
+
+        .badge.recommended {
+            background: var(--accent);
+            color: white;
+        }
+
         @media (max-width: 768px) {
-            body {
+            .container {
                 padding: 1rem;
+            }
+
+            .header {
+                margin: -1rem -1rem 1.5rem -1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .example-header {
+                flex-direction: column;
+            }
+
+            .example-links {
+                width: 100%;
+            }
+
+            .example-link {
+                flex: 1;
+                text-align: center;
             }
         }
     </style>
 </head>
 
 <body>
-    <h1>SquibView Examples</h1>
-    <div class="description">
-        A collection of examples demonstrating different ways to use SquibView, from basic integration to advanced features.
+    <div class="header">
+        <div class="header-content">
+            <h1>SquibView Examples</h1>
+            <p class="tagline">Interactive examples demonstrating SquibView's features and integration options</p>
+        </div>
     </div>
-    <div class="examples">
-        <div class="example">
-            <h2>Basic ESM Example <a href="example_ESM.html">View</a></h2>
-            <p>A simple example using SquibView as an ES module.</p>
+
+    <div class="container">
+        <div class="section">
+            <h2 class="section-title">Quick Start - Autoload Build</h2>
+            <div class="examples-grid">
+                <div class="example">
+                    <div class="example-header">
+                        <div>
+                            <div class="example-title">Simple Autoload</div>
+                            <div class="example-description">Zero configuration - libraries load from CDN automatically when needed</div>
+                        </div>
+                        <div class="example-links">
+                            <a href="example_autoload_simple.html" class="example-link">ESM</a>
+                            <a href="example_autoload_umd.html" class="example-link">UMD</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="example">
+                    <div class="example-header">
+                        <div>
+                            <div class="example-title">Custom Autoload</div>
+                            <div class="example-description">Configure custom CDNs, strategies, or mix with your own libraries</div>
+                        </div>
+                        <div class="example-links">
+                            <a href="example_autoload_custom.html" class="example-link">ESM</a>
+                            <a href="example_autoload_custom_umd.html" class="example-link">UMD</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="example">
-            <h2>Basic UMD Example <a href="example_umd.html">View</a></h2>
-            <p>A simple example using SquibView as a UMD module.</p>
+        <div class="section">
+            <h2 class="section-title">Standard Builds</h2>
+            <div class="examples-grid">
+                <div class="example">
+                    <div class="example-header">
+                        <div>
+                            <div class="example-title">Standard Build</div>
+                            <div class="example-description">Pre-bundled with mermaid and highlight.js - no CDN needed</div>
+                        </div>
+                        <div class="example-links">
+                            <a href="example_ESM.html" class="example-link">ESM</a>
+                            <a href="example_umd.html" class="example-link">UMD</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="example">
+                    <div class="example-header">
+                        <div>
+                            <div class="example-title">Standalone Build</div>
+                            <div class="example-description">Everything bundled (3.6MB) - works offline/airgapped</div>
+                        </div>
+                        <div class="example-links">
+                            <a href="standalone_esm.html" class="example-link">ESM</a>
+                            <a href="standalone_umd.html" class="example-link">UMD</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="example">
+                    <div class="example-header">
+                        <div>
+                            <div class="example-title">Lean Build</div>
+                            <div class="example-description">Minimal build (126KB) - bring your own libraries</div>
+                        </div>
+                        <div class="example-links">
+                            <a href="example_ESM_lean.html" class="example-link">ESM</a>
+                            <a href="example_umd_lean.html" class="example-link">UMD</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="example">
+                    <div class="example-header">
+                        <div>
+                            <div class="example-title">CDN Loading</div>
+                            <div class="example-description">Load SquibView directly from unpkg CDN - no installation needed</div>
+                        </div>
+                        <div class="example-links">
+                            <a href="example_esm_cdn.html" class="example-link">ESM</a>
+                            <a href="example_umd_cdn.html" class="example-link">UMD</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="example">
-            <h2>Standalone ESM Example <a href="standalone_esm.html">View</a></h2>
-            <p>A simple example using the standalone ESM build of SquibView, loaded via ES modules.</p>
-        </div>
+        <div class="section">
+            <h2 class="section-title">Features & Integration</h2>
+            <div class="examples-grid">
+                <div class="example">
+                    <div class="example-header">
+                        <div>
+                            <div class="example-title">Data Tables</div>
+                            <div class="example-description">Render CSV, TSV, and PSV data as interactive tables</div>
+                        </div>
+                        <div class="example-links">
+                            <a href="example_csv.html" class="example-link">View</a>
+                        </div>
+                    </div>
+                </div>
 
-        <div class="example">
-            <h2>Standalone UMD Example <a href="standalone_umd.html">View</a></h2>
-            <p>A simple example using the standalone UMD build of SquibView, loaded via script tags.</p>
-        </div>
+                <div class="example">
+                    <div class="example-header">
+                        <div>
+                            <div class="example-title">React Integration</div>
+                            <div class="example-description">React wrapper with state management and custom controls</div>
+                        </div>
+                        <div class="example-links">
+                            <a href="example_react.html" class="example-link">View</a>
+                        </div>
+                    </div>
+                </div>
 
-        <div class="example">
-            <h2>🚀 Simple Autoload Example <a href="example_autoload_simple.html">View</a></h2>
-            <p>Zero configuration autoloading - libraries load from CDN automatically when content needs them. Perfect for quick setup!</p>
-        </div>
+                <div class="example">
+                    <div class="example-header">
+                        <div>
+                            <div class="example-title">Vue Integration</div>
+                            <div class="example-description">Vue wrapper with reactive state and component integration</div>
+                        </div>
+                        <div class="example-links">
+                            <a href="example_vue.html" class="example-link">View</a>
+                        </div>
+                    </div>
+                </div>
 
-        <div class="example">
-            <h2>🎨 Custom Autoload Example <a href="example_autoload_custom.html">View</a></h2>
-            <p>Advanced autoload configuration - bring your own libraries, use custom CDNs, or mix approaches. Full control over library loading.</p>
-        </div>
+                <div class="example">
+                    <div class="example-header">
+                        <div>
+                            <div class="example-title">Selection API</div>
+                            <div class="example-description">Get, replace, and manage text selections programmatically</div>
+                        </div>
+                        <div class="example-links">
+                            <a href="example_selection_api.html" class="example-link">View</a>
+                        </div>
+                    </div>
+                </div>
 
-        <div class="example">
-            <h2>Lean ESM Build Example <a href="example_ESM_lean.html">View</a></h2>
-            <p>Advanced example using the lean ESM build with external dependencies for smaller bundle size.</p>
-        </div>
+                <div class="example">
+                    <div class="example-header">
+                        <div>
+                            <div class="example-title">Diff Viewer</div>
+                            <div class="example-description">Compare revisions with inline diff view</div>
+                        </div>
+                        <div class="example-links">
+                            <a href="diff_view_inline.html" class="example-link">Inline</a>
+                            <a href="diff_view_live.html" class="example-link">Live</a>
+                        </div>
+                    </div>
+                </div>
 
-        <div class="example">
-            <h2>ESM CDN Example <a href="example_esm_cdn.html">View</a></h2>
-            <p>Example using SquibView loaded directly from npm CDN without local installation.</p>
-        </div>
+                <div class="example">
+                    <div class="example-header">
+                        <div>
+                            <div class="example-title">Line Numbers</div>
+                            <div class="example-description">Source view with line numbers and wrapped line support</div>
+                        </div>
+                        <div class="example-links">
+                            <a href="example_linenumbers.html" class="example-link">View</a>
+                        </div>
+                    </div>
+                </div>
 
-        <div class="example">
-            <h2>CSV Example <a href="example_csv.html">View</a></h2>
-            <p>An example demonstrating CSV table rendering with SquibView. Supports comma, space, tab, and semicolon separators.</p>
-        </div>
-
-        <!--
-        <div class="example">
-            <h2>Plugin System Example <a href="plugin_system.html">View</a></h2>
-            <p>An example demonstrating how to extend SquibView with custom renderers and operations using the plugin architecture.</p>
-        </div>
-    -->
-
-        <div class="example">
-            <h2>React Example <a href="example_react.html">View</a></h2>
-            <p>A more complex example using the React wrapper for SquibView, demonstrating state management and custom controls.</p>
-        </div>
-
-        <div class="example">
-            <h2>Vue Example <a href="example_vue.html">View</a></h2>
-            <p>An example using the Vue wrapper for SquibView, demonstrating reactive state management and component integration.</p>
-        </div>
-
-        <div class="example">
-            <h2>Selection API Example <a href="example_selection_api.html">View</a></h2>
-            <p>Demonstrates the SquibView selection API for getting, replacing, and managing text selections.</p>
-        </div>
-
-        <div class="example">
-            <h2>Inline Diff Demo <a href="diff_view_inline.html">View</a></h2>
-            <p>Compare inline diff view (blue additions, red deletions) with traditional side-by-side diff display.</p>
-        </div>
-
-        <div class="example">
-            <h2>Live Diff Demo <a href="diff_view_live.html">View</a></h2>
-            <p>Real-time cumulative diff view that updates automatically as you edit content.</p>
-        </div>
-
-        <div class="example">
-            <h2>Line Numbers Example <a href="example_linenumbers.html">View</a></h2>
-            <p>Demonstrates the line numbers feature in source view with wrapped line support and custom start numbers.</p>
-        </div>
-        <div class="example">
-            <h2>Themes Example <a href="example_themes.html">View</a></h2>
-            <p>Shows how to use and customize SquibView themes including light, dark, and high contrast modes.</p>
+                <div class="example">
+                    <div class="example-header">
+                        <div>
+                            <div class="example-title">Themes</div>
+                            <div class="example-description">Light, dark, and high contrast themes</div>
+                        </div>
+                        <div class="example-links">
+                            <a href="example_themes.html" class="example-link">View</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </body>

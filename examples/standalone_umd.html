@@ -1,54 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
-<!--
-Squibview Markdown Viewer with Graphics Support
-This is the standalone UMD bundle.  It is a single file that can be used in any project with no external dependencies but is a large file.
-Author: @deftio
--->
 <head>
   <meta charset="UTF-8" />
-  <title>SquibView Editor with Live Render Support</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Standalone Example - SquibView</title>
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
 
+  <!-- SquibView CSS -->
   <link rel="stylesheet" href="../dist/squibview.min.css">
+
+  <!-- Base example styles -->
+  <link rel="stylesheet" href="examples-base.css">
+
+  <!-- Load standalone UMD build before page loads -->
   <script src="../dist/squibview.standalone.umd.min.js"></script>
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 1% 4%;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    #editorContainer {
-      margin-top: 0.5em;
-      min-height: 0;
-      /* Important for Firefox */
-      height: 90vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .error-icon {
-      display: none;
-    }
-    text.error-text {
-      display: none;
+    /* Page-specific overrides */
+    #editor {
+      height: calc(100vh - 120px);
     }
   </style>
 </head>
 
 <body>
-  <div id="editorContainer"></div>
+  <div class="example-header">
+    <h1 class="example-title">SquibView Standalone Example (UMD)</h1>
+    <div class="example-version">Version 1.0.18a</div>
+    <p class="example-description">
+      All-inclusive build (3.8MB) with everything pre-bundled - no external dependencies. Works offline, in airgapped environments, or where CDN access is blocked.
+    </p>
+  </div>
+
+  <div class="editor-container">
+    <div id="editor"></div>
+  </div>
   <script>
-    // Leaflet icons are automatically configured in the standalone build
-    const editor = new SquibView('#editorContainer', {
-      titleShow: true,
-      titleContent: "SquibView Editor (Standalone UMD Bundle) " + SquibView.version.version
+    // Initialize SquibView with standalone build
+    const editor = new SquibView('#editor', {
+      titleShow: false,
+      showControls: true,
+      initialView: 'split'
     });
 
     window.editor = editor; // Make the editor instance accessible globally

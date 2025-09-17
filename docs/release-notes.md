@@ -1,5 +1,45 @@
 # SquibView Release Notes
 
+## v1.0.18 (January 16, 2025)
+*Release Date: January 16, 2025*
+
+### 🚀 Major New Feature: Autoload Builds
+- **NEW**: Autoload build variants (`squibview.autoload.esm.js` and `squibview.autoload.umd.js`)
+  - Automatically loads fence handler libraries from CDN when content needs them
+  - Small initial size (258KB minified, 88KB gzipped)
+  - Smart caching prevents duplicate library loading
+  - Zero configuration - just works out of the box
+- **NEW**: Flexible per-library loading configuration:
+  - `'auto'` - Load immediately on initialization
+  - `'ondemand'` - Load when content requires it (default)
+  - `'none'` - Never load (bring your own)
+  - Custom function - Full control over loading
+- **NEW**: Support for custom CDN URLs per library
+
+### 📦 Libraries Autoloaded On-Demand
+- **Mermaid** - For diagrams and flowcharts
+- **Highlight.js** - For syntax highlighting
+- **MathJax** - For mathematical equations
+- **Leaflet** - For GeoJSON/TopoJSON maps
+- **Three.js** - For 3D STL model viewing
+
+### 🐛 Bug Fixes
+- **FIXED**: Copy-rendered functionality now works correctly in autoload builds
+- **FIXED**: MathJax rendering properly detects and typesets math content
+- **FIXED**: Protected all library references to prevent console errors
+
+### 🛠 Developer Experience
+- **NEW**: Build size table generator script (`tools/buildSizeTable.js`)
+- **NEW**: Comprehensive test suite for autoload functionality
+- **NEW**: Example files demonstrating autoload usage:
+  - `example_autoload_simple.html` - Basic zero-config usage
+  - `example_autoload_custom.html` - Advanced configuration examples
+
+### 📚 Documentation
+- **UPDATED**: README with autoload documentation and accurate build sizes
+- **ADDED**: Advanced configuration examples for autoload
+- **ADDED**: Build size comparison table with gzip sizes
+
 ## v1.0.15 (July 13, 2025)
 *Release Date: July 13, 2025*
 

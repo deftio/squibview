@@ -123,7 +123,10 @@ async function autoloadLibrary(name, check, scriptUrl, cssUrl = null) {
       // Verify library loaded
       return check();
     } catch (err) {
-      console.error(`SquibView: Failed to load ${name}:`, err);
+      // Silently fail unless debug mode is on
+      if (window._squibviewAutoloadDebug) {
+        console.error(`SquibView: Failed to load ${name}:`, err);
+      }
       return false;
     } finally {
       // Clear loading state
@@ -153,7 +156,7 @@ SquibView.prototype.initializeLibraries = function() {
         try {
           return hljs.highlight(str, { language: lang }).value;
         } catch (e) {
-          console.warn('Highlight.js error:', e);
+          // Silently handle error unless debug mode
         }
       }
       return ''; // Use default
@@ -207,7 +210,7 @@ SquibView.prototype.initializeLibraries = function() {
       securityLevel: 'loose',
       theme: 'default',
       errorCallback: function (error) {
-        console.warn("Mermaid error:", error);
+        // Silently handle mermaid errors
         return "<div class='mermaid-error'></div>";
       }
     });
@@ -220,6 +223,9 @@ class SquibViewAutoload extends OriginalSquibView {
   constructor(selector, options = {}) {
     // Extract autoload options before passing to parent
     const autoloadConfig = options.autoload || {};
+
+    // Store debug mode in a variable first (can't use 'this' before super())
+    const debugMode = autoloadConfig.debug === true || options.debug === 'autoload';
 
     // Parse library configurations with support for multiple formats
     const parseLibraryConfig = (libConfig, defaultStrategy = 'ondemand') => {
@@ -273,9 +279,16 @@ class SquibViewAutoload extends OriginalSquibView {
     // Initialize parent (now safe because we overrode initializeLibraries)
     super(selector, options);
 
-    // Store config after parent init
+    // Store config and debug mode after parent init
     this.autoloadConfig = autoloadSettings;
     this.loadedLibraries = new Set();
+    this.debugAutoload = debugMode;
+
+    // Set global debug flag if debug mode is on
+    if (this.debugAutoload) {
+      window._squibviewAutoloadDebug = true;
+      console.log('SquibView Autoload: Debug mode enabled');
+    }
 
     // Handle auto-loading strategies
     if (this.autoloadConfig.enabled) {
@@ -322,6 +335,10 @@ class SquibViewAutoload extends OriginalSquibView {
     const scriptUrl = cdnConfig.script || cdnConfig;
     const cssUrl = cdnConfig.css;
 
+    if (this.debugAutoload) {
+      console.log(`SquibView Autoload: Loading ${libName} from ${scriptUrl}`);
+    }
+
     return await autoloadLibrary(
       libName,
       checkFunctions[libName],
@@ -367,7 +384,9 @@ class SquibViewAutoload extends OriginalSquibView {
             img.src = dataURL;
           }
         } catch (error) {
-          console.error('Failed to convert image:', error);
+          if (this.debugAutoload) {
+            console.error('Failed to convert image:', error);
+          }
         }
       }
     }
@@ -450,11 +469,15 @@ class SquibViewAutoload extends OriginalSquibView {
               element.innerHTML = result.svg;
               element.removeAttribute('data-processed');
             }).catch(err => {
-              console.error('Mermaid render error:', err);
+              if (this.debugAutoload) {
+                console.error('Mermaid render error:', err);
+              }
               element.innerHTML = '<pre style="color: red;">Error rendering diagram</pre>';
             });
           } catch (err) {
-            console.error('Mermaid processing error:', err);
+            if (this.debugAutoload) {
+              console.error('Mermaid processing error:', err);
+            }
           }
         });
       }
