@@ -158,7 +158,7 @@ function updateReadme() {
   let readme = fs.readFileSync(readmePath, 'utf-8');
 
   // Find and replace the table
-  const tableStart = '| Configuration | What It Does | Best For | Size (min/gzip) | Libraries Included |';
+  const tableStart = '| Configuration | What It Does | Best For | Size (min/gzip) | What\'s Included |';
   const tableEnd = '| **Standalone**';
 
   const startIdx = readme.indexOf(tableStart);

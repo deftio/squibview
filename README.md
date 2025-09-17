@@ -156,6 +156,8 @@ editor.exportHTML();   // Download as file
 
 
 
+
+
 ### Quick Selection Guide
 
 - **Want it to just work?** → Use **Autoload** (`squibview.autoload.esm.min.js`) - Zero config, features load automatically
