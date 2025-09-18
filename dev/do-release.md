@@ -40,17 +40,34 @@ Ensure all tests pass before proceeding.
 npm run test:all
 ```
 
-## 4. Commit Version Update Changes
+## 4. Update CDN Example Versions
 
-Commit the version changes made to `package.json`, `package-lock.json`, and `src/version.js`.
+**IMPORTANT**: Update the CDN examples to use the new version number.
+
+Update these files:
+- `examples/example_esm_cdn.html`
+- `examples/example_umd_cdn.html`
+
+Replace the version in the CDN URLs:
+```javascript
+// ESM CDN example
+import SquibView from 'https://cdn.jsdelivr.net/npm/squibview@<VERSION>/dist/squibview.esm.min.js';
+
+// UMD CDN example
+<script src="https://unpkg.com/squibview@<VERSION>/dist/squibview.umd.min.js"></script>
+```
+
+## 5. Commit Version Update Changes
+
+Commit the version changes made to `package.json`, `package-lock.json`, `src/version.js`, and CDN examples.
 
 ```bash
-git add package.json package-lock.json src/version.js
+git add package.json package-lock.json src/version.js examples/example_*_cdn.html
 git commit -m "Release v<VERSION>"
 ```
 *   Example: `git commit -m "Release v1.0.1"`
 
-## 5. Push Release Commit
+## 6. Push Release Commit
 
 Push the release commit to the remote repository (if you haven't already as part of feature merging).
 
@@ -59,7 +76,7 @@ git push origin <branch-name>
 ```
 *   Example: `git push origin main`
 
-## 6. Create Git Tag
+## 7. Create Git Tag
 
 Tag the release commit. Ensure you are on the correct commit before tagging.
 
@@ -68,14 +85,14 @@ git tag -a v<VERSION> -m "Version <VERSION>"
 ```
 *   Example: `git tag -a v1.0.1 -m "Version 1.0.1"`
 
-## 7. Push Tag to Remote
+## 8. Push Tag to Remote
 
 ```bash
 git push origin v<VERSION>
 ```
 *   Example: `git push origin v1.0.1`
 
-## 8. Create GitHub Release
+## 9. Create GitHub Release
 
 Use the GitHub CLI to create the release on GitHub. This will use the tag you just pushed.
 
@@ -86,7 +103,7 @@ gh release create v<VERSION> --title "Version <VERSION>" --generate-notes --late
     `gh release create v<VERSION> --title "Version <VERSION>" --notes "Your detailed release notes here." --latest`
 *   You can also create/edit the release via the GitHub web UI if preferred.
 
-## 9. Publish to npm
+## 10. Publish to npm
 
 **Always do a dry run first!** This shows you what files will be published without actually publishing.
 
@@ -101,7 +118,7 @@ If the dry run is satisfactory:
 npm publish
 ```
 
-## 10. Post-Release (Optional Considerations)
+## 11. Post-Release (Optional Considerations)
 
 *   If you used a separate release branch, merge it back into `main` (if not already done) and then into any active long-term development branches.
 *   `git checkout main && git pull && git checkout <develop-branch> && git pull && git merge main`

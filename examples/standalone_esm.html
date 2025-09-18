@@ -23,7 +23,7 @@
 <body>
   <div class="example-header">
     <h1 class="example-title">SquibView Standalone Example (ESM)</h1>
-    <div class="example-version">Version 1.0.18</div>
+    <div class="example-version" id="version-display"></div>
     <p class="example-description">
       All-inclusive build (3.6MB) with everything pre-bundled - no external dependencies. Works offline, in airgapped environments, or where CDN access is blocked.
     </p>
@@ -36,6 +36,11 @@
   <script type="module">
     // Import SquibView from the standalone ESM build
     import SquibView from '../dist/squibview.standalone.esm.min.js';
+
+    // Set version display from the library
+    if (SquibView.version && SquibView.version.version) {
+      document.getElementById("version-display").textContent = `Version ${SquibView.version.version}`;
+    }
 
     // Load default content
     fetch('./sample-content.md')

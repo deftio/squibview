@@ -69,7 +69,7 @@
 <body>
   <div class="example-header">
     <h1 class="example-title">SquibView Custom Autoload Example (ESM)</h1>
-    <div class="example-version">Version 1.0.18</div>
+    <div class="example-version" id="version-display"></div>
     <p class="example-description">
       Demonstrates custom autoload configurations: bring your own libraries, use custom CDNs, disable specific libraries.
     </p>
@@ -129,6 +129,11 @@ const editor = new SquibView('#editor2', {
     // Removed monitoring code - autoloading is now silent
 
     const init = async () => {
+      try {
+        // Set version display from the library
+        if (SquibView.version && SquibView.version.version) {
+          document.getElementById("version-display").textContent = `Version ${SquibView.version.version}`;
+        }
       try {
         // Load sample content
         const response = await fetch('./sample-content.md');

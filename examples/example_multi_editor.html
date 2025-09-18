@@ -70,7 +70,7 @@
 <body>
   <div class="example-header">
     <h1 class="example-title">Multiple Editors with Autoload</h1>
-    <div class="example-version">Version 1.0.18</div>
+    <div class="example-version" id="version-display"></div>
     <p class="example-description">
       Four SquibView instances on the same page with different configurations. All using autoload - libraries are loaded once and shared between all editors.
     </p>
@@ -183,6 +183,11 @@ graph TD
 `;
 
     const init = async () => {
+      try {
+        // Set version display from the library
+        if (SquibView.version && SquibView.version.version) {
+          document.getElementById("version-display").textContent = `Version ${SquibView.version.version}`;
+        }
       try {
         // Load main sample content
         let sampleContent;

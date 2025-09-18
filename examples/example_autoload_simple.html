@@ -25,7 +25,7 @@
 <body>
   <div class="example-header">
     <h1 class="example-title">SquibView Autoload Example (ESM)</h1>
-    <div class="example-version">Version 1.0.18</div>
+    <div class="example-version" id="version-display"></div>
     <p class="example-description">
       Simple editor setup with autoloading of fence handler libraries (mermaid, highlight.js, MathJax, Leaflet, Three.js) from CDN on demand.
     </p>
@@ -41,6 +41,11 @@
 
     // Initialize SquibView with autoloading enabled
     const init = async () => {
+      try {
+        // Set version display from the library
+        if (SquibView.version && SquibView.version.version) {
+          document.getElementById("version-display").textContent = `Version ${SquibView.version.version}`;
+        }
       try {
         // Create SquibView instance with autoload enabled
         const editor = new SquibView('#editor', {

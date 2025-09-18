@@ -27,7 +27,7 @@
 <body>
   <div class="example-header">
     <h1 class="example-title">SquibView Custom Autoload Example (UMD)</h1>
-    <div class="example-version">Version 1.0.18</div>
+    <div class="example-version" id="version-display"></div>
     <p class="example-description">
       Demonstrates custom autoload configurations using UMD build: pre-load some libraries, use custom CDNs, or disable specific libraries.
     </p>
@@ -43,6 +43,10 @@
   <script>
     // Wait for DOM to be ready
     document.addEventListener('DOMContentLoaded', async function() {
+      // Set version display from the library
+      if (SquibView.version && SquibView.version.version) {
+        document.getElementById("version-display").textContent = `Version ${SquibView.version.version}`;
+      }
       try {
         // Load sample content
         const response = await fetch('./sample-content.md');

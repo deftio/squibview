@@ -26,7 +26,7 @@
 <body>
   <div class="example-header">
     <h1 class="example-title">SquibView Manual Dependencies Example (ESM)</h1>
-    <div class="example-version">Version 1.0.18</div>
+    <div class="example-version" id="version-display"></div>
     <p class="example-description">
       Standard build with manual dependency management. You load the libraries yourself for full control.
     </p>
@@ -80,6 +80,11 @@
     // Initialize SquibView WITHOUT autoload - we're managing dependencies manually
     const init = async () => {
       try {
+        // Set version display from the library
+        if (SquibView.version && SquibView.version.version) {
+          document.getElementById("version-display").textContent = `Version ${SquibView.version.version}`;
+        }
+
         // Load external libraries
         await loadExternalLibraries();
 

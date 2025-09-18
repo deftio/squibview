@@ -27,7 +27,7 @@
 <body>
   <div class="example-header">
     <h1 class="example-title">SquibView Standalone Example (UMD)</h1>
-    <div class="example-version">Version 1.0.18</div>
+    <div class="example-version" id="version-display"></div>
     <p class="example-description">
       All-inclusive build (3.8MB) with everything pre-bundled - no external dependencies. Works offline, in airgapped environments, or where CDN access is blocked.
     </p>
@@ -37,6 +37,11 @@
     <div id="editor"></div>
   </div>
   <script>
+    // Set version display from the library
+    if (SquibView.version && SquibView.version.version) {
+      document.getElementById("version-display").textContent = `Version ${SquibView.version.version}`;
+    }
+
     // Initialize SquibView with standalone build
     const editor = new SquibView('#editor', {
       titleShow: false,

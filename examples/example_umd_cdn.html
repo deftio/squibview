@@ -3,28 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SquibView UMD CDN Example</title>
+    <title>Simple Autoload Example - SquibView</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
 
-    <!-- Load SquibView CSS from CDN -->
-    <link rel="stylesheet" href="https://unpkg.com/squibview/dist/squibview.min.css">
+    <!-- SquibView CSS from CDN - version pinned to 1.0.18 -->
+    <link rel="stylesheet" href="https://unpkg.com/squibview@1.0.18/dist/squibview.min.css">
 
-    <!-- Shared example styles -->
+    <!-- Base example styles -->
     <link rel="stylesheet" href="examples.css">
 
     <style>
-        /* Page-specific styles */
+        /* Page-specific overrides - 80vh total for all content */
+        .example-header {
+            margin-bottom: 5px;
+        }
         #editor {
-            height: 600px;
+            height: calc(80vh - 140px); /* 80vh minus header and controls space */
         }
     </style>
 </head>
 <body>
     <div class="example-header">
-        <h1 class="example-title">SquibView UMD CDN Example</h1>
+        <h1 class="example-title">SquibView Autoload Example (UMD CDN)</h1>
+        <div class="example-version" id="version-display"></div>
         <p class="example-description">
-            This example loads SquibView UMD build directly from unpkg CDN using script tags - no bundler or npm installation needed.
-            Perfect for quick prototypes or simple websites.
+            Simple editor setup with autoloading of fence handler libraries (mermaid, highlight.js, MathJax, Leaflet, Three.js) from CDN on demand.
         </p>
     </div>
 
@@ -40,77 +43,43 @@
         <div id="editor"></div>
     </div>
 
-    <!-- Load SquibView UMD build from CDN -->
-    <script src="https://unpkg.com/squibview/dist/squibview.autoload.umd.min.js"></script>
+    <!-- Load standard SquibView UMD build - autoload is now built-in! -->
+    <!-- Version pinned to 1.0.18 to match local examples -->
+    <script src="https://unpkg.com/squibview@1.0.18/dist/squibview.umd.min.js"></script>
 
     <script>
-        // SquibView is available as a global variable when using UMD
-        const editor = new SquibView('#editor', {
-            initialContent: `# SquibView UMD CDN Example
+        // Wait for script to load completely
+        window.addEventListener('load', function() {
+            // Set version display from the library
+            if (SquibView.version && SquibView.version.version) {
+                document.getElementById('version-display').textContent = `Version ${SquibView.version.version}`;
+            }
 
-This demonstrates loading SquibView directly from a CDN using UMD format with script tags.
+            // Initialize SquibView with autoload
+            fetch('./sample-content.md')
+                .then(response => response.text())
+                .then(content => {
+                    // Create SquibView instance
+                    const editor = new SquibView('#editor', {
+                        initialContent: content,
+                        view: 'split',
+                        showControls: false,  // Controls are in HTML
+                        autoload_deps: { all: true }  // Enable autoloading for all libraries
+                    });
 
-## Features
-
-- ✅ No npm installation required
-- ✅ No build tools needed
-- ✅ Works with plain HTML files
-- ✅ Autoloads libraries when needed
-
-## Try Some Content
-
-### Mermaid Diagram (loads automatically)
-
-\`\`\`mermaid
-graph LR
-    A[UMD Build] --> B[Script Tag]
-    B --> C[Global Variable]
-    C --> D[Ready to Use!]
-\`\`\`
-
-### Code Highlighting (loads automatically)
-
-\`\`\`javascript
-// UMD makes SquibView available globally
-const editor = new SquibView('#editor', {
-    initialContent: 'Your markdown here',
-    view: 'split'
-});
-
-// All methods available
-editor.setContent('# New Content', 'md');
-const html = editor.getRenderedHTML();
-\`\`\`
-
-### Math Equations (loads automatically)
-
-Inline math: $E = mc^2$
-
-Block math:
-$$
-\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
-$$
-
-### Tables
-
-| Format | Loading | Use Case |
-|--------|---------|----------|
-| UMD | Script tag | Simple websites |
-| ESM | Module import | Modern bundlers |
-| Autoload | CDN on-demand | Zero config |
-
-Perfect for:
-- Quick prototypes
-- Simple websites
-- Learning SquibView
-- No build tool environments
-`,
-            view: 'split'
-        });
-
-        // Example: Listen for content changes
-        editor.events.on('content:change', () => {
-            console.log('Content changed');
+                    // Make editor available globally
+                    window.editor = editor;
+                })
+                .catch(error => {
+                    // Fallback if sample-content.md is not available
+                    const editor = new SquibView('#editor', {
+                        initialContent: '# SquibView Autoload Example\n\nEdit this content to test autoloading of libraries.',
+                        view: 'split',
+                        showControls: false,
+                        autoload_deps: { all: true }  // Enable autoloading for all libraries
+                    });
+                    window.editor = editor;
+                });
         });
     </script>
 </body>

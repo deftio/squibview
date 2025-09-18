@@ -3,82 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SquibView ESM CDN Example</title>
+  <title>Simple Autoload Example - SquibView</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
 
-  <!-- SquibView CSS from CDN -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/squibview@latest/dist/squibview.min.css">
-  
-  <!-- Common example styles -->
+  <!-- SquibView CSS from CDN - version pinned to 1.0.18 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/squibview@1.0.18/dist/squibview.min.css">
+
+  <!-- Base example styles -->
   <link rel="stylesheet" href="examples.css">
 
-  <!-- External dependencies for advanced features -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/default.min.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-
   <style>
-    /* Page-specific styles */
+    /* Page-specific overrides - 80vh total for all content */
+    .example-header {
+      margin-bottom: 5px;
+    }
     #editor {
-      height: calc(100vh - 40px);
+      height: calc(80vh - 100px); /* 80vh minus header space */
     }
   </style>
 </head>
 <body>
-  <div id="editor"></div>
+  <div class="example-header">
+    <h1 class="example-title">SquibView Autoload Example (ESM CDN)</h1>
+    <div class="example-version" id="version-display"></div>
+    <p class="example-description">
+      Simple editor setup with autoloading of fence handler libraries (mermaid, highlight.js, MathJax, Leaflet, Three.js) from CDN on demand.
+    </p>
+  </div>
+
+  <div class="editor-container">
+    <div id="editor"></div>
+  </div>
 
   <script type="module">
-    // Import SquibView ESM build from CDN (includes markdown-it bundled)
-    import SquibView from 'https://cdn.jsdelivr.net/npm/squibview@latest/dist/squibview.esm.min.js';
-    
-    // Import external libraries for advanced features
-    const loadExternalLibraries = async () => {
-      // Load highlight.js first (it needs to be loaded via script tag for proper global setup)
-      await new Promise((resolve) => {
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js';
-        script.onload = resolve;
-        document.head.appendChild(script);
-      });
+    // Import standard SquibView build - autoload is now built-in!
+    // Version pinned to 1.0.18 to match local examples
+    import SquibView from 'https://cdn.jsdelivr.net/npm/squibview@1.0.18/dist/squibview.esm.min.js';
 
-      // Load other libraries in parallel
-      const [mermaid, leaflet, topojson, THREE] = await Promise.all([
-        import('https://unpkg.com/mermaid@10/dist/mermaid.esm.min.mjs'),
-        import('https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js'),
-        import('https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js').then(() => window.topojson),
-        import('https://unpkg.com/three@0.164.1/build/three.module.js')
-      ]);
-
-      // Make libraries globally available for SquibView
-      window.mermaid = mermaid.default;
-      window.L = leaflet;
-      window.THREE = THREE;
-
-      // Configure Leaflet icons
-      if (leaflet.Icon && leaflet.Icon.Default) {
-        delete leaflet.Icon.Default.prototype._getIconUrl;
-        leaflet.Icon.Default.mergeOptions({
-          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
-        });
-      }
-
-      // Initialize mermaid
-      mermaid.default.initialize({ startOnLoad: false });
-    };
-
-    // Initialize SquibView
+    // Initialize SquibView with autoloading enabled
     const init = async () => {
       try {
-        // Load external libraries
-        await loadExternalLibraries();
+        // Set version display from the library
+        if (SquibView.version && SquibView.version.version) {
+          document.getElementById('version-display').textContent = `Version ${SquibView.version.version}`;
+        }
 
-        // Create SquibView instance
+        // Create SquibView instance with autoload enabled
         const editor = new SquibView('#editor', {
           initialView: 'split',
           showControls: true,
-          titleShow: true,
-          titleContent: `SquibView ESM CDN Example v${SquibView.version.version}`
+          titleShow: false,  // Title is now in the HTML header
+          autoload_deps: { all: true }  // Enable autoloading for all libraries
         });
 
         // Load sample content
@@ -88,8 +63,8 @@
 
         // Make editor available globally for debugging
         window.editor = editor;
-        
-        console.log('SquibView initialized successfully from CDN');
+
+        // Autoload initialized - libraries will load silently as needed
       } catch (error) {
         console.error('Failed to initialize SquibView:', error);
         document.getElementById('editor').innerHTML = `
