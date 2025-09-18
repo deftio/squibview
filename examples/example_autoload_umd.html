@@ -1,77 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Autoload Example - SquibView</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Autoload Example (UMD) - SquibView</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
 
-    <!-- SquibView CSS -->
-    <link rel="stylesheet" href="../dist/squibview.min.css">
+  <!-- SquibView CSS -->
+  <link rel="stylesheet" href="../dist/squibview.min.css">
 
-    <!-- Base example styles -->
-    <link rel="stylesheet" href="examples.css">
+  <!-- Base example styles -->
+  <link rel="stylesheet" href="examples.css">
 
-    <style>
-        /* Page-specific overrides - 80vh total for all content */
-        .example-header {
-            margin-bottom: 5px;
-        }
-        #editor {
-            height: calc(80vh - 140px); /* 80vh minus header and controls space */
-        }
-    </style>
+  <style>
+    /* Page-specific overrides - 80vh total for all content */
+    .example-header {
+      margin-bottom: 5px;
+    }
+    #editor {
+      height: calc(90vh - 100px); /* 80vh minus header space */
+    }
+  </style>
 </head>
 <body>
-    <div class="example-header">
-        <h1 class="example-title">SquibView Autoload Example (UMD)</h1>
-        <div class="example-version" id="version-display"></div>
-        <p class="example-description">
-            Simple editor setup with autoloading of fence handler libraries (mermaid, highlight.js, MathJax, Leaflet, Three.js) from CDN on demand.
-        </p>
-    </div>
+  <div class="example-header">
+    <h1 class="example-title">SquibView Autoload Example (UMD)</h1>
+    <div class="example-version" id="version-display"></div>
+    <p class="example-description">
+      Simple editor setup with autoloading of fence handler libraries (mermaid, highlight.js, MathJax, Leaflet, Three.js) from CDN on demand.
+    </p>
+  </div>
 
-    <div class="controls">
-        <button onclick="editor.setView('split')">Split View</button>
-        <button onclick="editor.setView('src')">Source Only</button>
-        <button onclick="editor.setView('html')">Preview Only</button>
-        <button onclick="editor.copyHTML()">Copy HTML</button>
-        <button onclick="editor.exportHTML()">Export HTML</button>
-    </div>
+  <div class="editor-container">
+    <div id="editor"></div>
+  </div>
 
-    <div class="editor-container">
-        <div id="editor"></div>
-    </div>
+  <!-- Load standard SquibView UMD build - autoload is now built-in! -->
+  <script src="../dist/squibview.umd.min.js"></script>
 
-    <!-- Load standard SquibView UMD build - autoload is now built-in! -->
-    <script src="../dist/squibview.umd.min.js"></script>
+  <script>
+    // Initialize SquibView with autoloading enabled
+    const init = async () => {
+      try {
+        // Set version display from the library
+        if (SquibView.version && SquibView.version.version) {
+          document.getElementById("version-display").textContent = `Version ${SquibView.version.version}`;
+        }
 
-    <script>
-        // Initialize SquibView with autoload
-        fetch('./sample-content.md')
-            .then(response => response.text())
-            .then(content => {
-                // Create SquibView instance
-                const editor = new SquibView('#editor', {
-                    initialContent: content,
-                    view: 'split',
-                    showControls: false,  // Controls are in HTML
-                    autoload_deps: { all: true }  // Enable autoloading for all libraries
-                });
+        // Create SquibView instance with autoload enabled
+        const editor = new SquibView('#editor', {
+          initialView: 'split',
+          showControls: true,
+          titleShow: false,  // Title is now in the HTML header
+          autoload_deps: { all: true }  // Enable autoloading for all libraries
+        });
 
-                // Make editor available globally
-                window.editor = editor;
-            })
-            .catch(error => {
-                // Fallback if sample-content.md is not available
-                const editor = new SquibView('#editor', {
-                    initialContent: '# SquibView Autoload Example\n\nEdit this content to test autoloading of libraries.',
-                    view: 'split',
-                    showControls: false,
-                    autoload_deps: { all: true }  // Enable autoloading for all libraries
-                });
-                window.editor = editor;
-            });
-    </script>
+        // Load sample content
+        const response = await fetch('./sample-content.md');
+        const content = await response.text();
+        editor.setContent(content, 'md');
+
+        // Make editor available globally for debugging
+        window.editor = editor;
+
+        // Autoload initialized - libraries will load silently as needed
+      } catch (error) {
+        console.error('Failed to initialize SquibView:', error);
+        document.getElementById('editor').innerHTML = `
+          <div style="padding: 20px; color: red;">
+            Failed to initialize: ${error.message}
+          </div>
+        `;
+      }
+    };
+
+    // Start initialization
+    init();
+  </script>
 </body>
 </html>
