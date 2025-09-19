@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SquibView Development Environment</title>
-  
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
+
   <!-- Development styles -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.5.1/styles/default.min.css">
   <link rel="stylesheet" href="/dist/squibview.css">
@@ -171,19 +172,12 @@
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   
   <!-- Import map for ES module resolution -->
-  <script type="importmap">
-  {
-    "imports": {
-      "tiny-emitter": "https://esm.sh/tiny-emitter@2.1.0",
-      "diff-match-patch": "https://esm.sh/diff-match-patch@1.0.5",
-      "turndown": "https://esm.sh/turndown@7.1.2"
-    }
-  }
-  </script>
-  
-  <script type="module">
-    // Import SquibView directly from source for development
-    import SquibView from '/src/squibview.js';
+  <!-- Use the built version to avoid module resolution issues -->
+  <script src="/dist/squibview.umd.js"></script>
+
+  <script>
+    // SquibView is now available as a global
+    const SquibView = window.SquibView;
     
     // Sample content
     const content = {
@@ -510,37 +504,9 @@ Select this paragraph and check the console to see the selection data.`
     // Initialize the editor when the page loads
     document.addEventListener('DOMContentLoaded', initEditor);
     
-    // Handle hot module replacement for development
-    if (import.meta.hot) {
-      import.meta.hot.accept('/src/squibview.js', () => {
-        console.log('SquibView module updated, reloading...');
-        
-        // Save current content and content type
-        const currentContent = editor ? editor.getContent() : content.markdown;
-        const currentContentType = editor ? editor.inputContentType : 'md';
-        
-        // Re-initialize the editor
-        try {
-          // Clean up existing editor (if any)
-          if (editor) {
-            const container = document.getElementById('editor-container');
-            container.innerHTML = '';
-          }
-          
-          // Initialize with new version
-          initEditor();
-          
-          // Restore content
-          editor.setContent(currentContent, currentContentType);
-          
-          // Update status
-          document.getElementById('status-message').textContent = 'Hot updated successfully';
-        } catch (error) {
-          console.error('Error during hot update:', error);
-          document.getElementById('status-message').textContent = `Hot update error: ${error.message}`;
-        }
-      });
-    }
+    // Note: Hot module replacement is not available with UMD builds
+    // For development with auto-reload, use the Vite dev server: npm run dev
+    // This debug page uses the compiled UMD bundle for testing production builds
   </script>
 </body>
 </html>

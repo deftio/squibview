@@ -134,6 +134,10 @@ const editor = new SquibView('#editor2', {
         if (SquibView.version && SquibView.version.version) {
           document.getElementById("version-display").textContent = `Version ${SquibView.version.version}`;
         }
+      } catch (error) {
+        console.error('Failed to set version:', error);
+      }
+
       try {
         // Load sample content
         const response = await fetch('./sample-content.md');

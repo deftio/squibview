@@ -188,6 +188,10 @@ graph TD
         if (SquibView.version && SquibView.version.version) {
           document.getElementById("version-display").textContent = `Version ${SquibView.version.version}`;
         }
+      } catch (error) {
+        console.error('Failed to set version:', error);
+      }
+
       try {
         // Load main sample content
         let sampleContent;

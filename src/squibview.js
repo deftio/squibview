@@ -67,7 +67,11 @@ class SquibView {
     showLineNumbers: false,  // Enable/disable line numbers
     lineNumberStart: 1,      // Starting line number
     lineNumberMinDigits: 2,   // Minimum digits (e.g., 01, 02)
-    autoload_deps: null      // Default off, can be { all: true } or fine-grained control
+    autoload_deps: null,      // Default off, can be { all: true } or fine-grained control
+    streamingMode: false,     // Enable streaming-friendly error handling
+    incompleteBlockPlaceholder: '⏳ Rendering...', // Placeholder for incomplete blocks
+    renderErrorPlaceholder: '❌ Render error',      // Placeholder for render errors
+    errorHandling: null       // Fine-grained error control
   };
 
   // Default CDN URLs for autoloading dependencies
@@ -528,16 +532,23 @@ class SquibView {
   initializeLibraries() {
     // Initialize Mermaid for diagram rendering if available
     if (typeof window !== 'undefined' && window.mermaid) {
+      const self = this;
       window.mermaid.initialize({
         startOnLoad: false,
         securityLevel: 'loose',
         theme: 'default',
         errorCallback: function (error) {
-          console.warn("Mermaid error:", error);
+          // Only log errors if not in streaming mode or if explicitly configured
+          if (!self._shouldSuppressErrors('mermaid')) {
+            console.warn("Mermaid error:", error);
+          }
           return "<div class='mermaid-error'></div>";
         }
       });
-      window.mermaid.init(undefined, ".mermaid");
+      // Don't auto-init in streaming mode - we'll handle it manually
+      if (!this.options.streamingMode) {
+        window.mermaid.init(undefined, ".mermaid");
+      }
     }
     
     // Initialize markdown-it with options and syntax highlighting
@@ -1158,8 +1169,24 @@ class SquibView {
   }
 
   /**
+   * Sets or gets the streaming mode state
+   * @param {boolean} [enabled] - If provided, sets streaming mode. If omitted, returns current state.
+   * @returns {boolean|undefined} Current streaming mode state if no parameter provided
+   */
+  streamingMode(enabled) {
+    if (enabled === undefined) {
+      return this.options.streamingMode;
+    }
+    this.options.streamingMode = Boolean(enabled);
+    // Re-render if content exists to apply new mode
+    if (this.input.value) {
+      this.renderMarkdown();
+    }
+  }
+
+  /**
    * Sets the content of the editor and renders it.
-   * 
+   *
    * @param {string} [content=this.input.value] - The content to set
    * @param {string} [contentType=this.inputContentType] - The type of content ('md', 'html', 'reveal', 'csv', 'tsv')
    * @param {boolean} [saveRevision=true] - Whether to save this change to the revision history
@@ -1293,20 +1320,166 @@ class SquibView {
   }
 
   /**
+   * Detects if content has incomplete fence blocks
+   * @private
+   * @param {string} content - The content to check
+   * @returns {Array} Array of incomplete block info {type, startLine, content}
+   */
+  _detectIncompleteBlocks(content) {
+    const incompleteBlocks = [];
+    const lines = content.split('\n');
+    let inBlock = false;
+    let blockType = '';
+    let blockStartLine = 0;
+    let blockContent = [];
+    let fenceLength = 0;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const fenceMatch = line.match(/^(`{3,}|~{3,})\s*(\w*)/);
+
+      if (fenceMatch && !inBlock) {
+        // Starting a fence block
+        inBlock = true;
+        fenceLength = fenceMatch[1].length;
+        blockType = fenceMatch[2] || 'code';
+        blockStartLine = i;
+        blockContent = [];
+      } else if (inBlock) {
+        const closeFence = line.match(/^(`{3,}|~{3,})\s*$/);
+        if (closeFence && closeFence[1].length >= fenceLength) {
+          // Closing fence found
+          inBlock = false;
+          blockType = '';
+          blockContent = [];
+          fenceLength = 0;
+        } else {
+          blockContent.push(line);
+        }
+      }
+    }
+
+    // If we're still in a block at the end, it's incomplete
+    if (inBlock) {
+      incompleteBlocks.push({
+        type: blockType,
+        startLine: blockStartLine,
+        content: blockContent.join('\n')
+      });
+    }
+
+    return incompleteBlocks;
+  }
+
+  /**
+   * Renders a placeholder for incomplete blocks
+   * @private
+   * @param {string} blockType - The type of the incomplete block
+   * @returns {string} HTML for the placeholder
+   */
+  _renderIncompletePlaceholder(blockType) {
+    const placeholder = this.options.incompleteBlockPlaceholder || '⏳ Rendering...';
+    return `<div class="incomplete-block" data-block-type="${blockType}">
+      <div class="incomplete-block-message">${placeholder}</div>
+      <div class="incomplete-block-type">Incomplete ${blockType} block</div>
+    </div>`;
+  }
+
+  /**
+   * Renders a placeholder for render errors
+   * @private
+   * @param {string} blockType - The type of the block that failed
+   * @returns {string} HTML for the error placeholder
+   */
+  _renderErrorPlaceholder(blockType) {
+    const placeholder = this.options.renderErrorPlaceholder || '❌ Render error';
+    return `<div class="render-error" data-block-type="${blockType}">
+      <div class="render-error-message">${placeholder}</div>
+      <div class="render-error-type">${blockType} rendering failed</div>
+    </div>`;
+  }
+
+  /**
+   * Determines if errors should be suppressed for a given type
+   * @private
+   * @param {string} errorType - The type of error (mermaid, math, etc.)
+   * @returns {boolean} True if errors should be suppressed
+   */
+  _shouldSuppressErrors(errorType) {
+    if (this.options.streamingMode) {
+      return true;
+    }
+
+    if (this.options.errorHandling) {
+      const key = `suppress${errorType.charAt(0).toUpperCase() + errorType.slice(1)}Errors`;
+      return this.options.errorHandling[key] === true;
+    }
+
+    return false;
+  }
+
+  /**
    * Renders Markdown content to HTML and processes the result.
    * Converts images to data URLs and initializes Mermaid diagrams.
-   * 
+   *
    * @param {string} [md] - The Markdown content to render, defaults to current input value
    * @returns {Promise<void>} A promise that resolves when rendering is complete
    */
   async renderMarkdown(md) {
-    const markdown = md || this.input.value;
+    let markdown = md || this.input.value;
+
+    // Check for incomplete blocks if in streaming mode
+    if (this.options.streamingMode || (this.options.errorHandling && this.options.errorHandling.showIncompleteBlockPlaceholder)) {
+      const incompleteBlocks = this._detectIncompleteBlocks(markdown);
+
+      if (incompleteBlocks.length > 0) {
+        // Replace incomplete blocks with HTML placeholders instead of processing them
+        const lines = markdown.split('\n');
+        let result = [];
+        let inIncompleteBlock = false;
+        let currentBlockType = '';
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+
+          // Check if this line starts an incomplete block
+          const isIncompleteStart = incompleteBlocks.some(block => {
+            if (block.startLine === i) {
+              inIncompleteBlock = true;
+              currentBlockType = block.type;
+              return true;
+            }
+            return false;
+          });
+
+          if (isIncompleteStart) {
+            // Add placeholder instead of the incomplete block
+            result.push(`\n\n<div class="incomplete-block-marker" data-type="${currentBlockType}">INCOMPLETE:${currentBlockType}</div>\n\n`);
+            // Skip to end of content
+            break;
+          } else if (!inIncompleteBlock) {
+            result.push(line);
+          }
+        }
+
+        markdown = result.join('\n');
+      }
+    }
 
     // Check if we need to autoload libraries based on content
     if (this.autoloadConfig && this.autoloadConfig.enabled) {
       await this._checkAndAutoloadLibraries(markdown);
     }
-    const html = this.md.render(markdown);
+
+    let html;
+    try {
+      html = this.md.render(markdown);
+    } catch (error) {
+      if (!this._shouldSuppressErrors('markdown')) {
+        console.error('Markdown rendering error:', error);
+      }
+      html = this._renderErrorPlaceholder('markdown');
+    }
     let processedHtml = html;
     if (this.linefeedViewEnabled) {
       // Only process paragraphs, not code blocks or pre
@@ -1323,6 +1496,13 @@ class SquibView {
         return open + processedLines.join('') + close;
       });
     }
+    // Replace incomplete block markers with visual indicators
+    if (this.options.streamingMode || (this.options.errorHandling && this.options.errorHandling.showIncompleteBlockPlaceholder)) {
+      processedHtml = processedHtml.replace(/<div class="incomplete-block-marker" data-type="(\w+)">INCOMPLETE:(\w+)<\/div>/g, (match, type1, type2) => {
+        return this._renderIncompletePlaceholder(type1);
+      });
+    }
+
     this.output.innerHTML = "<div contenteditable='true'>" + processedHtml + "</div>";
 
     // Convert all images to data URLs immediately after rendering
@@ -1371,7 +1551,78 @@ class SquibView {
 
     // Initialize mermaid diagrams after all images are processed
     if (typeof window !== 'undefined' && window.mermaid) {
-      window.mermaid.init(undefined, this.output.querySelectorAll('.mermaid'));
+      const mermaidElements = this.output.querySelectorAll('.mermaid');
+
+      for (const element of mermaidElements) {
+        const originalContent = element.textContent || element.innerHTML;
+
+        // In streaming mode or with error suppression, validate the mermaid syntax before rendering
+        if (this.options.streamingMode || this._shouldSuppressErrors('mermaid')) {
+          // Create a flag to track if an error occurred
+          let hasError = false;
+
+          // Temporarily override console.error to catch mermaid errors
+          const originalConsoleError = console.error;
+          const originalConsoleWarn = console.warn;
+
+          if (this._shouldSuppressErrors('mermaid')) {
+            console.error = () => {};
+            console.warn = () => {};
+          }
+
+          try {
+            // Try to parse using mermaid.parse if available (newer versions)
+            if (window.mermaid.parse) {
+              try {
+                window.mermaid.parse(originalContent);
+              } catch (parseError) {
+                hasError = true;
+              }
+            }
+
+            // If no parse error or parse not available, try to render
+            if (!hasError) {
+              // Store current innerHTML to check if it changes
+              const beforeHtml = element.innerHTML;
+
+              // Try to init the mermaid diagram
+              window.mermaid.init(undefined, element);
+
+              // Check if mermaid actually rendered something
+              // If it failed silently, the content won't change
+              if (element.innerHTML === beforeHtml || element.querySelector('.error')) {
+                hasError = true;
+              }
+            }
+
+            if (hasError) {
+              // Rendering failed - show error placeholder
+              element.innerHTML = this._renderErrorPlaceholder('mermaid');
+              element.classList.remove('mermaid');
+              element.classList.add('render-error');
+            }
+          } catch (error) {
+            // Error occurred - show error placeholder
+            if (!this._shouldSuppressErrors('mermaid')) {
+              originalConsoleError('Mermaid rendering error:', error);
+            }
+            element.innerHTML = this._renderErrorPlaceholder('mermaid');
+            element.classList.remove('mermaid');
+            element.classList.add('render-error');
+          } finally {
+            // Restore original console methods
+            console.error = originalConsoleError;
+            console.warn = originalConsoleWarn;
+          }
+        } else {
+          // Normal mode - use regular init and let errors show
+          try {
+            window.mermaid.init(undefined, element);
+          } catch (error) {
+            console.error('Mermaid rendering error:', error);
+          }
+        }
+      }
     }
 
     // Initialize GeoJSON/TopoJSON maps after content is rendered
@@ -1401,14 +1652,39 @@ class SquibView {
       if (config && config.strategy === 'ondemand') {
         const loaded = await this._autoloadLibrary('mathjax');
         if (loaded && typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
-          return MathJax.typesetPromise(Array.from(mathBlocks));
+          try {
+            return await MathJax.typesetPromise(Array.from(mathBlocks));
+          } catch (error) {
+            if (!this._shouldSuppressErrors('math')) {
+              console.error('MathJax rendering error:', error);
+            }
+            // Mark failed math blocks
+            mathBlocks.forEach(block => {
+              block.innerHTML = this._renderErrorPlaceholder('math');
+              block.classList.add('render-error');
+              block.classList.remove('math-display');
+            });
+            return;
+          }
         }
       }
     }
 
-    function typesetAll() {
+    const typesetAll = async () => {
       if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
-        return MathJax.typesetPromise(Array.from(mathBlocks));
+        try {
+          return await MathJax.typesetPromise(Array.from(mathBlocks));
+        } catch (error) {
+          if (!this._shouldSuppressErrors('math')) {
+            console.error('MathJax rendering error:', error);
+          }
+          // Mark failed math blocks
+          mathBlocks.forEach(block => {
+            block.innerHTML = this._renderErrorPlaceholder('math');
+            block.classList.add('render-error');
+            block.classList.remove('math-display');
+          });
+        }
       }
     }
     if (typeof MathJax === 'undefined') {

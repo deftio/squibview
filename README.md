@@ -22,8 +22,10 @@ SquibView renders Markdown (or HTML) with live preview and allows editing in bot
 - Edit in the rendered view - changes reflect back to markdown
 - Full revision history with undo/redo
 - Visual diff comparison between any revisions
-- Export/copy as HTML with embedded images
+- Export/copy as HTML with embedded images (including diagrams, pics, maps, 3D, editable tables and source code)
 - Works as CLI tool or JavaScript component
+- Streaming support for use with LLMs 
+- Examples with Vue and React in addition to pure js
 
 **Supported Content:**
 - 📊 Mermaid diagrams, flowcharts, sequence diagrams
@@ -37,8 +39,8 @@ SquibView renders Markdown (or HTML) with live preview and allows editing in bot
 
 ## Quick Start
 
-### Browser - Zero Configuration (Recommended)
-The easiest way to get started - fence libraries (math, mermaid, etc) load automatically from CDN when your content needs them.  Special care is taken to not load dependancies that may have already been provisioned so there is no double-loading.
+### Browser - Zero Configuration Quick Start
+The easiest way to get started - with fence libraries (math, mermaid, etc) loading automatically from CDN when your content needs them.  Special care is taken to not load dependancies that may have already been provisioned so there is no double-loading.
 
 ```html
 <!-- SquibView CSS -->

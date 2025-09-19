@@ -5015,16 +5015,23 @@
         var _this4 = this;
         // Initialize Mermaid for diagram rendering if available
         if (typeof window !== 'undefined' && window.mermaid) {
+          var self = this;
           window.mermaid.initialize({
             startOnLoad: false,
             securityLevel: 'loose',
             theme: 'default',
             errorCallback: function errorCallback(error) {
-              console.warn("Mermaid error:", error);
+              // Only log errors if not in streaming mode or if explicitly configured
+              if (!self._shouldSuppressErrors('mermaid')) {
+                console.warn("Mermaid error:", error);
+              }
               return "<div class='mermaid-error'></div>";
             }
           });
-          window.mermaid.init(undefined, ".mermaid");
+          // Don't auto-init in streaming mode - we'll handle it manually
+          if (!this.options.streamingMode) {
+            window.mermaid.init(undefined, ".mermaid");
+          }
         }
 
         // Initialize markdown-it with options and syntax highlighting
@@ -5710,8 +5717,26 @@
       }
 
       /**
+       * Sets or gets the streaming mode state
+       * @param {boolean} [enabled] - If provided, sets streaming mode. If omitted, returns current state.
+       * @returns {boolean|undefined} Current streaming mode state if no parameter provided
+       */
+    }, {
+      key: "streamingMode",
+      value: function streamingMode(enabled) {
+        if (enabled === undefined) {
+          return this.options.streamingMode;
+        }
+        this.options.streamingMode = Boolean(enabled);
+        // Re-render if content exists to apply new mode
+        if (this.input.value) {
+          this.renderMarkdown();
+        }
+      }
+
+      /**
        * Sets the content of the editor and renders it.
-       * 
+       *
        * @param {string} [content=this.input.value] - The content to set
        * @param {string} [contentType=this.inputContentType] - The type of content ('md', 'html', 'reveal', 'csv', 'tsv')
        * @param {boolean} [saveRevision=true] - Whether to save this change to the revision history
@@ -5863,9 +5888,105 @@
       }
 
       /**
+       * Detects if content has incomplete fence blocks
+       * @private
+       * @param {string} content - The content to check
+       * @returns {Array} Array of incomplete block info {type, startLine, content}
+       */
+    }, {
+      key: "_detectIncompleteBlocks",
+      value: function _detectIncompleteBlocks(content) {
+        var incompleteBlocks = [];
+        var lines = content.split('\n');
+        var inBlock = false;
+        var blockType = '';
+        var blockStartLine = 0;
+        var blockContent = [];
+        var fenceLength = 0;
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i];
+          var fenceMatch = line.match(/^(`{3,}|~{3,})\s*(\w*)/);
+          if (fenceMatch && !inBlock) {
+            // Starting a fence block
+            inBlock = true;
+            fenceLength = fenceMatch[1].length;
+            blockType = fenceMatch[2] || 'code';
+            blockStartLine = i;
+            blockContent = [];
+          } else if (inBlock) {
+            var closeFence = line.match(/^(`{3,}|~{3,})\s*$/);
+            if (closeFence && closeFence[1].length >= fenceLength) {
+              // Closing fence found
+              inBlock = false;
+              blockType = '';
+              blockContent = [];
+              fenceLength = 0;
+            } else {
+              blockContent.push(line);
+            }
+          }
+        }
+
+        // If we're still in a block at the end, it's incomplete
+        if (inBlock) {
+          incompleteBlocks.push({
+            type: blockType,
+            startLine: blockStartLine,
+            content: blockContent.join('\n')
+          });
+        }
+        return incompleteBlocks;
+      }
+
+      /**
+       * Renders a placeholder for incomplete blocks
+       * @private
+       * @param {string} blockType - The type of the incomplete block
+       * @returns {string} HTML for the placeholder
+       */
+    }, {
+      key: "_renderIncompletePlaceholder",
+      value: function _renderIncompletePlaceholder(blockType) {
+        var placeholder = this.options.incompleteBlockPlaceholder || '⏳ Rendering...';
+        return "<div class=\"incomplete-block\" data-block-type=\"".concat(blockType, "\">\n      <div class=\"incomplete-block-message\">").concat(placeholder, "</div>\n      <div class=\"incomplete-block-type\">Incomplete ").concat(blockType, " block</div>\n    </div>");
+      }
+
+      /**
+       * Renders a placeholder for render errors
+       * @private
+       * @param {string} blockType - The type of the block that failed
+       * @returns {string} HTML for the error placeholder
+       */
+    }, {
+      key: "_renderErrorPlaceholder",
+      value: function _renderErrorPlaceholder(blockType) {
+        var placeholder = this.options.renderErrorPlaceholder || '❌ Render error';
+        return "<div class=\"render-error\" data-block-type=\"".concat(blockType, "\">\n      <div class=\"render-error-message\">").concat(placeholder, "</div>\n      <div class=\"render-error-type\">").concat(blockType, " rendering failed</div>\n    </div>");
+      }
+
+      /**
+       * Determines if errors should be suppressed for a given type
+       * @private
+       * @param {string} errorType - The type of error (mermaid, math, etc.)
+       * @returns {boolean} True if errors should be suppressed
+       */
+    }, {
+      key: "_shouldSuppressErrors",
+      value: function _shouldSuppressErrors(errorType) {
+        if (this.options.streamingMode) {
+          return true;
+        }
+        if (this.options.errorHandling) {
+          var key = "suppress".concat(errorType.charAt(0).toUpperCase() + errorType.slice(1), "Errors");
+          return this.options.errorHandling[key] === true;
+        }
+        return false;
+      }
+
+      /**
        * Renders Markdown content to HTML and processes the result.
        * Converts images to data URLs and initializes Mermaid diagrams.
-       * 
+       *
        * @param {string} [md] - The Markdown content to render, defaults to current input value
        * @returns {Promise<void>} A promise that resolves when rendering is complete
        */
@@ -5874,19 +5995,92 @@
       value: (function () {
         var _renderMarkdown = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee6(md) {
           var _this10 = this;
-          var markdown, html, processedHtml, contentDiv, images, _iterator2, _step2, _loop;
-          return _regeneratorRuntime().wrap(function _callee6$(_context7) {
-            while (1) switch (_context7.prev = _context7.next) {
+          var markdown, incompleteBlocks, lines, result, inIncompleteBlock, currentBlockType, _loop, i, html, processedHtml, contentDiv, images, _iterator2, _step2, _loop2, mermaidElements, _iterator3, _step3, element, originalContent, hasError, originalConsoleError, originalConsoleWarn, beforeHtml;
+          return _regeneratorRuntime().wrap(function _callee6$(_context8) {
+            while (1) switch (_context8.prev = _context8.next) {
               case 0:
-                markdown = md || this.input.value; // Check if we need to autoload libraries based on content
-                if (!(this.autoloadConfig && this.autoloadConfig.enabled)) {
-                  _context7.next = 4;
+                markdown = md || this.input.value; // Check for incomplete blocks if in streaming mode
+                if (!(this.options.streamingMode || this.options.errorHandling && this.options.errorHandling.showIncompleteBlockPlaceholder)) {
+                  _context8.next = 18;
                   break;
                 }
-                _context7.next = 4;
+                incompleteBlocks = this._detectIncompleteBlocks(markdown);
+                if (!(incompleteBlocks.length > 0)) {
+                  _context8.next = 18;
+                  break;
+                }
+                // Replace incomplete blocks with HTML placeholders instead of processing them
+                lines = markdown.split('\n');
+                result = [];
+                inIncompleteBlock = false;
+                currentBlockType = '';
+                _loop = /*#__PURE__*/_regeneratorRuntime().mark(function _loop(i) {
+                  var line, isIncompleteStart;
+                  return _regeneratorRuntime().wrap(function _loop$(_context6) {
+                    while (1) switch (_context6.prev = _context6.next) {
+                      case 0:
+                        line = lines[i]; // Check if this line starts an incomplete block
+                        isIncompleteStart = incompleteBlocks.some(function (block) {
+                          if (block.startLine === i) {
+                            inIncompleteBlock = true;
+                            currentBlockType = block.type;
+                            return true;
+                          }
+                          return false;
+                        });
+                        if (!isIncompleteStart) {
+                          _context6.next = 7;
+                          break;
+                        }
+                        // Add placeholder instead of the incomplete block
+                        result.push("\n\n<div class=\"incomplete-block-marker\" data-type=\"".concat(currentBlockType, "\">INCOMPLETE:").concat(currentBlockType, "</div>\n\n"));
+                        // Skip to end of content
+                        return _context6.abrupt("return", 1);
+                      case 7:
+                        if (!inIncompleteBlock) {
+                          result.push(line);
+                        }
+                      case 8:
+                      case "end":
+                        return _context6.stop();
+                    }
+                  }, _loop);
+                });
+                i = 0;
+              case 10:
+                if (!(i < lines.length)) {
+                  _context8.next = 17;
+                  break;
+                }
+                return _context8.delegateYield(_loop(i), "t0", 12);
+              case 12:
+                if (!_context8.t0) {
+                  _context8.next = 14;
+                  break;
+                }
+                return _context8.abrupt("break", 17);
+              case 14:
+                i++;
+                _context8.next = 10;
+                break;
+              case 17:
+                markdown = result.join('\n');
+              case 18:
+                if (!(this.autoloadConfig && this.autoloadConfig.enabled)) {
+                  _context8.next = 21;
+                  break;
+                }
+                _context8.next = 21;
                 return this._checkAndAutoloadLibraries(markdown);
-              case 4:
-                html = this.md.render(markdown);
+              case 21:
+                try {
+                  html = this.md.render(markdown);
+                } catch (error) {
+                  if (!this._shouldSuppressErrors('markdown')) {
+                    console.error('Markdown rendering error:', error);
+                  }
+                  html = this._renderErrorPlaceholder('markdown');
+                }
                 processedHtml = html;
                 if (this.linefeedViewEnabled) {
                   // Only process paragraphs, not code blocks or pre
@@ -5903,31 +6097,37 @@
                     return open + processedLines.join('') + close;
                   });
                 }
+                // Replace incomplete block markers with visual indicators
+                if (this.options.streamingMode || this.options.errorHandling && this.options.errorHandling.showIncompleteBlockPlaceholder) {
+                  processedHtml = processedHtml.replace(/<div class="incomplete-block-marker" data-type="(\w+)">INCOMPLETE:(\w+)<\/div>/g, function (match, type1, type2) {
+                    return _this10._renderIncompletePlaceholder(type1);
+                  });
+                }
                 this.output.innerHTML = "<div contenteditable='true'>" + processedHtml + "</div>";
 
                 // Convert all images to data URLs immediately after rendering
                 contentDiv = this.output.querySelector('div[contenteditable="true"]');
                 images = contentDiv.querySelectorAll('img'); // render images to data urls
                 _iterator2 = _createForOfIteratorHelper(images);
-                _context7.prev = 11;
-                _loop = /*#__PURE__*/_regeneratorRuntime().mark(function _loop() {
+                _context8.prev = 29;
+                _loop2 = /*#__PURE__*/_regeneratorRuntime().mark(function _loop2() {
                   var img, originalSrc, canvas, ctx, tempImg;
-                  return _regeneratorRuntime().wrap(function _loop$(_context6) {
-                    while (1) switch (_context6.prev = _context6.next) {
+                  return _regeneratorRuntime().wrap(function _loop2$(_context7) {
+                    while (1) switch (_context7.prev = _context7.next) {
                       case 0:
                         img = _step2.value;
-                        _context6.prev = 1;
+                        _context7.prev = 1;
                         // Store original src if we need to preserve it
                         originalSrc = img.src; // Only convert to data URL if not preserving tags
                         if (_this10.options.preserveImageTags) {
-                          _context6.next = 10;
+                          _context7.next = 10;
                           break;
                         }
                         canvas = document.createElement('canvas');
                         ctx = canvas.getContext('2d'); // Create new image and wait for it to load
                         tempImg = new Image();
                         tempImg.crossOrigin = 'anonymous';
-                        _context6.next = 10;
+                        _context7.next = 10;
                         return new Promise(function (resolve, reject) {
                           tempImg.onload = function () {
                             // Set canvas size to match image
@@ -5948,43 +6148,112 @@
                           tempImg.src = originalSrc;
                         });
                       case 10:
-                        _context6.next = 15;
+                        _context7.next = 15;
                         break;
                       case 12:
-                        _context6.prev = 12;
-                        _context6.t0 = _context6["catch"](1);
-                        console.error('Failed to convert image:', _context6.t0);
+                        _context7.prev = 12;
+                        _context7.t0 = _context7["catch"](1);
+                        console.error('Failed to convert image:', _context7.t0);
                       case 15:
                       case "end":
-                        return _context6.stop();
+                        return _context7.stop();
                     }
-                  }, _loop, null, [[1, 12]]);
+                  }, _loop2, null, [[1, 12]]);
                 });
                 _iterator2.s();
-              case 14:
+              case 32:
                 if ((_step2 = _iterator2.n()).done) {
-                  _context7.next = 18;
+                  _context8.next = 36;
                   break;
                 }
-                return _context7.delegateYield(_loop(), "t0", 16);
-              case 16:
-                _context7.next = 14;
+                return _context8.delegateYield(_loop2(), "t1", 34);
+              case 34:
+                _context8.next = 32;
                 break;
-              case 18:
-                _context7.next = 23;
+              case 36:
+                _context8.next = 41;
                 break;
-              case 20:
-                _context7.prev = 20;
-                _context7.t1 = _context7["catch"](11);
-                _iterator2.e(_context7.t1);
-              case 23:
-                _context7.prev = 23;
+              case 38:
+                _context8.prev = 38;
+                _context8.t2 = _context8["catch"](29);
+                _iterator2.e(_context8.t2);
+              case 41:
+                _context8.prev = 41;
                 _iterator2.f();
-                return _context7.finish(23);
-              case 26:
+                return _context8.finish(41);
+              case 44:
                 // Initialize mermaid diagrams after all images are processed
                 if (typeof window !== 'undefined' && window.mermaid) {
-                  window.mermaid.init(undefined, this.output.querySelectorAll('.mermaid'));
+                  mermaidElements = this.output.querySelectorAll('.mermaid');
+                  _iterator3 = _createForOfIteratorHelper(mermaidElements);
+                  try {
+                    for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+                      element = _step3.value;
+                      originalContent = element.textContent || element.innerHTML; // In streaming mode or with error suppression, validate the mermaid syntax before rendering
+                      if (this.options.streamingMode || this._shouldSuppressErrors('mermaid')) {
+                        // Create a flag to track if an error occurred
+                        hasError = false; // Temporarily override console.error to catch mermaid errors
+                        originalConsoleError = console.error;
+                        originalConsoleWarn = console.warn;
+                        if (this._shouldSuppressErrors('mermaid')) {
+                          console.error = function () {};
+                          console.warn = function () {};
+                        }
+                        try {
+                          // Try to parse using mermaid.parse if available (newer versions)
+                          if (window.mermaid.parse) {
+                            try {
+                              window.mermaid.parse(originalContent);
+                            } catch (parseError) {
+                              hasError = true;
+                            }
+                          }
+
+                          // If no parse error or parse not available, try to render
+                          if (!hasError) {
+                            // Store current innerHTML to check if it changes
+                            beforeHtml = element.innerHTML; // Try to init the mermaid diagram
+                            window.mermaid.init(undefined, element);
+
+                            // Check if mermaid actually rendered something
+                            // If it failed silently, the content won't change
+                            if (element.innerHTML === beforeHtml || element.querySelector('.error')) {
+                              hasError = true;
+                            }
+                          }
+                          if (hasError) {
+                            // Rendering failed - show error placeholder
+                            element.innerHTML = this._renderErrorPlaceholder('mermaid');
+                            element.classList.remove('mermaid');
+                            element.classList.add('render-error');
+                          }
+                        } catch (error) {
+                          // Error occurred - show error placeholder
+                          if (!this._shouldSuppressErrors('mermaid')) {
+                            originalConsoleError('Mermaid rendering error:', error);
+                          }
+                          element.innerHTML = this._renderErrorPlaceholder('mermaid');
+                          element.classList.remove('mermaid');
+                          element.classList.add('render-error');
+                        } finally {
+                          // Restore original console methods
+                          console.error = originalConsoleError;
+                          console.warn = originalConsoleWarn;
+                        }
+                      } else {
+                        // Normal mode - use regular init and let errors show
+                        try {
+                          window.mermaid.init(undefined, element);
+                        } catch (error) {
+                          console.error('Mermaid rendering error:', error);
+                        }
+                      }
+                    }
+                  } catch (err) {
+                    _iterator3.e(err);
+                  } finally {
+                    _iterator3.f();
+                  }
                 }
 
                 // Initialize GeoJSON/TopoJSON maps after content is rendered
@@ -5994,16 +6263,16 @@
                 this.initializeSTLRenderers();
 
                 // Ensure MathJax is loaded and typeset all math blocks
-                _context7.next = 31;
+                _context8.next = 49;
                 return this.ensureMathJaxAndTypeset();
-              case 31:
+              case 49:
                 // Emit markdown:rendered event
                 this.events.emit('markdown:rendered', markdown, html);
-              case 32:
+              case 50:
               case "end":
-                return _context7.stop();
+                return _context8.stop();
             }
-          }, _callee6, this, [[11, 20, 23, 26]]);
+          }, _callee6, this, [[29, 38, 41, 44]]);
         }));
         function renderMarkdown(_x5) {
           return _renderMarkdown.apply(this, arguments);
@@ -6018,54 +6287,103 @@
     }, {
       key: "ensureMathJaxAndTypeset",
       value: (function () {
-        var _ensureMathJaxAndTypeset = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee7() {
+        var _ensureMathJaxAndTypeset = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee8() {
+          var _this11 = this;
           var mathBlocks, config, loaded, typesetAll;
-          return _regeneratorRuntime().wrap(function _callee7$(_context8) {
-            while (1) switch (_context8.prev = _context8.next) {
+          return _regeneratorRuntime().wrap(function _callee8$(_context10) {
+            while (1) switch (_context10.prev = _context10.next) {
               case 0:
-                typesetAll = function _typesetAll2() {
-                  if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
-                    return MathJax.typesetPromise(Array.from(mathBlocks));
-                  }
-                };
                 mathBlocks = this.output.querySelectorAll('div.math-display');
                 if (mathBlocks.length) {
-                  _context8.next = 4;
+                  _context10.next = 3;
                   break;
                 }
-                return _context8.abrupt("return");
-              case 4:
+                return _context10.abrupt("return");
+              case 3:
                 if (!(this.autoloadConfig && this.autoloadConfig.enabled)) {
-                  _context8.next = 12;
+                  _context10.next = 21;
                   break;
                 }
                 config = this.autoloadConfig.libraries.mathjax;
                 if (!(config && config.strategy === 'ondemand')) {
-                  _context8.next = 12;
+                  _context10.next = 21;
                   break;
                 }
-                _context8.next = 9;
+                _context10.next = 8;
                 return this._autoloadLibrary('mathjax');
-              case 9:
-                loaded = _context8.sent;
+              case 8:
+                loaded = _context10.sent;
                 if (!(loaded && typeof MathJax !== 'undefined' && MathJax.typesetPromise)) {
-                  _context8.next = 12;
+                  _context10.next = 21;
                   break;
                 }
-                return _context8.abrupt("return", MathJax.typesetPromise(Array.from(mathBlocks)));
-              case 12:
+                _context10.prev = 10;
+                _context10.next = 13;
+                return MathJax.typesetPromise(Array.from(mathBlocks));
+              case 13:
+                return _context10.abrupt("return", _context10.sent);
+              case 16:
+                _context10.prev = 16;
+                _context10.t0 = _context10["catch"](10);
+                if (!this._shouldSuppressErrors('math')) {
+                  console.error('MathJax rendering error:', _context10.t0);
+                }
+                // Mark failed math blocks
+                mathBlocks.forEach(function (block) {
+                  block.innerHTML = _this11._renderErrorPlaceholder('math');
+                  block.classList.add('render-error');
+                  block.classList.remove('math-display');
+                });
+                return _context10.abrupt("return");
+              case 21:
+                typesetAll = /*#__PURE__*/function () {
+                  var _ref = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee7() {
+                    return _regeneratorRuntime().wrap(function _callee7$(_context9) {
+                      while (1) switch (_context9.prev = _context9.next) {
+                        case 0:
+                          if (!(typeof MathJax !== 'undefined' && MathJax.typesetPromise)) {
+                            _context9.next = 11;
+                            break;
+                          }
+                          _context9.prev = 1;
+                          _context9.next = 4;
+                          return MathJax.typesetPromise(Array.from(mathBlocks));
+                        case 4:
+                          return _context9.abrupt("return", _context9.sent);
+                        case 7:
+                          _context9.prev = 7;
+                          _context9.t0 = _context9["catch"](1);
+                          if (!_this11._shouldSuppressErrors('math')) {
+                            console.error('MathJax rendering error:', _context9.t0);
+                          }
+                          // Mark failed math blocks
+                          mathBlocks.forEach(function (block) {
+                            block.innerHTML = _this11._renderErrorPlaceholder('math');
+                            block.classList.add('render-error');
+                            block.classList.remove('math-display');
+                          });
+                        case 11:
+                        case "end":
+                          return _context9.stop();
+                      }
+                    }, _callee7, null, [[1, 7]]);
+                  }));
+                  return function typesetAll() {
+                    return _ref.apply(this, arguments);
+                  };
+                }();
                 if (!(typeof MathJax === 'undefined')) {
-                  _context8.next = 19;
+                  _context10.next = 29;
                   break;
                 }
                 if (!window.mathJaxLoading) {
-                  _context8.next = 15;
+                  _context10.next = 25;
                   break;
                 }
-                return _context8.abrupt("return");
-              case 15:
+                return _context10.abrupt("return");
+              case 25:
                 window.mathJaxLoading = true;
-                return _context8.abrupt("return", new Promise(function (resolve, reject) {
+                return _context10.abrupt("return", new Promise(function (resolve, reject) {
                   // Configure MathJax before loading script to ensure SVG output
                   if (!window.MathJax) {
                     window.MathJax = {
@@ -6110,13 +6428,13 @@
                   };
                   document.head.appendChild(script);
                 }));
-              case 19:
-                return _context8.abrupt("return", typesetAll());
-              case 20:
+              case 29:
+                return _context10.abrupt("return", typesetAll());
+              case 30:
               case "end":
-                return _context8.stop();
+                return _context10.stop();
             }
-          }, _callee7, this);
+          }, _callee8, this, [[10, 16]]);
         }));
         function ensureMathJaxAndTypeset() {
           return _ensureMathJaxAndTypeset.apply(this, arguments);
@@ -6131,70 +6449,70 @@
     }, {
       key: "initializeGeoRenderers",
       value: (function () {
-        var _initializeGeoRenderers = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee8() {
-          var _this11 = this;
+        var _initializeGeoRenderers = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee9() {
+          var _this12 = this;
           var geojsonContainers, topojsonContainers, config, loaded;
-          return _regeneratorRuntime().wrap(function _callee8$(_context9) {
-            while (1) switch (_context9.prev = _context9.next) {
+          return _regeneratorRuntime().wrap(function _callee9$(_context11) {
+            while (1) switch (_context11.prev = _context11.next) {
               case 0:
                 if (this.output) {
-                  _context9.next = 2;
+                  _context11.next = 2;
                   break;
                 }
-                return _context9.abrupt("return");
+                return _context11.abrupt("return");
               case 2:
                 // Check if we have geo content
                 geojsonContainers = this.output.querySelectorAll('.geojson-container');
                 topojsonContainers = this.output.querySelectorAll('.topojson-container');
                 if (!(geojsonContainers.length === 0 && topojsonContainers.length === 0)) {
-                  _context9.next = 6;
+                  _context11.next = 6;
                   break;
                 }
-                return _context9.abrupt("return");
+                return _context11.abrupt("return");
               case 6:
                 if (!(this.autoloadConfig && this.autoloadConfig.enabled)) {
-                  _context9.next = 14;
+                  _context11.next = 14;
                   break;
                 }
                 config = this.autoloadConfig.libraries.leaflet;
                 if (!(config && config.strategy === 'ondemand')) {
-                  _context9.next = 14;
+                  _context11.next = 14;
                   break;
                 }
-                _context9.next = 11;
+                _context11.next = 11;
                 return this._autoloadLibrary('leaflet');
               case 11:
-                loaded = _context9.sent;
+                loaded = _context11.sent;
                 if (loaded) {
-                  _context9.next = 14;
+                  _context11.next = 14;
                   break;
                 }
-                return _context9.abrupt("return");
+                return _context11.abrupt("return");
               case 14:
                 if (!(typeof window === 'undefined' || !window.L)) {
-                  _context9.next = 16;
+                  _context11.next = 16;
                   break;
                 }
-                return _context9.abrupt("return");
+                return _context11.abrupt("return");
               case 16:
                 // Initialize GeoJSON containers
                 geojsonContainers.forEach(function (container) {
                   if (!container.dataset.initialized) {
-                    _this11.renderGeoJSON(container);
+                    _this12.renderGeoJSON(container);
                   }
                 });
 
                 // Initialize TopoJSON containers
                 topojsonContainers.forEach(function (container) {
                   if (!container.dataset.initialized) {
-                    _this11.renderTopoJSON(container);
+                    _this12.renderTopoJSON(container);
                   }
                 });
               case 18:
               case "end":
-                return _context9.stop();
+                return _context11.stop();
             }
-          }, _callee8, this);
+          }, _callee9, this);
         }));
         function initializeGeoRenderers() {
           return _initializeGeoRenderers.apply(this, arguments);
@@ -6209,60 +6527,60 @@
     }, {
       key: "initializeSTLRenderers",
       value: (function () {
-        var _initializeSTLRenderers = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee9() {
-          var _this12 = this;
+        var _initializeSTLRenderers = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee10() {
+          var _this13 = this;
           var stlContainers, config, loaded;
-          return _regeneratorRuntime().wrap(function _callee9$(_context10) {
-            while (1) switch (_context10.prev = _context10.next) {
+          return _regeneratorRuntime().wrap(function _callee10$(_context12) {
+            while (1) switch (_context12.prev = _context12.next) {
               case 0:
                 if (this.output) {
-                  _context10.next = 2;
+                  _context12.next = 2;
                   break;
                 }
-                return _context10.abrupt("return");
+                return _context12.abrupt("return");
               case 2:
                 stlContainers = this.output.querySelectorAll('.stl-container');
                 if (!(stlContainers.length === 0)) {
-                  _context10.next = 5;
+                  _context12.next = 5;
                   break;
                 }
-                return _context10.abrupt("return");
+                return _context12.abrupt("return");
               case 5:
                 if (!(this.autoloadConfig && this.autoloadConfig.enabled)) {
-                  _context10.next = 13;
+                  _context12.next = 13;
                   break;
                 }
                 config = this.autoloadConfig.libraries.three;
                 if (!(config && config.strategy === 'ondemand')) {
-                  _context10.next = 13;
+                  _context12.next = 13;
                   break;
                 }
-                _context10.next = 10;
+                _context12.next = 10;
                 return this._autoloadLibrary('three');
               case 10:
-                loaded = _context10.sent;
+                loaded = _context12.sent;
                 if (loaded) {
-                  _context10.next = 13;
+                  _context12.next = 13;
                   break;
                 }
-                return _context10.abrupt("return");
+                return _context12.abrupt("return");
               case 13:
                 if (!(typeof window === 'undefined' || !window.THREE)) {
-                  _context10.next = 15;
+                  _context12.next = 15;
                   break;
                 }
-                return _context10.abrupt("return");
+                return _context12.abrupt("return");
               case 15:
                 stlContainers.forEach(function (container) {
                   if (!container.dataset.initialized) {
-                    _this12.renderSTL(container);
+                    _this13.renderSTL(container);
                   }
                 });
               case 16:
               case "end":
-                return _context10.stop();
+                return _context12.stop();
             }
-          }, _callee9, this);
+          }, _callee10, this);
         }));
         function initializeSTLRenderers() {
           return _initializeSTLRenderers.apply(this, arguments);
@@ -6479,11 +6797,11 @@
         var lines = stlData.split('\n');
         var currentNormal = null;
         var vertexCount = 0;
-        var _iterator3 = _createForOfIteratorHelper(lines),
-          _step3;
+        var _iterator4 = _createForOfIteratorHelper(lines),
+          _step4;
         try {
-          for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-            var line = _step3.value;
+          for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+            var line = _step4.value;
             line = line.trim();
             if (line.startsWith('facet normal')) {
               var parts = line.split(/\s+/);
@@ -6498,9 +6816,9 @@
             }
           }
         } catch (err) {
-          _iterator3.e(err);
+          _iterator4.e(err);
         } finally {
-          _iterator3.f();
+          _iterator4.f();
         }
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
         geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
@@ -6760,24 +7078,24 @@
     }, {
       key: "copySource",
       value: (function () {
-        var _copySource = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee10() {
+        var _copySource = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee11() {
           var copyButton, markdownText, textarea;
-          return _regeneratorRuntime().wrap(function _callee10$(_context11) {
-            while (1) switch (_context11.prev = _context11.next) {
+          return _regeneratorRuntime().wrap(function _callee11$(_context13) {
+            while (1) switch (_context13.prev = _context13.next) {
               case 0:
                 copyButton = this.controls.querySelector('.copy-src-button');
                 copyButton.textContent = 'Copying...';
-                _context11.prev = 2;
+                _context13.prev = 2;
                 markdownText = this.getMarkdownSource();
-                _context11.prev = 4;
-                _context11.next = 7;
+                _context13.prev = 4;
+                _context13.next = 7;
                 return navigator.clipboard.writeText(markdownText);
               case 7:
-                _context11.next = 18;
+                _context13.next = 18;
                 break;
               case 9:
-                _context11.prev = 9;
-                _context11.t0 = _context11["catch"](4);
+                _context13.prev = 9;
+                _context13.t0 = _context13["catch"](4);
                 textarea = document.createElement('textarea');
                 textarea.value = markdownText;
                 textarea.style.position = 'fixed';
@@ -6787,12 +7105,12 @@
                 document.body.removeChild(textarea);
               case 18:
                 copyButton.textContent = 'Copied!';
-                _context11.next = 25;
+                _context13.next = 25;
                 break;
               case 21:
-                _context11.prev = 21;
-                _context11.t1 = _context11["catch"](2);
-                console.error('Copy Markdown failed:', _context11.t1);
+                _context13.prev = 21;
+                _context13.t1 = _context13["catch"](2);
+                console.error('Copy Markdown failed:', _context13.t1);
                 copyButton.textContent = 'Copy failed';
               case 25:
                 setTimeout(function () {
@@ -6800,9 +7118,9 @@
                 }, 2000);
               case 26:
               case "end":
-                return _context11.stop();
+                return _context13.stop();
             }
-          }, _callee10, this, [[2, 21], [4, 9]]);
+          }, _callee11, this, [[2, 21], [4, 9]]);
         }));
         function copySource() {
           return _copySource.apply(this, arguments);
@@ -6961,11 +7279,11 @@
 
         // Add diff content
         html += "<div class=\"diff-content\">";
-        var _iterator4 = _createForOfIteratorHelper(diffData.lineDiff),
-          _step4;
+        var _iterator5 = _createForOfIteratorHelper(diffData.lineDiff),
+          _step5;
         try {
-          for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-            var line = _step4.value;
+          for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+            var line = _step5.value;
             var lineClass = "".concat(classes.line, " ").concat(classes[line.type]);
             html += "<div class=\"".concat(lineClass, "\">");
             if (showLineNumbers) {
@@ -6979,9 +7297,9 @@
             html += "</div>";
           }
         } catch (err) {
-          _iterator4.e(err);
+          _iterator5.e(err);
         } finally {
-          _iterator4.f();
+          _iterator5.f();
         }
         html += "</div>"; // diff-content
         html += "</div>"; // container
@@ -7065,13 +7383,13 @@
 
         // Add content with inline diffs
         html += "<div class=\"diff-inline-content\">";
-        var _iterator5 = _createForOfIteratorHelper(diff),
-          _step5;
+        var _iterator6 = _createForOfIteratorHelper(diff),
+          _step6;
         try {
-          for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-            var _step5$value = _slicedToArray(_step5.value, 2),
-              op = _step5$value[0],
-              text = _step5$value[1];
+          for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+            var _step6$value = _slicedToArray(_step6.value, 2),
+              op = _step6$value[0],
+              text = _step6$value[1];
             var escapedText = this._escapeHtml(text);
             if (op === 1) {
               // Addition
@@ -7085,9 +7403,9 @@
             }
           }
         } catch (err) {
-          _iterator5.e(err);
+          _iterator6.e(err);
         } finally {
-          _iterator5.f();
+          _iterator6.f();
         }
         html += "</div></div>";
 
@@ -7123,7 +7441,7 @@
     }, {
       key: "onTextSelected",
       value: function onTextSelected(callback) {
-        var _this13 = this;
+        var _this14 = this;
         if (typeof callback !== 'function') {
           throw new Error('Callback must be a function');
         }
@@ -7131,7 +7449,7 @@
 
         // Return unsubscribe function
         return function () {
-          _this13.events.off('text:selected', callback);
+          _this14.events.off('text:selected', callback);
         };
       }
 
@@ -7398,9 +7716,9 @@
        * @returns {Function|null} The current handler function or null if none is set
        */
       function get() {
-        var _this14 = this;
+        var _this15 = this;
         return this._onTextReplacementHandler ? function (selectionData) {
-          var result = _this14._onTextReplacementHandler(selectionData);
+          var result = _this15._onTextReplacementHandler(selectionData);
           return result;
         } : null;
       }
@@ -7410,7 +7728,7 @@
        * Processes code blocks, SVG elements, and images to ensure they copy correctly.
        */,
       set: function set(handler) {
-        var _this15 = this;
+        var _this16 = this;
         if (handler !== null && typeof handler !== 'function') {
           throw new Error('onReplaceSelectedText handler must be a function or null');
         }
@@ -7428,7 +7746,7 @@
 
             // If the handler returns a string, use it to replace the selected text
             if (typeof result === 'string') {
-              _this15.replaceSelectedText(result, selectionData);
+              _this16.replaceSelectedText(result, selectionData);
             }
           };
 
@@ -7439,18 +7757,18 @@
     }, {
       key: "copyHTML",
       value: (function () {
-        var _copyHTML = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee11() {
-          var _this16 = this;
-          var copyButton, contentDiv, clone, images, _iterator6, _step6, _loop3, svgElements, _iterator7, _step7, _loop4, mathElements, _iterator8, _step8, _loop2, geojsonContainers, _iterator9, _step9, container, originalSource, originalContainer, allOriginalContainers, _iterator11, _step11, candidate, dataUrl, img, placeholder, _placeholder, stlContainers, _iterator10, _step10, _container, _originalSource, _originalContainer, _allOriginalContainers, _iterator12, _step12, _candidate, canvas, renderer, scene, camera, _dataUrl, _img, _placeholder2, _placeholder3, htmlContent, platform, tempDiv, selection, range, successful;
-          return _regeneratorRuntime().wrap(function _callee11$(_context15) {
-            while (1) switch (_context15.prev = _context15.next) {
+        var _copyHTML = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee12() {
+          var _this17 = this;
+          var copyButton, contentDiv, clone, images, _iterator7, _step7, _loop4, svgElements, _iterator8, _step8, _loop5, mathElements, _iterator9, _step9, _loop3, geojsonContainers, _iterator10, _step10, container, originalSource, originalContainer, allOriginalContainers, _iterator12, _step12, candidate, dataUrl, img, placeholder, _placeholder, stlContainers, _iterator11, _step11, _container, _originalSource, _originalContainer, _allOriginalContainers, _iterator13, _step13, _candidate, canvas, renderer, scene, camera, _dataUrl, _img, _placeholder2, _placeholder3, htmlContent, platform, tempDiv, selection, range, successful;
+          return _regeneratorRuntime().wrap(function _callee12$(_context17) {
+            while (1) switch (_context17.prev = _context17.next) {
               case 0:
                 copyButton = this.controls.querySelector('.copy-html-button');
                 copyButton.textContent = 'Copying...';
-                _context15.prev = 2;
+                _context17.prev = 2;
                 contentDiv = this.output.querySelector('div[contenteditable="true"]');
                 if (contentDiv) {
-                  _context15.next = 6;
+                  _context17.next = 6;
                   break;
                 }
                 throw new Error('Content div not found');
@@ -7477,20 +7795,20 @@
 
                 // Convert all images to data URLs for copying
                 images = clone.querySelectorAll('img');
-                _iterator6 = _createForOfIteratorHelper(images);
-                _context15.prev = 10;
-                _loop3 = /*#__PURE__*/_regeneratorRuntime().mark(function _loop3() {
+                _iterator7 = _createForOfIteratorHelper(images);
+                _context17.prev = 10;
+                _loop4 = /*#__PURE__*/_regeneratorRuntime().mark(function _loop4() {
                   var img, canvas, ctx, tempImg, width, height;
-                  return _regeneratorRuntime().wrap(function _loop3$(_context13) {
-                    while (1) switch (_context13.prev = _context13.next) {
+                  return _regeneratorRuntime().wrap(function _loop4$(_context15) {
+                    while (1) switch (_context15.prev = _context15.next) {
                       case 0:
-                        img = _step6.value;
-                        _context13.prev = 1;
+                        img = _step7.value;
+                        _context15.prev = 1;
                         canvas = document.createElement('canvas');
                         ctx = canvas.getContext('2d'); // Create new image and wait for it to load
                         tempImg = new Image();
                         tempImg.crossOrigin = 'anonymous';
-                        _context13.next = 8;
+                        _context15.next = 8;
                         return new Promise(function (resolve, reject) {
                           tempImg.onload = function () {
                             // Get intended display dimensions from HTML attributes or CSS
@@ -7537,12 +7855,12 @@
                           tempImg.src = img.src;
                         });
                       case 8:
-                        _context13.next = 14;
+                        _context15.next = 14;
                         break;
                       case 10:
-                        _context13.prev = 10;
-                        _context13.t0 = _context13["catch"](1);
-                        console.error('Failed to convert image for copying:', _context13.t0);
+                        _context15.prev = 10;
+                        _context15.t0 = _context15["catch"](1);
+                        console.error('Failed to convert image for copying:', _context15.t0);
                         // Preserve the original image source if conversion fails (e.g., for external badges)
                         // This ensures badges from services like shields.io still work when copied
                         if (img.src) {
@@ -7554,54 +7872,54 @@
                         }
                       case 14:
                       case "end":
-                        return _context13.stop();
+                        return _context15.stop();
                     }
-                  }, _loop3, null, [[1, 10]]);
+                  }, _loop4, null, [[1, 10]]);
                 });
-                _iterator6.s();
+                _iterator7.s();
               case 13:
-                if ((_step6 = _iterator6.n()).done) {
-                  _context15.next = 17;
+                if ((_step7 = _iterator7.n()).done) {
+                  _context17.next = 17;
                   break;
                 }
-                return _context15.delegateYield(_loop3(), "t0", 15);
+                return _context17.delegateYield(_loop4(), "t0", 15);
               case 15:
-                _context15.next = 13;
+                _context17.next = 13;
                 break;
               case 17:
-                _context15.next = 22;
+                _context17.next = 22;
                 break;
               case 19:
-                _context15.prev = 19;
-                _context15.t1 = _context15["catch"](10);
-                _iterator6.e(_context15.t1);
+                _context17.prev = 19;
+                _context17.t1 = _context17["catch"](10);
+                _iterator7.e(_context17.t1);
               case 22:
-                _context15.prev = 22;
-                _iterator6.f();
-                return _context15.finish(22);
+                _context17.prev = 22;
+                _iterator7.f();
+                return _context17.finish(22);
               case 25:
                 // Convert SVG elements to PNG (excluding math SVGs which are handled separately)
                 svgElements = clone.querySelectorAll('svg');
-                _iterator7 = _createForOfIteratorHelper(svgElements);
-                _context15.prev = 27;
-                _loop4 = /*#__PURE__*/_regeneratorRuntime().mark(function _loop4() {
+                _iterator8 = _createForOfIteratorHelper(svgElements);
+                _context17.prev = 27;
+                _loop5 = /*#__PURE__*/_regeneratorRuntime().mark(function _loop5() {
                   var svg, pngBlob, dataUrl, img, isMermaidSvg, hasExplicitDimensions, imgWidth, imgHeight;
-                  return _regeneratorRuntime().wrap(function _loop4$(_context14) {
-                    while (1) switch (_context14.prev = _context14.next) {
+                  return _regeneratorRuntime().wrap(function _loop5$(_context16) {
+                    while (1) switch (_context16.prev = _context16.next) {
                       case 0:
-                        svg = _step7.value;
+                        svg = _step8.value;
                         if (!svg.closest('.math-display')) {
-                          _context14.next = 3;
+                          _context16.next = 3;
                           break;
                         }
-                        return _context14.abrupt("return", 1);
+                        return _context16.abrupt("return", 1);
                       case 3:
-                        _context14.prev = 3;
-                        _context14.next = 6;
-                        return _this16.svgToPng(svg);
+                        _context16.prev = 3;
+                        _context16.next = 6;
+                        return _this17.svgToPng(svg);
                       case 6:
-                        pngBlob = _context14.sent;
-                        _context14.next = 9;
+                        pngBlob = _context16.sent;
+                        _context16.next = 9;
                         return new Promise(function (resolve) {
                           var reader = new FileReader();
                           reader.onloadend = function () {
@@ -7610,7 +7928,7 @@
                           reader.readAsDataURL(pngBlob);
                         });
                       case 9:
-                        dataUrl = _context14.sent;
+                        dataUrl = _context16.sent;
                         img = document.createElement('img');
                         img.src = dataUrl;
 
@@ -7639,68 +7957,68 @@
                         img.setAttribute('v:shapes', 'image' + Math.random().toString(36).substr(2, 9));
                         img.alt = "Converted diagram";
                         svg.parentNode.replaceChild(img, svg);
-                        _context14.next = 31;
+                        _context16.next = 31;
                         break;
                       case 28:
-                        _context14.prev = 28;
-                        _context14.t0 = _context14["catch"](3);
-                        console.error('Failed to convert SVG:', _context14.t0);
+                        _context16.prev = 28;
+                        _context16.t0 = _context16["catch"](3);
+                        console.error('Failed to convert SVG:', _context16.t0);
                       case 31:
                       case "end":
-                        return _context14.stop();
+                        return _context16.stop();
                     }
-                  }, _loop4, null, [[3, 28]]);
+                  }, _loop5, null, [[3, 28]]);
                 });
-                _iterator7.s();
+                _iterator8.s();
               case 30:
-                if ((_step7 = _iterator7.n()).done) {
-                  _context15.next = 36;
+                if ((_step8 = _iterator8.n()).done) {
+                  _context17.next = 36;
                   break;
                 }
-                return _context15.delegateYield(_loop4(), "t2", 32);
+                return _context17.delegateYield(_loop5(), "t2", 32);
               case 32:
-                if (!_context15.t2) {
-                  _context15.next = 34;
+                if (!_context17.t2) {
+                  _context17.next = 34;
                   break;
                 }
-                return _context15.abrupt("continue", 34);
+                return _context17.abrupt("continue", 34);
               case 34:
-                _context15.next = 30;
+                _context17.next = 30;
                 break;
               case 36:
-                _context15.next = 41;
+                _context17.next = 41;
                 break;
               case 38:
-                _context15.prev = 38;
-                _context15.t3 = _context15["catch"](27);
-                _iterator7.e(_context15.t3);
+                _context17.prev = 38;
+                _context17.t3 = _context17["catch"](27);
+                _iterator8.e(_context17.t3);
               case 41:
-                _context15.prev = 41;
-                _iterator7.f();
-                return _context15.finish(41);
+                _context17.prev = 41;
+                _iterator8.f();
+                return _context17.finish(41);
               case 44:
                 // Convert Math elements to PNG images using the copy-as-image approach from math-test.html
                 mathElements = Array.from(clone.querySelectorAll('.math-display'));
                 if (!(mathElements.length > 0)) {
-                  _context15.next = 64;
+                  _context17.next = 64;
                   break;
                 }
-                _iterator8 = _createForOfIteratorHelper(mathElements);
-                _context15.prev = 47;
-                _loop2 = /*#__PURE__*/_regeneratorRuntime().mark(function _loop2() {
+                _iterator9 = _createForOfIteratorHelper(mathElements);
+                _context17.prev = 47;
+                _loop3 = /*#__PURE__*/_regeneratorRuntime().mark(function _loop3() {
                   var mathEl, svg, serializer, svgStr, svgBlob, url, img, dataUrl, imgElement;
-                  return _regeneratorRuntime().wrap(function _loop2$(_context12) {
-                    while (1) switch (_context12.prev = _context12.next) {
+                  return _regeneratorRuntime().wrap(function _loop3$(_context14) {
+                    while (1) switch (_context14.prev = _context14.next) {
                       case 0:
-                        mathEl = _step8.value;
-                        _context12.prev = 1;
+                        mathEl = _step9.value;
+                        _context14.prev = 1;
                         svg = mathEl.querySelector('svg');
                         if (svg) {
-                          _context12.next = 6;
+                          _context14.next = 6;
                           break;
                         }
                         console.warn('No SVG found in math element, skipping');
-                        return _context12.abrupt("return", 1);
+                        return _context14.abrupt("return", 1);
                       case 6:
                         // Convert SVG to PNG data URL using the exact approach from math-test.html
                         serializer = new XMLSerializer();
@@ -7710,7 +8028,7 @@
                         });
                         url = URL.createObjectURL(svgBlob);
                         img = new Image();
-                        _context12.next = 13;
+                        _context14.next = 13;
                         return new Promise(function (resolve, reject) {
                           img.onload = function () {
                             var canvas = document.createElement('canvas');
@@ -7788,70 +8106,70 @@
                           img.src = url;
                         });
                       case 13:
-                        dataUrl = _context12.sent;
+                        dataUrl = _context14.sent;
                         // Replace math element with img tag containing the PNG data URL
                         imgElement = document.createElement('img');
                         imgElement.src = dataUrl;
                         imgElement.style.cssText = 'display:block;margin:0.5em 0;max-width:100%;height:auto;';
                         imgElement.alt = 'Math equation';
                         mathEl.parentNode.replaceChild(imgElement, mathEl);
-                        _context12.next = 24;
+                        _context14.next = 24;
                         break;
                       case 21:
-                        _context12.prev = 21;
-                        _context12.t0 = _context12["catch"](1);
-                        console.error('Failed to convert math element to image:', _context12.t0);
+                        _context14.prev = 21;
+                        _context14.t0 = _context14["catch"](1);
+                        console.error('Failed to convert math element to image:', _context14.t0);
                         // Keep the original element if conversion fails
                       case 24:
                       case "end":
-                        return _context12.stop();
+                        return _context14.stop();
                     }
-                  }, _loop2, null, [[1, 21]]);
+                  }, _loop3, null, [[1, 21]]);
                 });
-                _iterator8.s();
+                _iterator9.s();
               case 50:
-                if ((_step8 = _iterator8.n()).done) {
-                  _context15.next = 56;
+                if ((_step9 = _iterator9.n()).done) {
+                  _context17.next = 56;
                   break;
                 }
-                return _context15.delegateYield(_loop2(), "t4", 52);
+                return _context17.delegateYield(_loop3(), "t4", 52);
               case 52:
-                if (!_context15.t4) {
-                  _context15.next = 54;
+                if (!_context17.t4) {
+                  _context17.next = 54;
                   break;
                 }
-                return _context15.abrupt("continue", 54);
+                return _context17.abrupt("continue", 54);
               case 54:
-                _context15.next = 50;
+                _context17.next = 50;
                 break;
               case 56:
-                _context15.next = 61;
+                _context17.next = 61;
                 break;
               case 58:
-                _context15.prev = 58;
-                _context15.t5 = _context15["catch"](47);
-                _iterator8.e(_context15.t5);
+                _context17.prev = 58;
+                _context17.t5 = _context17["catch"](47);
+                _iterator9.e(_context17.t5);
               case 61:
-                _context15.prev = 61;
-                _iterator8.f();
-                return _context15.finish(61);
+                _context17.prev = 61;
+                _iterator9.f();
+                return _context17.finish(61);
               case 64:
                 // Handle GeoJSON containers - convert canvas to image
                 geojsonContainers = clone.querySelectorAll('.geojson-container');
-                _iterator9 = _createForOfIteratorHelper(geojsonContainers);
-                _context15.prev = 66;
-                _iterator9.s();
+                _iterator10 = _createForOfIteratorHelper(geojsonContainers);
+                _context17.prev = 66;
+                _iterator10.s();
               case 68:
-                if ((_step9 = _iterator9.n()).done) {
-                  _context15.next = 130;
+                if ((_step10 = _iterator10.n()).done) {
+                  _context17.next = 130;
                   break;
                 }
-                container = _step9.value;
-                _context15.prev = 70;
+                container = _step10.value;
+                _context17.prev = 70;
                 // Find the corresponding GeoJSON container in the original DOM by searching with proper escaping
                 originalSource = container.getAttribute('data-original-source');
                 if (originalSource) {
-                  _context15.next = 75;
+                  _context17.next = 75;
                   break;
                 }
                 console.warn('No original source found for GeoJSON container');
@@ -7860,47 +8178,47 @@
                 // Find original container more reliably
                 originalContainer = null;
                 allOriginalContainers = this.output.querySelectorAll('.geojson-container');
-                _iterator11 = _createForOfIteratorHelper(allOriginalContainers);
-                _context15.prev = 78;
-                _iterator11.s();
+                _iterator12 = _createForOfIteratorHelper(allOriginalContainers);
+                _context17.prev = 78;
+                _iterator12.s();
               case 80:
-                if ((_step11 = _iterator11.n()).done) {
-                  _context15.next = 87;
+                if ((_step12 = _iterator12.n()).done) {
+                  _context17.next = 87;
                   break;
                 }
-                candidate = _step11.value;
+                candidate = _step12.value;
                 if (!(candidate.getAttribute('data-original-source') === originalSource)) {
-                  _context15.next = 85;
+                  _context17.next = 85;
                   break;
                 }
                 originalContainer = candidate;
-                return _context15.abrupt("break", 87);
+                return _context17.abrupt("break", 87);
               case 85:
-                _context15.next = 80;
+                _context17.next = 80;
                 break;
               case 87:
-                _context15.next = 92;
+                _context17.next = 92;
                 break;
               case 89:
-                _context15.prev = 89;
-                _context15.t6 = _context15["catch"](78);
-                _iterator11.e(_context15.t6);
+                _context17.prev = 89;
+                _context17.t6 = _context17["catch"](78);
+                _iterator12.e(_context17.t6);
               case 92:
-                _context15.prev = 92;
-                _iterator11.f();
-                return _context15.finish(92);
+                _context17.prev = 92;
+                _iterator12.f();
+                return _context17.finish(92);
               case 95:
                 if (!originalContainer) {
-                  _context15.next = 114;
+                  _context17.next = 114;
                   break;
                 }
-                _context15.prev = 96;
-                _context15.next = 99;
+                _context17.prev = 96;
+                _context17.next = 99;
                 return this.divToDataUrl(originalContainer);
               case 99:
-                dataUrl = _context15.sent;
+                dataUrl = _context17.sent;
                 if (!dataUrl) {
-                  _context15.next = 107;
+                  _context17.next = 107;
                   break;
                 }
                 img = document.createElement('img');
@@ -7910,16 +8228,16 @@
 
                 // Replace the container with the image
                 container.parentNode.replaceChild(img, container);
-                return _context15.abrupt("continue", 128);
+                return _context17.abrupt("continue", 128);
               case 107:
-                _context15.next = 112;
+                _context17.next = 112;
                 break;
               case 109:
-                _context15.prev = 109;
-                _context15.t7 = _context15["catch"](96);
-                console.warn('Failed to convert GeoJSON container to image:', _context15.t7);
+                _context17.prev = 109;
+                _context17.t7 = _context17["catch"](96);
+                console.warn('Failed to convert GeoJSON container to image:', _context17.t7);
               case 112:
-                _context15.next = 115;
+                _context17.next = 115;
                 break;
               case 114:
                 console.warn('Could not find original GeoJSON container');
@@ -7929,31 +8247,31 @@
                 placeholder.style.cssText = 'padding: 12px; background-color: #f0f0f0; border: 1px solid #ccc; text-align: center; margin: 0.5em 0;';
                 placeholder.textContent = '[GeoJSON Map - Interactive content not available in copy]';
                 container.parentNode.replaceChild(placeholder, container);
-                _context15.next = 128;
+                _context17.next = 128;
                 break;
               case 121:
-                _context15.prev = 121;
-                _context15.t8 = _context15["catch"](70);
-                console.error('Error processing GeoJSON container for copy:', _context15.t8);
+                _context17.prev = 121;
+                _context17.t8 = _context17["catch"](70);
+                console.error('Error processing GeoJSON container for copy:', _context17.t8);
                 // Fallback to placeholder
                 _placeholder = document.createElement('div');
                 _placeholder.style.cssText = 'padding: 12px; background-color: #f0f0f0; border: 1px solid #ccc; text-align: center; margin: 0.5em 0;';
                 _placeholder.textContent = '[GeoJSON Map - Interactive content not available in copy]';
                 container.parentNode.replaceChild(_placeholder, container);
               case 128:
-                _context15.next = 68;
+                _context17.next = 68;
                 break;
               case 130:
-                _context15.next = 135;
+                _context17.next = 135;
                 break;
               case 132:
-                _context15.prev = 132;
-                _context15.t9 = _context15["catch"](66);
-                _iterator9.e(_context15.t9);
+                _context17.prev = 132;
+                _context17.t9 = _context17["catch"](66);
+                _iterator10.e(_context17.t9);
               case 135:
-                _context15.prev = 135;
-                _iterator9.f();
-                return _context15.finish(135);
+                _context17.prev = 135;
+                _iterator10.f();
+                return _context17.finish(135);
               case 138:
                 // Handle TopoJSON containers - convert to structured data tables
                 clone.querySelectorAll('.topojson-container').forEach(function (container) {
@@ -7996,20 +8314,20 @@
 
                 // Handle STL containers - convert canvas to image
                 stlContainers = clone.querySelectorAll('.stl-container');
-                _iterator10 = _createForOfIteratorHelper(stlContainers);
-                _context15.prev = 141;
-                _iterator10.s();
+                _iterator11 = _createForOfIteratorHelper(stlContainers);
+                _context17.prev = 141;
+                _iterator11.s();
               case 143:
-                if ((_step10 = _iterator10.n()).done) {
-                  _context15.next = 211;
+                if ((_step11 = _iterator11.n()).done) {
+                  _context17.next = 211;
                   break;
                 }
-                _container = _step10.value;
-                _context15.prev = 145;
+                _container = _step11.value;
+                _context17.prev = 145;
                 // Find the corresponding STL container in the original DOM by searching with proper escaping
                 _originalSource = _container.getAttribute('data-original-source');
                 if (_originalSource) {
-                  _context15.next = 150;
+                  _context17.next = 150;
                   break;
                 }
                 console.warn('No original source found for STL container');
@@ -8018,47 +8336,47 @@
                 // Find original container more reliably
                 _originalContainer = null;
                 _allOriginalContainers = this.output.querySelectorAll('.stl-container');
-                _iterator12 = _createForOfIteratorHelper(_allOriginalContainers);
-                _context15.prev = 153;
-                _iterator12.s();
+                _iterator13 = _createForOfIteratorHelper(_allOriginalContainers);
+                _context17.prev = 153;
+                _iterator13.s();
               case 155:
-                if ((_step12 = _iterator12.n()).done) {
-                  _context15.next = 162;
+                if ((_step13 = _iterator13.n()).done) {
+                  _context17.next = 162;
                   break;
                 }
-                _candidate = _step12.value;
+                _candidate = _step13.value;
                 if (!(_candidate.getAttribute('data-original-source') === _originalSource)) {
-                  _context15.next = 160;
+                  _context17.next = 160;
                   break;
                 }
                 _originalContainer = _candidate;
-                return _context15.abrupt("break", 162);
+                return _context17.abrupt("break", 162);
               case 160:
-                _context15.next = 155;
+                _context17.next = 155;
                 break;
               case 162:
-                _context15.next = 167;
+                _context17.next = 167;
                 break;
               case 164:
-                _context15.prev = 164;
-                _context15.t10 = _context15["catch"](153);
-                _iterator12.e(_context15.t10);
+                _context17.prev = 164;
+                _context17.t10 = _context17["catch"](153);
+                _iterator13.e(_context17.t10);
               case 167:
-                _context15.prev = 167;
-                _iterator12.f();
-                return _context15.finish(167);
+                _context17.prev = 167;
+                _iterator13.f();
+                return _context17.finish(167);
               case 170:
                 if (!_originalContainer) {
-                  _context15.next = 195;
+                  _context17.next = 195;
                   break;
                 }
                 // Look for canvas element in the original container (Three.js WebGL canvas)
                 canvas = _originalContainer.querySelector('canvas');
                 if (!(canvas && canvas.width > 0 && canvas.height > 0)) {
-                  _context15.next = 192;
+                  _context17.next = 192;
                   break;
                 }
-                _context15.prev = 173;
+                _context17.prev = 173;
                 // Ensure the Three.js scene is rendered before capturing
                 // The renderer should be accessible through the canvas or container
                 renderer = canvas._threeRenderer || _originalContainer._threeRenderer;
@@ -8077,18 +8395,18 @@
 
                 // Replace the container with the image
                 _container.parentNode.replaceChild(_img, _container);
-                return _context15.abrupt("continue", 209);
+                return _context17.abrupt("continue", 209);
               case 187:
-                _context15.prev = 187;
-                _context15.t11 = _context15["catch"](173);
-                console.warn('Failed to convert STL canvas to image (likely WebGL context issue):', _context15.t11);
+                _context17.prev = 187;
+                _context17.t11 = _context17["catch"](173);
+                console.warn('Failed to convert STL canvas to image (likely WebGL context issue):', _context17.t11);
               case 190:
-                _context15.next = 193;
+                _context17.next = 193;
                 break;
               case 192:
                 console.warn('No valid canvas found in STL container');
               case 193:
-                _context15.next = 196;
+                _context17.next = 196;
                 break;
               case 195:
                 console.warn('Could not find original STL container');
@@ -8098,40 +8416,40 @@
                 _placeholder2.style.cssText = 'padding: 12px; background-color: #f0f0f0; border: 1px solid #ccc; text-align: center; margin: 0.5em 0;';
                 _placeholder2.textContent = '[STL 3D Model - Interactive content not available in copy]';
                 _container.parentNode.replaceChild(_placeholder2, _container);
-                _context15.next = 209;
+                _context17.next = 209;
                 break;
               case 202:
-                _context15.prev = 202;
-                _context15.t12 = _context15["catch"](145);
-                console.error('Error processing STL container for copy:', _context15.t12);
+                _context17.prev = 202;
+                _context17.t12 = _context17["catch"](145);
+                console.error('Error processing STL container for copy:', _context17.t12);
                 // Fallback to placeholder
                 _placeholder3 = document.createElement('div');
                 _placeholder3.style.cssText = 'padding: 12px; background-color: #f0f0f0; border: 1px solid #ccc; text-align: center; margin: 0.5em 0;';
                 _placeholder3.textContent = '[STL 3D Model - Interactive content not available in copy]';
                 _container.parentNode.replaceChild(_placeholder3, _container);
               case 209:
-                _context15.next = 143;
+                _context17.next = 143;
                 break;
               case 211:
-                _context15.next = 216;
+                _context17.next = 216;
                 break;
               case 213:
-                _context15.prev = 213;
-                _context15.t13 = _context15["catch"](141);
-                _iterator10.e(_context15.t13);
+                _context17.prev = 213;
+                _context17.t13 = _context17["catch"](141);
+                _iterator11.e(_context17.t13);
               case 216:
-                _context15.prev = 216;
-                _iterator10.f();
-                return _context15.finish(216);
+                _context17.prev = 216;
+                _iterator11.f();
+                return _context17.finish(216);
               case 219:
                 htmlContent = "\n          <html xmlns:v=\"urn:schemas-microsoft-com:vml\"\n                xmlns:o=\"urn:schemas-microsoft-com:office:office\"\n                xmlns:w=\"urn:schemas-microsoft-com:office:word\">\n            <head>\n              <meta charset=\"utf-8\">\n              <style>\n                table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }\n                th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }\n                th { background-color: #f0f0f0; font-weight: bold; }\n\n                /* Code block styling */\n                .hljs { display: block; overflow-x: auto; padding: 1em; }\n                .hljs-keyword { color: #0033B3; }\n                .hljs-string { color: #067D17; }\n                .hljs-comment { color: #8C8C8C; }\n                .hljs-function { color: #00627A; }\n                .hljs-number { color: #1750EB; }\n                .hljs-operator { color: #687687; }\n                .hljs-punctuation { color: #000000; }\n\n                /* Word-specific image handling */\n                img { display: block; max-width: none; }\n              </style>\n            </head>\n            <body>\n              ".concat(clone.innerHTML, "\n            </body>\n          </html>");
                 platform = this.getPlatform();
                 if (!(platform === 'macos')) {
-                  _context15.next = 233;
+                  _context17.next = 233;
                   break;
                 }
-                _context15.prev = 222;
-                _context15.next = 225;
+                _context17.prev = 222;
+                _context17.next = 225;
                 return navigator.clipboard.write([new ClipboardItem({
                   'text/html': new Blob([htmlContent], {
                     type: 'text/html'
@@ -8141,18 +8459,18 @@
                   })
                 })]);
               case 225:
-                _context15.next = 231;
+                _context17.next = 231;
                 break;
               case 227:
-                _context15.prev = 227;
-                _context15.t14 = _context15["catch"](222);
+                _context17.prev = 227;
+                _context17.t14 = _context17["catch"](222);
                 if (this.copyToClipboard(htmlContent)) {
-                  _context15.next = 231;
+                  _context17.next = 231;
                   break;
                 }
                 throw new Error('Fallback copy failed');
               case 231:
-                _context15.next = 257;
+                _context17.next = 257;
                 break;
               case 233:
                 // Windows/Linux approach
@@ -8162,8 +8480,8 @@
                 tempDiv.style.top = '0';
                 tempDiv.innerHTML = htmlContent;
                 document.body.appendChild(tempDiv);
-                _context15.prev = 239;
-                _context15.next = 242;
+                _context17.prev = 239;
+                _context17.next = 242;
                 return navigator.clipboard.write([new ClipboardItem({
                   'text/html': new Blob([htmlContent], {
                     type: 'text/html'
@@ -8173,11 +8491,11 @@
                   })
                 })]);
               case 242:
-                _context15.next = 254;
+                _context17.next = 254;
                 break;
               case 244:
-                _context15.prev = 244;
-                _context15.t15 = _context15["catch"](239);
+                _context17.prev = 244;
+                _context17.t15 = _context17["catch"](239);
                 selection = window.getSelection();
                 range = document.createRange();
                 range.selectNodeContents(tempDiv);
@@ -8185,24 +8503,24 @@
                 selection.addRange(range);
                 successful = document.execCommand('copy');
                 if (successful) {
-                  _context15.next = 254;
+                  _context17.next = 254;
                   break;
                 }
                 throw new Error('Fallback copy failed');
               case 254:
-                _context15.prev = 254;
+                _context17.prev = 254;
                 if (tempDiv && tempDiv.parentNode) {
                   document.body.removeChild(tempDiv);
                 }
-                return _context15.finish(254);
+                return _context17.finish(254);
               case 257:
                 copyButton.textContent = 'Copied!';
-                _context15.next = 264;
+                _context17.next = 264;
                 break;
               case 260:
-                _context15.prev = 260;
-                _context15.t16 = _context15["catch"](2);
-                console.error('Copy HTML failed:', _context15.t16);
+                _context17.prev = 260;
+                _context17.t16 = _context17["catch"](2);
+                console.error('Copy HTML failed:', _context17.t16);
                 copyButton.textContent = 'Copy failed';
               case 264:
                 setTimeout(function () {
@@ -8210,9 +8528,9 @@
                 }, 2000);
               case 265:
               case "end":
-                return _context15.stop();
+                return _context17.stop();
             }
-          }, _callee11, this, [[2, 260], [10, 19, 22, 25], [27, 38, 41, 44], [47, 58, 61, 64], [66, 132, 135, 138], [70, 121], [78, 89, 92, 95], [96, 109], [141, 213, 216, 219], [145, 202], [153, 164, 167, 170], [173, 187], [222, 227], [239, 244, 254, 257]]);
+          }, _callee12, this, [[2, 260], [10, 19, 22, 25], [27, 38, 41, 44], [47, 58, 61, 64], [66, 132, 135, 138], [70, 121], [78, 89, 92, 95], [96, 109], [141, 213, 216, 219], [145, 202], [153, 164, 167, 170], [173, 187], [222, 227], [239, 244, 254, 257]]);
         }));
         function copyHTML() {
           return _copyHTML.apply(this, arguments);
@@ -8418,11 +8736,11 @@
     }, {
       key: "mathToPng",
       value: (function () {
-        var _mathToPng = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee12(mathElement) {
-          return _regeneratorRuntime().wrap(function _callee12$(_context16) {
-            while (1) switch (_context16.prev = _context16.next) {
+        var _mathToPng = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee13(mathElement) {
+          return _regeneratorRuntime().wrap(function _callee13$(_context18) {
+            while (1) switch (_context18.prev = _context18.next) {
               case 0:
-                return _context16.abrupt("return", new Promise(function (resolve, reject) {
+                return _context18.abrupt("return", new Promise(function (resolve, reject) {
                   try {
                     var svg = mathElement.querySelector('svg');
                     if (!svg) {
@@ -8468,9 +8786,9 @@
                 }));
               case 1:
               case "end":
-                return _context16.stop();
+                return _context18.stop();
             }
-          }, _callee12);
+          }, _callee13);
         }));
         function mathToPng(_x6) {
           return _mathToPng.apply(this, arguments);
@@ -8502,20 +8820,20 @@
     }, {
       key: "mathCHTMLToPng",
       value: (function () {
-        var _mathCHTMLToPng = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee13(chtmlContainer) {
+        var _mathCHTMLToPng = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee14(chtmlContainer) {
           var rect, padding, canvas, ctx, scale, canvasWidth, canvasHeight, foreignObject, svgBlob, url;
-          return _regeneratorRuntime().wrap(function _callee13$(_context17) {
-            while (1) switch (_context17.prev = _context17.next) {
+          return _regeneratorRuntime().wrap(function _callee14$(_context19) {
+            while (1) switch (_context19.prev = _context19.next) {
               case 0:
-                _context17.prev = 0;
+                _context19.prev = 0;
                 // Get container bounds
                 rect = chtmlContainer.getBoundingClientRect();
                 if (!(rect.width === 0 || rect.height === 0)) {
-                  _context17.next = 5;
+                  _context19.next = 5;
                   break;
                 }
                 console.warn('CHTML container has zero dimensions');
-                return _context17.abrupt("return", null);
+                return _context19.abrupt("return", null);
               case 5:
                 // Create canvas
                 padding = 8;
@@ -8540,7 +8858,7 @@
                   type: 'image/svg+xml;charset=utf-8'
                 });
                 url = URL.createObjectURL(svgBlob);
-                return _context17.abrupt("return", new Promise(function (resolve, reject) {
+                return _context19.abrupt("return", new Promise(function (resolve, reject) {
                   var img = new Image();
                   img.onload = function () {
                     try {
@@ -8559,15 +8877,15 @@
                   img.src = url;
                 }));
               case 24:
-                _context17.prev = 24;
-                _context17.t0 = _context17["catch"](0);
-                console.error('CHTML to PNG conversion failed:', _context17.t0);
-                return _context17.abrupt("return", null);
+                _context19.prev = 24;
+                _context19.t0 = _context19["catch"](0);
+                console.error('CHTML to PNG conversion failed:', _context19.t0);
+                return _context19.abrupt("return", null);
               case 28:
               case "end":
-                return _context17.stop();
+                return _context19.stop();
             }
-          }, _callee13, null, [[0, 24]]);
+          }, _callee14, null, [[0, 24]]);
         }));
         function mathCHTMLToPng(_x7) {
           return _mathCHTMLToPng.apply(this, arguments);
@@ -8762,12 +9080,12 @@
     }, {
       key: "divToDataUrl",
       value: (function () {
-        var _divToDataUrl = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee14(element) {
-          var _this17 = this;
-          return _regeneratorRuntime().wrap(function _callee14$(_context18) {
-            while (1) switch (_context18.prev = _context18.next) {
+        var _divToDataUrl = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee15(element) {
+          var _this18 = this;
+          return _regeneratorRuntime().wrap(function _callee15$(_context20) {
+            while (1) switch (_context20.prev = _context20.next) {
               case 0:
-                return _context18.abrupt("return", new Promise(function (resolve, reject) {
+                return _context20.abrupt("return", new Promise(function (resolve, reject) {
                   try {
                     // Get the element's dimensions
                     var rect = element.getBoundingClientRect();
@@ -8810,11 +9128,11 @@
                             }
 
                             // Load and draw each tile
-                            var _iterator13 = _createForOfIteratorHelper(tileLayers),
-                              _step13;
+                            var _iterator14 = _createForOfIteratorHelper(tileLayers),
+                              _step14;
                             try {
-                              var _loop5 = function _loop5() {
-                                var tile = _step13.value;
+                              var _loop6 = function _loop6() {
+                                var tile = _step14.value;
                                 var img = new Image();
                                 img.crossOrigin = 'anonymous';
                                 img.onload = function () {
@@ -8830,11 +9148,11 @@
                                   if (tilesLoaded === totalTiles) {
                                     // All tiles loaded, now draw SVG overlays
                                     var svgElements = mapContainer.querySelectorAll('svg');
-                                    var _iterator14 = _createForOfIteratorHelper(svgElements),
-                                      _step14;
+                                    var _iterator15 = _createForOfIteratorHelper(svgElements),
+                                      _step15;
                                     try {
-                                      var _loop6 = function _loop6() {
-                                        var svg = _step14.value;
+                                      var _loop7 = function _loop7() {
+                                        var svg = _step15.value;
                                         if (svg.classList.contains('leaflet-attribution-flag')) return 1; // continue
                                         try {
                                           var svgRect = svg.getBoundingClientRect();
@@ -8857,13 +9175,13 @@
                                           console.warn('Failed to draw SVG overlay:', e);
                                         }
                                       };
-                                      for (_iterator14.s(); !(_step14 = _iterator14.n()).done;) {
-                                        if (_loop6()) continue;
+                                      for (_iterator15.s(); !(_step15 = _iterator15.n()).done;) {
+                                        if (_loop7()) continue;
                                       }
                                     } catch (err) {
-                                      _iterator14.e(err);
+                                      _iterator15.e(err);
                                     } finally {
-                                      _iterator14.f();
+                                      _iterator15.f();
                                     }
                                     var _dataUrl3 = _canvas.toDataURL('image/png', 1.0);
                                     resolve(_dataUrl3);
@@ -8878,13 +9196,13 @@
                                 };
                                 img.src = tile.src;
                               };
-                              for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
-                                _loop5();
+                              for (_iterator14.s(); !(_step14 = _iterator14.n()).done;) {
+                                _loop6();
                               }
                             } catch (err) {
-                              _iterator13.e(err);
+                              _iterator14.e(err);
                             } finally {
-                              _iterator13.f();
+                              _iterator14.f();
                             }
                             return;
                           } catch (error) {
@@ -8912,11 +9230,11 @@
                       // Find the largest SVG (excluding small attribution icons)
                       var bestSvg = null;
                       var maxArea = 0;
-                      var _iterator15 = _createForOfIteratorHelper(svgs),
-                        _step15;
+                      var _iterator16 = _createForOfIteratorHelper(svgs),
+                        _step16;
                       try {
-                        for (_iterator15.s(); !(_step15 = _iterator15.n()).done;) {
-                          var svg = _step15.value;
+                        for (_iterator16.s(); !(_step16 = _iterator16.n()).done;) {
+                          var svg = _step16.value;
                           if (svg.classList.contains('leaflet-attribution-flag')) continue;
                           var svgWidth = svg.clientWidth || parseFloat(svg.getAttribute('width')) || 0;
                           var svgHeight = svg.clientHeight || parseFloat(svg.getAttribute('height')) || 0;
@@ -8927,13 +9245,13 @@
                           }
                         }
                       } catch (err) {
-                        _iterator15.e(err);
+                        _iterator16.e(err);
                       } finally {
-                        _iterator15.f();
+                        _iterator16.f();
                       }
                       if (bestSvg) {
                         try {
-                          _this17.svgToPng(bestSvg).then(function (pngBlob) {
+                          _this18.svgToPng(bestSvg).then(function (pngBlob) {
                             var reader = new FileReader();
                             reader.onloadend = function () {
                               return resolve(reader.result);
@@ -8971,9 +9289,9 @@
                 }));
               case 1:
               case "end":
-                return _context18.stop();
+                return _context20.stop();
             }
-          }, _callee14);
+          }, _callee15);
         }));
         function divToDataUrl(_x8) {
           return _divToDataUrl.apply(this, arguments);
@@ -8988,7 +9306,7 @@
     }, {
       key: "initializeLineNumbers",
       value: function initializeLineNumbers() {
-        var _this18 = this;
+        var _this19 = this;
         // Create line mirror for measuring line heights
         this.lineMirror = document.createElement('div');
         this.lineMirror.className = "".concat(this.options.baseClass, "-line-mirror");
@@ -9003,7 +9321,7 @@
 
         // Store bound handler for cleanup
         this._lineNumberInputHandler = function () {
-          _this18.updateLineNumbersIfNeeded();
+          _this19.updateLineNumbersIfNeeded();
         };
 
         // Update line numbers on input
@@ -9054,11 +9372,11 @@
     }, {
       key: "setupLineNumberScrollSync",
       value: function setupLineNumberScrollSync() {
-        var _this19 = this;
+        var _this20 = this;
         if (!this.lineGutter) return;
         this.input.addEventListener('scroll', function () {
-          if (_this19.lineGutter) {
-            _this19.lineGutter.scrollTop = _this19.input.scrollTop;
+          if (_this20.lineGutter) {
+            _this20.lineGutter.scrollTop = _this20.input.scrollTop;
           }
         });
       }
@@ -9084,7 +9402,7 @@
        * @private
        */
       function updateLineNumbers() {
-        var _this20 = this;
+        var _this21 = this;
         if (!this.options.showLineNumbers || !this.lineGutter) return;
         var lines = this.input.value.split('\n');
         var totalLines = lines.length;
@@ -9098,19 +9416,19 @@
 
         // Create line number elements
         lines.forEach(function (line, index) {
-          var lineNum = _this20.options.lineNumberStart + index;
+          var lineNum = _this21.options.lineNumberStart + index;
           var lineNumStr = String(lineNum).padStart(minDigits, '0');
 
           // Measure line height
-          var lineHeight = _this20.measureLineHeight(line);
+          var lineHeight = _this21.measureLineHeight(line);
 
           // Create line number element
           var gutterLine = document.createElement('div');
-          gutterLine.className = "".concat(_this20.options.baseClass, "-gutter-line");
+          gutterLine.className = "".concat(_this21.options.baseClass, "-gutter-line");
           gutterLine.textContent = lineNumStr;
           gutterLine.style.height = lineHeight + 'px';
           gutterLine.style.lineHeight = lineHeight + 'px';
-          _this20.lineGutter.appendChild(gutterLine);
+          _this21.lineGutter.appendChild(gutterLine);
         });
       }
 
@@ -9143,11 +9461,11 @@
     }, {
       key: "syncMirrorStyles",
       value: function syncMirrorStyles() {
-        var _this21 = this;
+        var _this22 = this;
         var computed = window.getComputedStyle(this.input);
         var stylesToCopy = ['fontFamily', 'fontSize', 'lineHeight', 'letterSpacing', 'paddingTop', 'paddingBottom', 'paddingLeft', 'paddingRight', 'borderTopWidth', 'borderBottomWidth', 'borderLeftWidth', 'borderRightWidth', 'boxSizing', 'whiteSpace', 'wordWrap', 'wordBreak', 'overflowWrap'];
         stylesToCopy.forEach(function (prop) {
-          _this21.lineMirror.style[prop] = computed[prop];
+          _this22.lineMirror.style[prop] = computed[prop];
         });
 
         // Match textarea content width exactly
@@ -9258,7 +9576,15 @@
     // Starting line number
     lineNumberMinDigits: 2,
     // Minimum digits (e.g., 01, 02)
-    autoload_deps: null // Default off, can be { all: true } or fine-grained control
+    autoload_deps: null,
+    // Default off, can be { all: true } or fine-grained control
+    streamingMode: false,
+    // Enable streaming-friendly error handling
+    incompleteBlockPlaceholder: '⏳ Rendering...',
+    // Placeholder for incomplete blocks
+    renderErrorPlaceholder: '❌ Render error',
+    // Placeholder for render errors
+    errorHandling: null // Fine-grained error control
   });
   // Default CDN URLs for autoloading dependencies
   _defineProperty(SquibView, "DEFAULT_CDN_URLS", {
