@@ -146,11 +146,13 @@ editor.exportHTML();   // Download as file
 
 ## Documentation
 
-**Online Documentation**
-- [Quick Start Guide](https://deftio.github.io/squibview/docs/guides/01-quick-start.html) - Get running in 5 minutes
-- [API Reference](https://deftio.github.io/squibview/docs/programmers-guide.html) - Methods, options, events
-- [CLI Documentation](https://deftio.github.io/squibview/docs/guides/04-cli-usage.html) - Command line usage
-- [Release Notes](https://deftio.github.io/squibview/docs/release-notes.html) - Version history and changelog
+**Complete Documentation**
+- [📚 Full Documentation](docs/) - All documentation in organized structure
+- [API Reference](docs/api/) - Comprehensive API documentation
+- [Programmer's Guide](docs/programmers-guide.md) - Detailed usage guide
+- [CLI Documentation](docs/cli/CLI.md) - Command line interface guide
+- [Examples](examples/) - Live examples and demos
+- [Release Notes](docs/release-notes.md) - Version history and changelog
 
 **Local Documentation** (after cloning)
 - [Documentation Home](./docs/home.html)

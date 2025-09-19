@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contributing to SquibView</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; viewBox=&#39;0 0 32 32&#39;&gt;&lt;circle cx=&#39;16&#39; cy=&#39;16&#39; r=&#39;14&#39; fill=&#39;%23f57c00&#39; stroke=&#39;%23000&#39; stroke-width=&#39;1&#39;/&gt;&lt;path d=&#39;M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z&#39; fill=&#39;none&#39; stroke=&#39;%23000&#39; stroke-width=&#39;1&#39;/&gt;&lt;/svg&gt;">
+  <style>
+
+
+/* Additional CSS */
+/* SquibView CLI Generated Styles */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  line-height: 1.6;
+  color: #333;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 3rem;
+  background-color: #fff;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+h1 { 
+  font-size: 2rem;
+  
+}
+h2 { 
+  font-size: 1.5rem;
+  
+}
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1rem; }
+h5 { font-size: 0.875rem; }
+h6 { font-size: 0.85rem; color: #666; }
+
+p { margin-bottom: 1rem; }
+
+a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #0066cc;
+  text-decoration: underline;
+}
+
+ul, ol {
+  margin-bottom: 1rem;
+  padding-left: 2rem;
+}
+
+li {
+  margin-bottom: 0.25rem;
+}
+
+blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 4px solid #ddd;
+  background-color: #f9f9f9;
+  color: #666;
+}
+
+code {
+  background-color: #f5f5f5;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.85em;
+}
+
+pre {
+  background-color: #f8f8f8;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  border-radius: 4px;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 1rem;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 2rem 0;
+}
+
+/* Badge images - inline display */
+p img {
+  display: inline;
+  margin: 0 2px;
+  vertical-align: middle;
+}
+
+/* Math styling */
+.MathJax {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  body {
+    padding: 1rem 1.5rem;
+  }
+  
+  table {
+    font-size: 0.875rem;
+  }
+  
+  th, td {
+    padding: 0.25rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    padding: 0;
+    color: #000;
+  }
+  
+  a {
+    color: #000;
+    text-decoration: underline;
+  }
+  
+  pre, blockquote {
+    page-break-inside: avoid;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+}
+  </style>
+    <!-- Highlight.js for syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <!-- Leaflet for GeoJSON/TopoJSON maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <!-- Three.js for STL 3D models -->
+  <script src="https://unpkg.com/three@0.171.0/build/three.min.js"></script>
+  <!-- MathJax for math rendering -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true
+      },
+      options: {
+        ignoreHtmlClass: 'tex2jax_ignore',
+        processHtmlClass: 'tex2jax_process'
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+  </script>
+  <!-- Mermaid for diagram rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+</head>
+<body>
+<div><h1>Contributing to SquibView</h1><p>We welcome contributions to SquibView! Here’s how you can help.</p><h2>Getting Started</h2><ol><li><strong>Fork the repository</strong> on GitHub.</li><li><strong>Clone your fork</strong> locally: <code>git clone https://github.com/YOUR_USERNAME/squibview.git</code></li><li><strong>Install dependencies</strong>: <code>npm install</code></li></ol><h2>Development Workflow</h2><ol><li><strong>Create a new branch</strong> for your feature or bug fix: <code>git checkout -b my-feature-branch</code></li><li><strong>Make your changes</strong>.</li><li><strong>Build the project</strong>: See the “Building and Versioning” section below.</li><li><strong>Test your changes</strong>: See the “Testing and Debugging” section below.</li><li><strong>Commit your changes</strong>: <code>git commit -am "Add some feature"</code></li><li><strong>Push to your branch</strong>: <code>git push origin my-feature-branch</code></li><li><strong>Create a Pull Request</strong> on GitHub.</li></ol><h2>Building and Versioning</h2><p>SquibView uses a combination of <code>npm version</code> and custom shell scripts to manage versioning, builds, and testing in an integrated way. <strong>IMPORTANT</strong>: SquibView supports multiple build targets (ESM, UMD, Standalone, React, Vue, CLI) - it’s critical not to break any of these during development.</p><h3>Source of Truth for Version</h3><p>The canonical version number is stored in <code>package.json</code>. The <code>src/version.js</code> file, which makes the version available at runtime via <code>SquibView.version</code>, is <em>automatically generated</em> from <code>package.json</code> by the build process.</p><h3>Development Scripts</h3><ul><li><p><strong><code>dev-bump-build-test.sh</code></strong>: <strong>Recommended for development iterations</strong>. This script automates bumping to a development version, building, and testing.</p><ul><li><strong>How to use it:</strong> Simply run <code>./dev-bump-build-test.sh</code> from the project root.</li><li><strong>What it does:</strong><ol><li>Determines the current version from <code>package.json</code>.</li><li>If the current version is a pre-release (e.g., <code>1.0.5-dev.0</code>), it increments the pre-release part (e.g., to <code>1.0.5-dev.1</code>).</li><li>If the current version is a stable release (e.g., <code>1.0.5</code>), it adds <code>-dev.0</code> to create the first development version (e.g., <code>1.0.5-dev.0</code>).</li><li>Runs <code>node tools/updateVersion.js</code> to update <code>src/version.js</code>.</li><li>Runs <code>npm run build:esm</code> (fast build for development).</li><li>Runs <code>npm test -- tests/SquibView.test.js</code> (core tests only).</li></ol></li><li><strong>Why use it:</strong> Streamlines development by creating traceable dev versions and ensuring core functionality works.</li></ul></li><li><p><strong><code>build-and-test.sh</code></strong>: For formal builds when you want to test a specific version.</p><ul><li><strong>How to use it:</strong><ol><li>Manually update the <code>version</code> in <code>package.json</code> (e.g., <code>npm version patch</code>, <code>npm version minor</code>, or edit directly).</li><li>Run <code>./build-and-test.sh</code>.</li></ol></li><li><strong>What it does:</strong><ol><li>Runs <code>node tools/updateVersion.js</code> to update <code>src/version.js</code>.</li><li>Runs <code>npm run build</code> (full build of all targets).</li><li>Runs <code>npm test</code> (all tests).</li></ol></li></ul></li></ul><h3>Build Targets and Commands</h3><p>⚠️ <strong>WARNING</strong>: Full builds take significant time (several minutes), especially standalone builds. Use targeted builds during development.</p><h4>Individual Build Commands</h4><ul><li><p><strong><code>npm run build:esm</code></strong> - ES Module build (fastest, ~2 seconds)</p><ul><li>Outputs: <code>dist/squibview.esm.js</code>, <code>dist/squibview.esm.min.js</code></li><li>Use: Modern bundlers (Webpack, Vite, etc.)</li></ul></li><li><p><strong><code>npm run build:umd</code></strong> - Universal Module Definition build (~3 seconds)</p><ul><li>Outputs: <code>dist/squibview.umd.js</code>, <code>dist/squibview.umd.min.js</code></li><li>Use: Browser script tags, RequireJS, CommonJS</li></ul></li><li><p><strong><code>npm run build:standalone</code></strong> - Self-contained build with all dependencies (⚠️ ~30+ seconds)</p><ul><li>Outputs: <code>dist/squibview.standalone.min.js</code>, <code>dist/squibview.standalone.esm.js</code></li><li>Use: CDN deployment, no external dependencies needed</li></ul></li><li><p><strong><code>npm run build:react</code></strong> - React component wrapper</p><ul><li>Outputs: <code>dist/squibview-react.js</code>, <code>dist/squibview-react.min.js</code></li></ul></li><li><p><strong><code>npm run build:cli</code></strong> - Command-line interface</p><ul><li>Outputs: <code>cli/</code> directory with CLI tools</li></ul></li></ul><h4>Comprehensive Build Commands</h4><ul><li><strong><code>npm run build</code></strong> - Builds all library targets (ESM, UMD, Standalone, React, Vue)</li><li><strong><code>npm run build:all</code></strong> - Builds library + CLI (complete build)</li><li><strong><code>npm run build:fast</code></strong> - ESM build only (for development)</li></ul><h4>Supporting Build Tools</h4><ul><li><strong><code>npm run updateVersion</code></strong> - Updates <code>src/version.js</code> from <code>package.json</code></li><li><strong><code>npm run minifyCSS</code></strong> - Processes and minifies CSS files</li><li><strong><code>npm run makeIndexHTML</code></strong> - Generates documentation HTML</li></ul><h3>Build Architecture Details</h3><ol><li><strong>Version Management</strong>: <code>tools/updateVersion.js</code> reads <code>package.json</code> and generates <code>src/version.js</code></li><li><strong>Bundling</strong>: Rollup.js with different configurations for each target</li><li><strong>CSS Processing</strong>: Custom minification via <code>tools/minifyCSS.cjs</code></li><li><strong>Distribution</strong>: All builds output to <code>dist/</code> directory</li></ol><h3>Version Runtime Access</h3><p>SquibView reports its version at runtime via:</p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title class_">SquibView</span>.<span class="hljs-property">version</span>); <span class="hljs-comment">// e.g., "1.0.5-dev.2"</span><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title class_">SquibView</span>.<span class="hljs-property">version</span>.<span class="hljs-property">version</span>); <span class="hljs-comment">// Version string</span><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title class_">SquibView</span>.<span class="hljs-property">version</span>.<span class="hljs-property">url</span>); <span class="hljs-comment">// Repository URL</span></code></pre></div><h3>Build Troubleshooting</h3><ul><li><strong>Standalone builds fail</strong>: Often due to dependency compatibility issues</li><li><strong>UMD builds not working in browser</strong>: Check <code>docs/umd-build-configuration.md</code></li><li><strong>Version mismatch</strong>: Run <code>npm run updateVersion</code> manually</li><li><strong>CSS issues</strong>: Ensure <code>npm run minifyCSS</code> runs after code changes</li></ul><h2>Testing and Debugging</h2><h3>Running Tests</h3><ul><li><strong>Run all tests:</strong><code>npm test</code></li><li><strong>Run tests for a specific file:</strong><code>npm test -- tests/SquibView.test.js</code> (or <code>npx jest tests/SquibView.test.js</code>)</li><li><strong>Run tests with verbose output for debugging:</strong><code>npm test -- --verbose</code></li><li><strong>Run tests in watch mode:</strong><code>npm test -- --watch</code></li></ul><h3>Debugging Tests in VS Code (or similar IDEs with Jest integration)</h3><p>Most modern IDEs offer excellent Jest integration for debugging.</p><ol><li><strong>Install the Jest extension</strong> for your IDE if you haven’t already (e.g., “Jest” by Orta for VS Code).</li><li><strong>Set breakpoints</strong> in your test files (<code>*.test.js</code>) or the source files (<code>src/*.js</code>).</li><li><strong>Use the IDE’s debugger UI</strong> to run the specific test or test suite. You can usually click a “Debug” button or icon that appears next to <code>describe</code> or <code>it</code> blocks in your test files.</li></ol><h3>Debugging in the Browser</h3><p>For issues that are hard to reproduce in the JSDOM environment provided by Jest, or for visual/interaction debugging:</p><ol><li><strong>Use <code>debug.html</code> or <code>debug-dev.html</code>:</strong> These files in the <code>dev/</code> directory are set up to load SquibView. You can open them in a browser.</li><li><strong>Modify <code>debug-dev.html</code>:</strong> This file is particularly useful as it often includes more complex setups or specific content to test features under development.
+<ul><li>You can change the <code>initialContent</code> or <code>inputContentType</code> directly in the script tag within <code>debug-dev.html</code> to load specific Markdown or HTML.</li><li>Add <code>debugger;</code> statements in <code>src/squibview.js</code> or other relevant source files where you want the browser’s debugger to pause.</li></ul></li><li><strong>Use Browser Developer Tools:</strong> Open your browser’s developer tools (usually F12 or right-click -&gt; Inspect) to:
+<ul><li>Set breakpoints in the JavaScript source code.</li><li>Inspect the DOM structure and CSS.</li><li>Monitor console output (<code>console.log</code>, <code>console.warn</code>, etc.).</li><li>Step through code execution.</li></ul></li></ol><h3>Tips for Debugging SquibView</h3><ul><li><strong>Isolate the Issue:</strong> Try to create the simplest possible Markdown or HTML snippet that reproduces the bug. Use this in <code>debug-dev.html</code> or a new Jest test case.</li><li><strong>Check <code>console.log</code> output:</strong> Add <code>console.log</code> statements strategically in <code>squibview.js</code> or <code>HtmlToMarkdown.js</code> to understand the state of variables or the flow of execution.</li><li><strong>Understand the Rendering Pipeline:</strong><ul><li><strong>Markdown to HTML:</strong><code>squibview.js</code> -&gt; <code>markdown-it</code> (with custom fence renderers) -&gt; HTML string -&gt; DOM.</li><li><strong>HTML to Markdown:</strong> HTML string (from contenteditable or input) -&gt; <code>HtmlToMarkdown.js</code> (which uses Turndown with custom rules) -&gt; Markdown string.</li></ul></li><li><strong>Review Test Logs:</strong> Carefully examine the output from <code>npm test</code>, especially the diffs provided by Jest when assertions fail. This often points directly to the problem.</li><li><strong>Consider Mocks:</strong> Be aware of how mocks (e.g., for <code>hljs</code>, <code>mermaid</code>, <code>Papa</code>) in <code>tests/SquibView.test.js</code> might affect test behavior. Sometimes, unmocking a module or using <code>jest.requireActual</code> is necessary for specific tests.</li></ul><h2>Code Style</h2><p>Please follow the existing code style. We generally adhere to common JavaScript best practices.</p><h2>Reporting Bugs</h2><ul><li><strong>Search existing issues</strong> to see if the bug has already been reported.</li><li><strong>Provide a clear and descriptive title.</strong></li><li><strong>Include steps to reproduce the bug.</strong></li><li><strong>Provide a code example or a link to a live example if possible.</strong></li><li><strong>Describe the expected behavior and the actual behavior.</strong></li><li><strong>Include your browser and OS information.</strong></li></ul><p>Thank you for contributing to SquibView!</p></div>
+  <script>
+    // Initialize MathJax after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise().catch(function(err) {
+          console.warn('MathJax typesetting failed:', err);
+        });
+      }
+    });
+  </script>
+  <script>
+    // Initialize Mermaid after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.mermaid) {
+        try {
+          window.mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose',
+            fontFamily: 'inherit'
+          });
+          
+          // Manually render all mermaid diagrams
+          const mermaidElements = document.querySelectorAll('.mermaid');
+          mermaidElements.forEach(function(element, index) {
+            const id = 'mermaid-' + index;
+            element.id = id;
+            try {
+              window.mermaid.render(id + '-svg', element.textContent, function(svgCode) {
+                element.innerHTML = svgCode;
+              });
+            } catch (err) {
+              console.warn('Mermaid rendering failed for element', index, ':', err);
+              // Fallback: show the text content
+              element.innerHTML = '<pre>' + element.textContent + '</pre>';
+            }
+          });
+        } catch (err) {
+          console.warn('Mermaid initialization failed:', err);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

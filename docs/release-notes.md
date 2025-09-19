@@ -1,5 +1,9 @@
 # SquibView Release Notes
 
+Complete changelog and release history for SquibView.
+
+---
+
 ## v1.0.18 (September 17, 2024)
 
 ### Major Features
@@ -48,29 +52,48 @@
 - Improved responsive design for mobile devices
 - Simplified build options to 3 main configurations
 
+---
+
 ## v1.0.17 (July 22, 2024)
 
 ### Features
-- Added copy to clipboard functionality for markdown and HTML content
-- Improved clipboard API integration with fallback for older browsers
+- Added line number support to source view
+- Added examples for using themes with line numbers
+- Dark theme styling improvements
+- Improved CLI build system
+
+### Improvements
+- Resolved line number bugs and improved example
+- Updated line numbers example with proper dependencies and formatting
+- Removed container borders for cleaner appearance
+- Updated bin path format to match npm requirements
 
 ### Documentation
-- Added comprehensive documentation for copy operations
-- Updated examples to demonstrate clipboard functionality
+- Added comprehensive documentation for line numbers feature
+- Added theme usage examples
 
-## v1.0.16 (July 2024)
+---
+
+## v1.0.16 (July 16, 2024)
 
 ### Improvements
 - Performance optimizations for large documents
 - Better memory management for revision history
 - Improved scrolling synchronization between panes
+- Enhanced bidirectional editing reliability
+
+### Documentation
+- Updated API documentation with performance tips
+- Added large document handling guide
+
+---
 
 ## v1.0.15 (June 2024)
 
 ### Build System Changes
 
 **Default Builds Now Include Dependencies**
-- ESM/UMD builds now bundle markdown-it, diff-match-patch, and tiny-emitter
+- ESM/UMD builds now bundle markdown-it, diff-match-patch, and tiny-emitter (~240KB)
 - Eliminates import map configuration requirements for new users
 - Existing applications continue to work without changes
 
@@ -82,6 +105,7 @@
 - Fixed ESM standalone build generation
 - Resolved Leaflet icon side effects in standalone builds
 - Fixed GeoJSON rendering without prototype pollution
+- Standalone builds no longer modify global Leaflet prototype
 
 ### Build Sizes
 | Build | Size | Description |
@@ -91,6 +115,13 @@
 | squibview.umd.min.js | 246KB | Standard UMD with bundled dependencies |
 | squibview.umd-lean.min.js | 128KB | Minimal UMD without dependencies |
 | squibview.standalone.*.min.js | 3.6-3.8MB | All features bundled |
+
+### Documentation
+- Updated all docs to reflect bundled dependencies in default builds
+- Cleaned up examples to use best practices
+- Removed duplicate Leaflet icon configuration from examples
+
+---
 
 ## v1.0.13 - v1.0.14 (May 2024)
 
@@ -102,112 +133,38 @@
 - **NEW**: Support for comparing any revision against any other (including initial state)
 - **NEW**: Working example demos: `diff_view_inline.html` and `diff_view_live.html`
 
-### 🔧 RevisionHistory Enhancements
+### RevisionHistory Enhancements
 - **NEW**: `getContentAtRevision()` method to retrieve content at any revision
 - **NEW**: `computeDiff()` method for character-level diffs
 - **NEW**: `computeLineDiff()` method for line-by-line comparisons
 - **NEW**: `getDiffStats()` method to get additions/deletions/changes count
 - **NEW**: `getRevisionInfo()` method for revision metadata
 
-### 📝 Examples & Documentation
+### Examples & Documentation
 - **NEW**: Inline diff demo showing manual revision comparison
 - **NEW**: Live diff demo showing real-time cumulative changes
 - **IMPROVED**: ESM module loading in diff examples
 - **FIXED**: Revision dropdown population and event handling
 - **FIXED**: Baseline revision persistence in live diff mode
-- **CLEANED**: Removed broken/debug example files
-
----
-## v1.0.17 (July 22, 2025)
-*Release Date: July 22, 2025*
-
-### ✨ Improvements
-- **Updated cli build
-- **Added line number support, add examples for showing hhow to use themes.
-- **Dark theme styling and remove container border
-- **Resolve line numbers bugs and improve example
-- **Update line numbers example with proper dependencies and formatting
-- **Add line numbers support to source view
-- **Update bin path format to match npm requirements
 
 ---
 
-## v1.0.16 (July 16, 2025)
-*Release Date: July 16, 2025*
+## v1.0.11 - v1.0.12 (July 2024)
 
-### ✨ Improvements
-- **V1.0.16 release
-- **V1.0.16 pre-release docs updated
-- **V1.0.16 prelease
-
----
-
-## v1.0.15 (July 13, 2025)
-*Release Date: July 13, 2025*
-
-### ✨ Improvements
-- **Update documentation for v1.0.15 bundled dependencies
-- **Remove duplicate Leaflet icon configuration from standalone_umd example
-- **Remove console warnings for missing libraries
-- **Update examples to use bundled builds
-- **Implement bundled builds with markdown-it
-- **V1.0.15 task list and version bump
-- **Fix line diff algorithm and edge cases for v1.0.14
+### Documentation & Build Improvements
+- Enhanced documentation structure
+- Fixed badge copy errors for README.md generation
+- Improved regex patterns in build scripts
+- Fixed release script issues
+- Updated demo GIF maker tool
+- Fixed CORS errors on markdown badges rendering
+- Incremental build improvements
 
 ---
 
-## v1.0.12 (July 01, 2025)
-*Release Date: July 01, 2025*
+## v1.0.10 (June 24, 2024)
 
-### ✨ Improvements
-- **V1.0.12 enhanced docs, fixed badge copy errors for README.md generation
-
----
-## v1.0.14 (July 13, 2025)
-*Release Date: July 13, 2025*
-
-### 📝 Release Highlights
-Fixed ci/cd builds for diffs
-
-### ✨ Improvements
-- **V1.0.14 docs update
-
----
-
-## v1.0.13 (July 13, 2025)
-*Release Date: July 13, 2025*
-
-### ✨ Improvements
-- **V1.0.14 upgraded diff support completed
-- **Working diff view viewers
-- **Updated diff example view
-- **V1.0.13-dev.0 add diff view support as api
-
----
-
-
-## v1.0.11 (July 01, 2025)
-*Release Date: July 01, 2025*
-
-### ✨ Improvements
-- **Simplify regex patterns to avoid bash syntax errors
-- **Regex syntax error in update-release-notes.sh
-- **Fixed release script
-- **Making release for enhanced docs
-- **Enhanced docs
-- **Updatd gif maker
-- **Working updated frame generator
-- **Fixing demo frame capture
-- **Incremental build fixed CORS errors on markdown badges being rendered
-- **Making more updates to docs
-
----
-
-
-## v1.0.10 (June 24, 2025)
-*Release Date: June 24, 2025*
-
-### 🗺️ Enhanced Geographic & 3D Content Support
+### Geographic & 3D Content Support
 - **NEW**: GeoJSON rendering with interactive Leaflet maps
 - **NEW**: TopoJSON support for geographic visualizations
 - **NEW**: ASCII STL support for 3D model rendering
@@ -215,10 +172,9 @@ Fixed ci/cd builds for diffs
 
 ---
 
-## v1.0.7 (June 19, 2025)
-*Release Date: June 19, 2025*
+## v1.0.7 (June 19, 2024)
 
-### 🧮 Math & Content Copy Improvements
+### Math & Content Copy Improvements
 - **FIXED**: Math equation copy-paste functionality with proper sizing
 - **FIXED**: Image copy-paste sizing issues in rendered content
 - **IMPROVED**: Content copying reliability across different content types
@@ -226,10 +182,9 @@ Fixed ci/cd builds for diffs
 
 ---
 
-## v1.0.5 (June 17, 2025)
-*Release Date: June 17, 2025*
+## v1.0.5 (June 17, 2024)
 
-### 💻 CLI Introduction & Syntax Highlighting Fixes
+### CLI Introduction & Syntax Highlighting Fixes
 - **NEW**: SquibV CLI tool for command-line Markdown to HTML conversion
 - **NEW**: Standalone build support for CLI distribution
 - **FIXED**: Syntax highlighting bugs in code blocks
@@ -244,30 +199,27 @@ Fixed ci/cd builds for diffs
 
 ---
 
-## v1.0.4 (June 16, 2025)
-*Release Date: June 16, 2025*
+## v1.0.4 (June 16, 2024)
 
-### 🏗️ Build System & Release Management
+### Build System & Release Management
 - **IMPROVED**: Release management tools for both library and CLI versions
 - **IMPROVED**: Build tools and automation scripts
 - **UPDATED**: Documentation for CLI usage and installation
 
 ---
 
-## v1.0.3 (June 16, 2025)
-*Release Date: June 16, 2025*
+## v1.0.3 (June 16, 2024)
 
-### 🧮 Math Rendering Improvements
+### Math Rendering Improvements
 - **FIXED**: Math rendering issues in various contexts
 - **IMPROVED**: MathJax integration and reliability
 - **UPDATED**: Documentation and examples for math support
 
 ---
 
-## v1.0.1 (June 3, 2025)
-*Release Date: June 3, 2025*
+## v1.0.1 (June 3, 2024)
 
-### 🔄 Bidirectional Editing Fixes & Runtime Identification
+### Bidirectional Editing Fixes & Runtime Identification
 - **FIXED**: Runtime version identification issues
 - **FIXED**: Bidirectional rendering problems with SVG content
 - **FIXED**: SVG roundtrip editing in rendered → source updates
@@ -276,10 +228,9 @@ Fixed ci/cd builds for diffs
 
 ---
 
-## v1.0.0 (June 3, 2025)
-*Release Date: June 3, 2025*
+## v1.0.0 (June 3, 2024)
 
-### 🎉 Major Release - Production Ready
+### Major Release - Production Ready
 - **MILESTONE**: First stable 1.0 release
 - **STABLE**: All core features tested and production-ready
 - **COMPLETE**: Bidirectional editing (source ↔ rendered) fully functional
@@ -287,10 +238,9 @@ Fixed ci/cd builds for diffs
 
 ---
 
-## v0.0.36 (May 20, 2025)
-*Release Date: May 20, 2025*
+## v0.0.36 (May 20, 2024)
 
-### 📊 Data Format Support & CI Improvements
+### Data Format Support & CI Improvements
 - **NEW**: CSV, TSV, and PSV inline block support with table rendering
 - **NEW**: Smart line feed handling for better text flow
 - **IMPROVED**: GitHub Actions CI workflow optimization
@@ -299,10 +249,9 @@ Fixed ci/cd builds for diffs
 
 ---
 
-## v0.0.35 (May 14, 2025)
-*Release Date: May 14, 2025*
+## v0.0.35 (May 14, 2024)
 
-### 🖼️ Image Handling & React Integration
+### Image Handling & React Integration
 - **IMPROVED**: Image handling to preserve URLs in source view by default
 - **FIXED**: React example import issues
 - **UPDATED**: Example content and documentation
@@ -310,10 +259,9 @@ Fixed ci/cd builds for diffs
 
 ---
 
-## v0.0.33 (May 14, 2025)
-*Release Date: May 14, 2025*
+## v0.0.33 (May 14, 2024)
 
-### 📦 Build System Enhancements
+### Build System Enhancements
 - **NEW**: Standalone ESM build for modern module systems
 - **IMPROVED**: React build configuration and compatibility
 - **FIXED**: All build targets (ESM, UMD, Standalone) working correctly
@@ -321,10 +269,9 @@ Fixed ci/cd builds for diffs
 
 ---
 
-## v0.0.32 (May 11, 2025)
-*Release Date: May 11, 2025*
+## v0.0.32 (May 11, 2024)
 
-### ⚛️ React Support & Build Fixes
+### React Support & Build Fixes
 - **NEW**: Full React build support with standalone ESM
 - **FIXED**: React build configuration issues
 - **IMPROVED**: Build system reliability
@@ -332,95 +279,89 @@ Fixed ci/cd builds for diffs
 
 ---
 
-## v0.0.29 (March 12, 2025)
-*Release Date: March 12, 2025*
+## v0.0.30 (March 28, 2024)
 
-### ↶ Undo/Redo System Implementation
-- **NEW**: Full undo/redo support for both source and rendered content
-- **NEW**: Revision history system with efficient diff-based storage
-- **IMPROVED**: Content editing workflow with history tracking
-- **ENHANCED**: User experience with familiar undo/redo keyboard shortcuts
-
-### Core Features Added
-- Revision history management
-- Memory-efficient diff system
-- Cross-panel undo/redo synchronization
-
----
-
-## v0.0.28 (March 9, 2025)
-*Release Date: March 9, 2025*
-
-### 🏗️ Foundation Release
-- **NEW**: Initial stable build system
-- **NEW**: Core SquibView functionality
-- **NEW**: Basic Markdown rendering with live preview
-- **NEW**: Multiple view modes (source, HTML, split)
-- **ESTABLISHED**: Project structure and development workflow
-
-### Core Architecture
-- Bidirectional editing foundation
-- Content type system
-- Plugin-ready architecture
-- Modern build system with Rollup
+### Text Selection API
+- Text selection API with events for detecting when text is selected in either panel
+- `onTextSelected()` method to register callbacks for text selection events
+- `getCurrentSelection()` method to get current text selection data
+- `replaceSelectedText()` method for replacing selected text
+- `setSelectionEditable()` method to make selected text non-editable
+- `toggleSelectionLock()` method to smartly toggle between locked/unlocked states
+- Visual indicators for locked content (lock icon, styling)
+- `clearSelection()` method to clear current selection
+- `onReplaceSelectedText` getter/setter for handling selections and automatic replacement
+- Comprehensive documentation in `/docs` directory
+- New examples for text selection features
+- Selection data caching for improved performance
+- Updated version in package.json and static version property
+- Improved event handling for text selections
 
 ---
 
-## Release Process Recommendations
+## v0.0.29a (March 22, 2024)
 
-### Current Process Strengths
-✅ **Automated tooling**: `tools/make-release.sh` script handles git tagging and GitHub releases  
-✅ **Version synchronization**: Automatic sync between package.json and src/version.js  
-✅ **Pre-flight checks**: Validates git status, authentication, and branch  
-✅ **Manual npm publish**: Prevents accidental publishes with dry-run preview  
+### Undo/Redo System
+- Support for undo/redo in both source and rendered panels
+- RevisionManager with memory-efficient diff storage
+- Bidirectional editing enhancements
+- Various bug fixes related to content type handling
 
-### Recommended Improvements
+---
 
-#### 1. **Integrate Release Notes Updates**
-```bash
-# Add to tools/make-release.sh before creating GitHub release:
-./tools/update-release-notes.sh "$VERSION" "$CUSTOM_NOTES"
-```
+## v0.0.29 (March 15, 2024)
 
-#### 2. **Create Automated Release Notes Script**
-Create `tools/update-release-notes.sh`:
-- Parse git commits since last tag using conventional commit format
-- Auto-categorize changes (NEW/IMPROVED/FIXED/BREAKING)
-- Update release_notes.md with structured entry
-- Validate release notes format
+### Core Features
+- Bidirectional editing support
+- Enhanced content type handling
+- Support for CSV, TSV, and other separator formats
 
-#### 3. **Enforce Conventional Commits**
-- Add commit message validation via git hooks
-- Use format: `type(scope): description`
-- Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
-- Enable automated changelog generation
+---
 
-#### 4. **Enhanced Pre-release Validation**
-Add to prerelease process:
-- ✅ Run full test suite (already included)
-- ✅ Build all targets (already included)  
-- ➕ Validate documentation links
-- ➕ Check for breaking changes
-- ➕ Validate release notes entry exists
-- ➕ Run CLI integration tests
+## v0.0.28 (March 1, 2024)
 
-#### 5. **Release Checklist Integration**
-Create `tools/release-checklist.md` with:
-- [ ] Update package.json version
-- [ ] Add release notes entry
-- [ ] Run `npm run prerelease`
-- [ ] Run `./tools/make-release.sh "notes"`
-- [ ] Test npm package locally
-- [ ] Publish to npm
-- [ ] Update documentation deployment
+### Plugin System
+- Plugin system for extending functionality
+- Support for RevealJS presentations
+- Custom renderer registration
+- Enhanced clipboard operations
 
-#### 6. **Automated Documentation Deployment**
-- Trigger docs rebuild on release
-- Deploy documentation to GitHub Pages
-- Update live demo links
-- Validate all examples work with new version
+---
 
-### Implementation Priority
-1. **HIGH**: Release notes automation (immediate impact)
-2. **MEDIUM**: Conventional commits (improves changelog quality)
-3. **LOW**: Enhanced validation (nice to have, already quite robust)
+## v0.0.27 (February 15, 2024)
+
+### Initial Release
+- Initial release with core features
+- Markdown and HTML rendering
+- Split view editing
+- Basic clipboard support
+
+---
+
+## Release Process
+
+### Current Process
+✅ **Automated tooling**: `tools/make-release.sh` script handles git tagging and GitHub releases
+✅ **Version synchronization**: Automatic sync between package.json and src/version.js
+✅ **Pre-flight checks**: Validates git status, authentication, and branch
+✅ **Manual npm publish**: Prevents accidental publishes with dry-run preview
+
+### Release Checklist
+1. Update package.json version
+2. Run `npm run prerelease` (runs tests and builds)
+3. Add release notes entry to this file
+4. Run `./tools/make-release.sh "release notes"`
+5. Test npm package locally
+6. Publish to npm with `npm publish`
+7. Update documentation if needed
+
+### Version History Summary
+- **v1.0.18**: Integrated autoload, improved math rendering, consolidated examples
+- **v1.0.17**: Line numbers support, theme improvements
+- **v1.0.16**: Performance optimizations for large documents
+- **v1.0.15**: Bundled dependencies in default builds, lean build options
+- **v1.0.13-14**: Comprehensive diff view support
+- **v1.0.10**: GeoJSON and 3D model support
+- **v1.0.5**: CLI tool introduction
+- **v1.0.0**: First stable release
+- **v0.0.27-30**: Foundation releases with core features

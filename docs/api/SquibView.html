@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Class: SquibView</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; viewBox=&#39;0 0 32 32&#39;&gt;&lt;circle cx=&#39;16&#39; cy=&#39;16&#39; r=&#39;14&#39; fill=&#39;%23f57c00&#39; stroke=&#39;%23000&#39; stroke-width=&#39;1&#39;/&gt;&lt;path d=&#39;M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z&#39; fill=&#39;none&#39; stroke=&#39;%23000&#39; stroke-width=&#39;1&#39;/&gt;&lt;/svg&gt;">
+  <style>
+
+
+/* Additional CSS */
+/* SquibView CLI Generated Styles */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  line-height: 1.6;
+  color: #333;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 3rem;
+  background-color: #fff;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+h1 { 
+  font-size: 2rem;
+  
+}
+h2 { 
+  font-size: 1.5rem;
+  
+}
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1rem; }
+h5 { font-size: 0.875rem; }
+h6 { font-size: 0.85rem; color: #666; }
+
+p { margin-bottom: 1rem; }
+
+a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #0066cc;
+  text-decoration: underline;
+}
+
+ul, ol {
+  margin-bottom: 1rem;
+  padding-left: 2rem;
+}
+
+li {
+  margin-bottom: 0.25rem;
+}
+
+blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 4px solid #ddd;
+  background-color: #f9f9f9;
+  color: #666;
+}
+
+code {
+  background-color: #f5f5f5;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.85em;
+}
+
+pre {
+  background-color: #f8f8f8;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  border-radius: 4px;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 1rem;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 2rem 0;
+}
+
+/* Badge images - inline display */
+p img {
+  display: inline;
+  margin: 0 2px;
+  vertical-align: middle;
+}
+
+/* Math styling */
+.MathJax {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  body {
+    padding: 1rem 1.5rem;
+  }
+  
+  table {
+    font-size: 0.875rem;
+  }
+  
+  th, td {
+    padding: 0.25rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    padding: 0;
+    color: #000;
+  }
+  
+  a {
+    color: #000;
+    text-decoration: underline;
+  }
+  
+  pre, blockquote {
+    page-break-inside: avoid;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+}
+  </style>
+    <!-- Highlight.js for syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <!-- Leaflet for GeoJSON/TopoJSON maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <!-- Three.js for STL 3D models -->
+  <script src="https://unpkg.com/three@0.171.0/build/three.min.js"></script>
+  <!-- MathJax for math rendering -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true
+      },
+      options: {
+        ignoreHtmlClass: 'tex2jax_ignore',
+        processHtmlClass: 'tex2jax_process'
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+  </script>
+  <!-- Mermaid for diagram rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+</head>
+<body>
+<div><h1>Class: SquibView</h1><p>The main editor class that provides a live-rendering editor for various content types.</p><h2>Constructor</h2><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(element, options)
+</code></pre></div><h3>Parameters</h3><table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>element</code></td><td><code>HTMLElement | string</code></td><td>The DOM element or CSS selector where the editor will be mounted</td></tr><tr><td><code>options</code></td><td><code>Object</code></td><td>Configuration options for the editor (see <a href="./options.html">Options</a>)</td></tr></tbody></table><h3>Example</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Create editor with default options</span><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editor'</span>);
+
+<span class="hljs-comment">// Create editor with custom options</span><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editor'</span>, {
+  <span class="hljs-attr">initialContent</span>: <span class="hljs-string">'# Hello World'</span>,
+  <span class="hljs-attr">inputContentType</span>: <span class="hljs-string">'md'</span>,
+  <span class="hljs-attr">initialView</span>: <span class="hljs-string">'split'</span>,
+  <span class="hljs-attr">showControls</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">showLineNumbers</span>: <span class="hljs-literal">true</span>
+});
+</code></pre></div><h2>Static Properties</h2><h3><code>SquibView.version</code></h3><p>Returns version information for the library.</p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title class_">SquibView</span>.<span class="hljs-property">version</span>);
+<span class="hljs-comment">// { version: '1.0.18', url: 'https://github.com/...' }</span></code></pre></div><h3><code>SquibView.defaultOptions</code></h3><p>Default configuration options for new instances.</p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript">{
+  <span class="hljs-attr">initialContent</span>: <span class="hljs-string">''</span>,
+  <span class="hljs-attr">inputContentType</span>: <span class="hljs-string">'md'</span>,
+  <span class="hljs-attr">showControls</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">titleShow</span>: <span class="hljs-literal">false</span>,
+  <span class="hljs-attr">titleContent</span>: <span class="hljs-string">''</span>,
+  <span class="hljs-attr">initialView</span>: <span class="hljs-string">'split'</span>,
+  <span class="hljs-attr">baseClass</span>: <span class="hljs-string">'squibview'</span>,
+  <span class="hljs-attr">preserveImageTags</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">showLineNumbers</span>: <span class="hljs-literal">false</span>,
+  <span class="hljs-attr">lineNumberStart</span>: <span class="hljs-number">1</span>,
+  <span class="hljs-attr">lineNumberMinDigits</span>: <span class="hljs-number">2</span>,
+  <span class="hljs-attr">autoload_deps</span>: <span class="hljs-literal">null</span>
+}
+</code></pre></div><h3><code>SquibView.DEFAULT_CDN_URLS</code></h3><p>Default CDN URLs for autoloading external dependencies.</p><h2>Instance Properties</h2><table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>container</code></td><td><code>HTMLElement</code></td><td>The container element</td></tr><tr><td><code>input</code></td><td><code>HTMLTextAreaElement</code></td><td>The source input textarea</td></tr><tr><td><code>output</code></td><td><code>HTMLElement</code></td><td>The rendered output element</td></tr><tr><td><code>currentView</code></td><td><code>string</code></td><td>Current view mode (‘src’, ‘html’, ‘split’)</td></tr><tr><td><code>inputContentType</code></td><td><code>string</code></td><td>Current content type (‘md’, ‘html’, ‘reveal’, ‘csv’, ‘tsv’)</td></tr><tr><td><code>revisionManager</code></td><td><code>RevisionHistory</code></td><td>Revision history manager</td></tr><tr><td><code>events</code></td><td><code>TinyEmitter</code></td><td>Event emitter for plugin communication</td></tr></tbody></table><h2>Core Methods</h2><h3>Content Management</h3><ul><li><a href="./methods.html#setcontent"><code>setContent(content, contentType, saveRevision)</code></a> - Set editor content</li><li><a href="./methods.html#getcontent"><code>getContent()</code></a> - Get current source content</li><li><a href="./methods.html#getrenderedhtml"><code>getRenderedHTML()</code></a> - Get rendered HTML output</li><li><a href="./methods.html#clearcontent"><code>clearContent()</code></a> - Clear all content</li></ul><h3>View Control</h3><ul><li><a href="./methods.html#setview"><code>setView(view)</code></a> - Change view mode</li><li><a href="./methods.html#toggleview"><code>toggleView()</code></a> - Cycle through view modes</li><li><a href="./methods.html#showsource"><code>showSource()</code></a> - Show source view only</li><li><a href="./methods.html#showhtml"><code>showHTML()</code></a> - Show rendered view only</li><li><a href="./methods.html#showsplit"><code>showSplit()</code></a> - Show split view</li></ul><h3>Content Type</h3><ul><li><a href="./methods.html#setcontenttype"><code>setContentType(type)</code></a> - Change content type</li><li><a href="./methods.html#getcontenttype"><code>getContentType()</code></a> - Get current content type</li></ul><h3>Revision Management</h3><ul><li><a href="./methods.html#undo"><code>undo()</code></a> - Undo last change</li><li><a href="./methods.html#redo"><code>redo()</code></a> - Redo previously undone change</li><li><a href="./methods.html#canundo"><code>canUndo()</code></a> - Check if undo is available</li><li><a href="./methods.html#canredo"><code>canRedo()</code></a> - Check if redo is available</li><li><a href="./methods.html#getrevisioncount"><code>getRevisionCount()</code></a> - Get number of saved revisions</li></ul><h3>Selection &amp; Copy</h3><ul><li><a href="./methods.html#copytoclipboard"><code>copyToClipboard(copyMode)</code></a> - Copy content to clipboard</li><li><a href="./methods.html#getselectedtext"><code>getSelectedText()</code></a> - Get currently selected text</li><li><a href="./methods.html#getselectiondata"><code>getSelectionData()</code></a> - Get detailed selection information</li><li><a href="./methods.html#setonreplaceselectedtext"><code>setOnReplaceSelectedText(handler)</code></a> - Set text replacement handler</li></ul><h3>Renderer System</h3><ul><li><a href="./methods.html#registerrenderer"><code>registerRenderer(type, config)</code></a> - Register custom renderer</li><li><a href="./methods.html#render"><code>render()</code></a> - Manually trigger rendering</li></ul><h3>Events</h3><ul><li><a href="./methods.html#on"><code>on(event, handler)</code></a> - Subscribe to event</li><li><a href="./methods.html#off"><code>off(event, handler)</code></a> - Unsubscribe from event</li><li><a href="./methods.html#emit"><code>emit(event, data)</code></a> - Emit custom event</li></ul><h2>Events</h2><p>See <a href="./events.html">Events Documentation</a> for complete event reference.</p><h3>Core Events</h3><ul><li><code>content-change</code> - Content has changed</li><li><code>view-change</code> - View mode has changed</li><li><code>type-change</code> - Content type has changed</li><li><code>render</code> - Content has been rendered</li><li><code>selection-change</code> - Text selection has changed</li><li><code>revision-added</code> - New revision saved</li><li><code>undo</code> - Undo performed</li><li><code>redo</code> - Redo performed</li></ul><h2>See Also</h2><ul><li><a href="./methods.html">Methods Reference</a></li><li><a href="./options.html">Options Reference</a></li><li><a href="./events.html">Events Reference</a></li><li><a href="../examples/">Examples</a></li></ul></div>
+  <script>
+    // Initialize MathJax after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise().catch(function(err) {
+          console.warn('MathJax typesetting failed:', err);
+        });
+      }
+    });
+  </script>
+  <script>
+    // Initialize Mermaid after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.mermaid) {
+        try {
+          window.mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose',
+            fontFamily: 'inherit'
+          });
+          
+          // Manually render all mermaid diagrams
+          const mermaidElements = document.querySelectorAll('.mermaid');
+          mermaidElements.forEach(function(element, index) {
+            const id = 'mermaid-' + index;
+            element.id = id;
+            try {
+              window.mermaid.render(id + '-svg', element.textContent, function(svgCode) {
+                element.innerHTML = svgCode;
+              });
+            } catch (err) {
+              console.warn('Mermaid rendering failed for element', index, ':', err);
+              // Fallback: show the text content
+              element.innerHTML = '<pre>' + element.textContent + '</pre>';
+            }
+          });
+        } catch (err) {
+          console.warn('Mermaid initialization failed:', err);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

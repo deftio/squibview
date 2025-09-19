@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SquibView Options Reference</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; viewBox=&#39;0 0 32 32&#39;&gt;&lt;circle cx=&#39;16&#39; cy=&#39;16&#39; r=&#39;14&#39; fill=&#39;%23f57c00&#39; stroke=&#39;%23000&#39; stroke-width=&#39;1&#39;/&gt;&lt;path d=&#39;M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z&#39; fill=&#39;none&#39; stroke=&#39;%23000&#39; stroke-width=&#39;1&#39;/&gt;&lt;/svg&gt;">
+  <style>
+
+
+/* Additional CSS */
+/* SquibView CLI Generated Styles */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  line-height: 1.6;
+  color: #333;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 3rem;
+  background-color: #fff;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+h1 { 
+  font-size: 2rem;
+  
+}
+h2 { 
+  font-size: 1.5rem;
+  
+}
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1rem; }
+h5 { font-size: 0.875rem; }
+h6 { font-size: 0.85rem; color: #666; }
+
+p { margin-bottom: 1rem; }
+
+a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #0066cc;
+  text-decoration: underline;
+}
+
+ul, ol {
+  margin-bottom: 1rem;
+  padding-left: 2rem;
+}
+
+li {
+  margin-bottom: 0.25rem;
+}
+
+blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 4px solid #ddd;
+  background-color: #f9f9f9;
+  color: #666;
+}
+
+code {
+  background-color: #f5f5f5;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.85em;
+}
+
+pre {
+  background-color: #f8f8f8;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  border-radius: 4px;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 1rem;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 2rem 0;
+}
+
+/* Badge images - inline display */
+p img {
+  display: inline;
+  margin: 0 2px;
+  vertical-align: middle;
+}
+
+/* Math styling */
+.MathJax {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  body {
+    padding: 1rem 1.5rem;
+  }
+  
+  table {
+    font-size: 0.875rem;
+  }
+  
+  th, td {
+    padding: 0.25rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    padding: 0;
+    color: #000;
+  }
+  
+  a {
+    color: #000;
+    text-decoration: underline;
+  }
+  
+  pre, blockquote {
+    page-break-inside: avoid;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+}
+  </style>
+    <!-- Highlight.js for syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <!-- Leaflet for GeoJSON/TopoJSON maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <!-- Three.js for STL 3D models -->
+  <script src="https://unpkg.com/three@0.171.0/build/three.min.js"></script>
+  <!-- MathJax for math rendering -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true
+      },
+      options: {
+        ignoreHtmlClass: 'tex2jax_ignore',
+        processHtmlClass: 'tex2jax_process'
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+  </script>
+  <!-- Mermaid for diagram rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+</head>
+<body>
+<div><h1>SquibView Options Reference</h1><p>Complete reference for all configuration options available when creating a SquibView instance.</p><h2>Constructor Options</h2><p>All options are passed as an object to the SquibView constructor:</p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editor'</span>, {
+  <span class="hljs-comment">// options here</span>
+});
+</code></pre></div><h2>Content Options</h2><h3>initialContent</h3><p>Initial content to display in the editor.</p><ul><li><strong>Type:</strong><code>string</code></li><li><strong>Default:</strong><code>''</code></li><li><strong>Example:</strong></li></ul><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-attr">initialContent</span>: <span class="hljs-string">'# Welcome\n\nStart editing here...'</span></code></pre></div><hr><h3>inputContentType</h3><p>Type of the initial content and default content type for the editor.</p><ul><li><strong>Type:</strong><code>string</code></li><li><strong>Default:</strong><code>'md'</code></li><li><strong>Values:</strong><code>'md'</code>, <code>'html'</code>, <code>'reveal'</code>, <code>'csv'</code>, <code>'tsv'</code></li><li><strong>Example:</strong></li></ul><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-attr">inputContentType</span>: <span class="hljs-string">'html'</span></code></pre></div><h2>Display Options</h2><h3>initialView</h3><p>Initial view mode for the editor.</p><ul><li><strong>Type:</strong><code>string</code></li><li><strong>Default:</strong><code>'split'</code></li><li><strong>Values:</strong><code>'src'</code>, <code>'html'</code>, <code>'split'</code></li><li><strong>Example:</strong></li></ul><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-attr">initialView</span>: <span class="hljs-string">'src'</span><span class="hljs-comment">// Start with source view only</span></code></pre></div><hr><h3>showControls</h3><p>Whether to display the control toolbar.</p><ul><li><strong>Type:</strong><code>boolean</code></li><li><strong>Default:</strong><code>true</code></li><li><strong>Example:</strong></li></ul><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-attr">showControls</span>: <span class="hljs-literal">false</span><span class="hljs-comment">// Hide all controls</span></code></pre></div><hr><h3>titleShow</h3><p>Whether to display the title section above the editor.</p><ul><li><strong>Type:</strong><code>boolean</code></li><li><strong>Default:</strong><code>false</code></li><li><strong>Example:</strong></li></ul><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-attr">titleShow</span>: <span class="hljs-literal">true</span>,
+<span class="hljs-attr">titleContent</span>: <span class="hljs-string">'My Editor'</span></code></pre></div><hr><h3>titleContent</h3><p>Content for the title section (only used if <code>titleShow</code> is true).</p><ul><li><strong>Type:</strong><code>string</code></li><li><strong>Default:</strong><code>''</code></li><li><strong>Example:</strong></li></ul><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-attr">titleShow</span>: <span class="hljs-literal">true</span>,
+<span class="hljs-attr">titleContent</span>: <span class="hljs-string">'&lt;h2&gt;Document Editor&lt;/h2&gt;'</span></code></pre></div><hr><h3>baseClass</h3><p>Base CSS class for styling the editor container.</p><ul><li><strong>Type:</strong><code>string</code></li><li><strong>Default:</strong><code>'squibview'</code></li><li><strong>Example:</strong></li></ul><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-attr">baseClass</span>: <span class="hljs-string">'my-custom-editor'</span><span class="hljs-comment">// Use custom CSS class</span></code></pre></div><h2>Line Numbers</h2><h3>showLineNumbers</h3><p>Whether to display line numbers in the source editor.</p><ul><li><strong>Type:</strong><code>boolean</code></li><li><strong>Default:</strong><code>false</code></li><li><strong>Example:</strong></li></ul><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-attr">showLineNumbers</span>: <span class="hljs-literal">true</span></code></pre></div><hr><h3>lineNumberStart</h3><p>Starting line number (when line numbers are shown).</p><ul><li><strong>Type:</strong><code>number</code></li><li><strong>Default:</strong><code>1</code></li><li><strong>Example:</strong></li></ul><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-attr">showLineNumbers</span>: <span class="hljs-literal">true</span>,
+<span class="hljs-attr">lineNumberStart</span>: <span class="hljs-number">100</span><span class="hljs-comment">// Start numbering from 100</span></code></pre></div><hr><h3>lineNumberMinDigits</h3><p>Minimum number of digits for line numbers (adds leading zeros).</p><ul><li><strong>Type:</strong><code>number</code></li><li><strong>Default:</strong><code>2</code></li><li><strong>Example:</strong></li></ul><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-attr">showLineNumbers</span>: <span class="hljs-literal">true</span>,
+<span class="hljs-attr">lineNumberMinDigits</span>: <span class="hljs-number">3</span><span class="hljs-comment">// Shows 001, 002, etc.</span></code></pre></div><h2>Content Processing</h2><h3>preserveImageTags</h3><p>Whether to preserve HTML image tags when converting HTML to Markdown.</p><ul><li><strong>Type:</strong><code>boolean</code></li><li><strong>Default:</strong><code>true</code></li><li><strong>Example:</strong></li></ul><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-attr">preserveImageTags</span>: <span class="hljs-literal">false</span><span class="hljs-comment">// Convert &lt;img&gt; to ![alt](src)</span></code></pre></div><h2>Event Handlers</h2><h3>onReplaceSelectedText</h3><p>Callback function for handling text replacement operations.</p><ul><li><strong>Type:</strong><code>function(selectionData)</code></li><li><strong>Default:</strong><code>null</code></li><li><strong>Example:</strong></li></ul><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-attr">onReplaceSelectedText</span>: <span class="hljs-function">(<span class="hljs-params">data</span>) =&gt;</span> {
+  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">'Selected:'</span>, data.<span class="hljs-property">text</span>);
+  <span class="hljs-comment">// Return replacement text or handle replacement</span><span class="hljs-keyword">return</span> data.<span class="hljs-property">text</span>.<span class="hljs-title function_">toUpperCase</span>();
+}
+</code></pre></div><h2>Dependency Autoloading</h2><h3>autoload_deps</h3><p>Configuration for automatically loading external dependencies.</p><ul><li><strong>Type:</strong><code>Object | null</code></li><li><strong>Default:</strong><code>null</code> (disabled)</li><li><strong>Structure:</strong></li></ul><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript">{
+  <span class="hljs-attr">all</span>: boolean,           <span class="hljs-comment">// Enable all autoloading</span><span class="hljs-attr">strategy</span>: string,       <span class="hljs-comment">// 'auto', 'ondemand', or 'custom'</span><span class="hljs-attr">libraries</span>: {
+    <span class="hljs-attr">mermaid</span>: boolean | <span class="hljs-string">'auto'</span> | <span class="hljs-string">'ondemand'</span> | <span class="hljs-string">'none'</span>,
+    <span class="hljs-attr">hljs</span>: boolean | <span class="hljs-string">'auto'</span> | <span class="hljs-string">'ondemand'</span> | <span class="hljs-string">'none'</span>,
+    <span class="hljs-attr">mathjax</span>: boolean | <span class="hljs-string">'auto'</span> | <span class="hljs-string">'ondemand'</span> | <span class="hljs-string">'none'</span>,
+    <span class="hljs-attr">leaflet</span>: boolean | <span class="hljs-string">'auto'</span> | <span class="hljs-string">'ondemand'</span> | <span class="hljs-string">'none'</span>,
+    <span class="hljs-attr">three</span>: boolean | <span class="hljs-string">'auto'</span> | <span class="hljs-string">'ondemand'</span> | <span class="hljs-string">'none'</span>
+  },
+  <span class="hljs-attr">cdnUrls</span>: {
+    <span class="hljs-comment">// Custom CDN URLs for each library</span>
+  },
+  <span class="hljs-attr">debug</span>: boolean          <span class="hljs-comment">// Enable debug logging</span>
+}
+</code></pre></div><h3>Autoload Examples</h3><h4>Enable All Dependencies</h4><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-attr">autoload_deps</span>: {
+  <span class="hljs-attr">all</span>: <span class="hljs-literal">true</span><span class="hljs-comment">// Load all dependencies automatically</span>
+}
+</code></pre></div><h4>Selective Autoloading</h4><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-attr">autoload_deps</span>: {
+  <span class="hljs-attr">libraries</span>: {
+    <span class="hljs-attr">mermaid</span>: <span class="hljs-string">'auto'</span>,      <span class="hljs-comment">// Load at startup</span><span class="hljs-attr">hljs</span>: <span class="hljs-string">'ondemand'</span>,     <span class="hljs-comment">// Load when needed</span><span class="hljs-attr">mathjax</span>: <span class="hljs-literal">false</span><span class="hljs-comment">// Never load</span>
+  }
+}
+</code></pre></div><h4>Custom CDN URLs</h4><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-attr">autoload_deps</span>: {
+  <span class="hljs-attr">all</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">cdnUrls</span>: {
+    <span class="hljs-attr">mermaid</span>: {
+      <span class="hljs-attr">script</span>: <span class="hljs-string">'https://my-cdn.com/mermaid.min.js'</span>
+    },
+    <span class="hljs-attr">hljs</span>: {
+      <span class="hljs-attr">script</span>: <span class="hljs-string">'https://my-cdn.com/highlight.min.js'</span>,
+      <span class="hljs-attr">css</span>: <span class="hljs-string">'https://my-cdn.com/highlight.css'</span>
+    }
+  }
+}
+</code></pre></div><h4>On-Demand Loading</h4><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-attr">autoload_deps</span>: {
+  <span class="hljs-attr">strategy</span>: <span class="hljs-string">'ondemand'</span>,  <span class="hljs-comment">// Only load when content requires it</span><span class="hljs-attr">debug</span>: <span class="hljs-literal">true</span><span class="hljs-comment">// Show loading messages</span>
+}
+</code></pre></div><h2>Complete Example</h2><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editor'</span>, {
+  <span class="hljs-comment">// Content</span><span class="hljs-attr">initialContent</span>: <span class="hljs-string">'# Welcome\n\nStart typing...'</span>,
+  <span class="hljs-attr">inputContentType</span>: <span class="hljs-string">'md'</span>,
+
+  <span class="hljs-comment">// Display</span><span class="hljs-attr">initialView</span>: <span class="hljs-string">'split'</span>,
+  <span class="hljs-attr">showControls</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">titleShow</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">titleContent</span>: <span class="hljs-string">'My Document'</span>,
+  <span class="hljs-attr">baseClass</span>: <span class="hljs-string">'my-editor'</span>,
+
+  <span class="hljs-comment">// Line numbers</span><span class="hljs-attr">showLineNumbers</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">lineNumberStart</span>: <span class="hljs-number">1</span>,
+  <span class="hljs-attr">lineNumberMinDigits</span>: <span class="hljs-number">2</span>,
+
+  <span class="hljs-comment">// Processing</span><span class="hljs-attr">preserveImageTags</span>: <span class="hljs-literal">true</span>,
+
+  <span class="hljs-comment">// Events</span><span class="hljs-attr">onReplaceSelectedText</span>: <span class="hljs-function">(<span class="hljs-params">data</span>) =&gt;</span> {
+    <span class="hljs-keyword">return</span><span class="hljs-title function_">processSelection</span>(data);
+  },
+
+  <span class="hljs-comment">// Dependencies</span><span class="hljs-attr">autoload_deps</span>: {
+    <span class="hljs-attr">strategy</span>: <span class="hljs-string">'ondemand'</span>,
+    <span class="hljs-attr">libraries</span>: {
+      <span class="hljs-attr">mermaid</span>: <span class="hljs-string">'auto'</span>,
+      <span class="hljs-attr">hljs</span>: <span class="hljs-string">'auto'</span>,
+      <span class="hljs-attr">mathjax</span>: <span class="hljs-string">'ondemand'</span>
+    }
+  }
+});
+</code></pre></div><h2>Default Values</h2><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript">{
+  <span class="hljs-attr">initialContent</span>: <span class="hljs-string">''</span>,
+  <span class="hljs-attr">inputContentType</span>: <span class="hljs-string">'md'</span>,
+  <span class="hljs-attr">showControls</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">titleShow</span>: <span class="hljs-literal">false</span>,
+  <span class="hljs-attr">titleContent</span>: <span class="hljs-string">''</span>,
+  <span class="hljs-attr">initialView</span>: <span class="hljs-string">'split'</span>,
+  <span class="hljs-attr">baseClass</span>: <span class="hljs-string">'squibview'</span>,
+  <span class="hljs-attr">preserveImageTags</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">showLineNumbers</span>: <span class="hljs-literal">false</span>,
+  <span class="hljs-attr">lineNumberStart</span>: <span class="hljs-number">1</span>,
+  <span class="hljs-attr">lineNumberMinDigits</span>: <span class="hljs-number">2</span>,
+  <span class="hljs-attr">onReplaceSelectedText</span>: <span class="hljs-literal">null</span>,
+  <span class="hljs-attr">autoload_deps</span>: <span class="hljs-literal">null</span>
+}
+</code></pre></div><h2>See Also</h2><ul><li><a href="./SquibView.html">SquibView Class</a></li><li><a href="./methods.html">Methods Reference</a></li><li><a href="./events.html">Events Reference</a></li><li><a href="../examples/">Examples</a></li></ul></div>
+  <script>
+    // Initialize MathJax after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise().catch(function(err) {
+          console.warn('MathJax typesetting failed:', err);
+        });
+      }
+    });
+  </script>
+  <script>
+    // Initialize Mermaid after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.mermaid) {
+        try {
+          window.mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose',
+            fontFamily: 'inherit'
+          });
+          
+          // Manually render all mermaid diagrams
+          const mermaidElements = document.querySelectorAll('.mermaid');
+          mermaidElements.forEach(function(element, index) {
+            const id = 'mermaid-' + index;
+            element.id = id;
+            try {
+              window.mermaid.render(id + '-svg', element.textContent, function(svgCode) {
+                element.innerHTML = svgCode;
+              });
+            } catch (err) {
+              console.warn('Mermaid rendering failed for element', index, ':', err);
+              // Fallback: show the text content
+              element.innerHTML = '<pre>' + element.textContent + '</pre>';
+            }
+          });
+        } catch (err) {
+          console.warn('Mermaid initialization failed:', err);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

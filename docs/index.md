@@ -7,7 +7,7 @@ Welcome to the SquibView documentation! SquibView is a lightweight, flexible liv
 - [Programmer's Guide](programmers-guide.md) - Comprehensive guide to SquibView's API and features
 - [API Reference](#api-reference) - Complete API reference
 - [Examples](#examples) - Code examples for common use cases
-- [Changelog](../CHANGELOG.md) - Version history and changes
+- [Release Notes](./release-notes.md) - Version history and changes
 
 ## Quick Start
 
