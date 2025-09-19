@@ -34,6 +34,20 @@ Complete changelog and release history for SquibView.
 - Event names use colons: `content:change`, `text:selected`, `revision:undo`
 
 ---
+## v1.0.19 (September 19, 2025)
+*Release Date: September 19, 2025*
+
+### ✨ Improvements
+- **Updated release scripts
+- **Updated docs
+- **V1.0.19 streaming support added
+- **Updated docs for headless mode
+- **Updated docs
+- **Fixed simple examples
+- **Updated examples and docs for 1.0.18
+
+---
+
 
 ## v1.0.18 (September 17, 2024)
 
