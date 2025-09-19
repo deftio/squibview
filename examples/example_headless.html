@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SquibView Headless Mode - Complete API Example</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
+
+  <!-- SquibView CSS -->
+  <link rel="stylesheet" href="../dist/squibview.min.css">
+
+  <!-- Example styles -->
+  <link rel="stylesheet" href="examples.css">
+
+  <style>
+    .demo-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .custom-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 15px;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px 8px 0 0;
+      margin-bottom: -1px;
+    }
+
+    .toolbar-group {
+      display: flex;
+      gap: 4px;
+      padding: 4px 8px;
+      background: white;
+      border-radius: 4px;
+      align-items: center;
+    }
+
+    .toolbar-label {
+      font-size: 11px;
+      color: #6c757d;
+      font-weight: 600;
+      margin-right: 4px;
+      text-transform: uppercase;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      background: white;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.15s;
+    }
+
+    .btn:hover {
+      background: #e9ecef;
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn.active {
+      background: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+
+    .btn-primary:hover {
+      background: #0056b3;
+    }
+
+    .btn-success {
+      background: #28a745;
+      color: white;
+      border-color: #28a745;
+    }
+
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+      border-color: #dc3545;
+    }
+
+    #editor {
+      border: 1px solid #dee2e6;
+      border-radius: 0 0 8px 8px;
+      overflow: hidden;
+      height: 500px;
+    }
+
+    /* Hide SquibView's default controls */
+    #editor .squibview-controls {
+      display: none !important;
+    }
+
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 15px;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      font-size: 12px;
+      color: #6c757d;
+      margin-top: -1px;
+    }
+
+    .status-item {
+      display: flex;
+      gap: 5px;
+    }
+
+    .status-label {
+      font-weight: 600;
+    }
+
+    .output-box {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .output-box.show {
+      display: block;
+    }
+
+    .output-line {
+      margin: 2px 0;
+      padding: 2px 0;
+    }
+
+    .output-line.success {
+      color: #28a745;
+    }
+
+    .output-line.info {
+      color: #007bff;
+    }
+
+    .output-line.error {
+      color: #dc3545;
+    }
+
+    .checkbox-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-container">
+    <header>
+      <h1>SquibView Headless Mode - Complete API Example</h1>
+      <p>This example shows how to use SquibView without default UI controls, implementing all features with custom buttons.</p>
+    </header>
+
+    <!-- Custom Toolbar with ALL API Features -->
+    <div class="custom-toolbar">
+      <!-- Content Management -->
+      <div class="toolbar-group">
+        <span class="toolbar-label">Content:</span>
+        <button class="btn" onclick="demo.setContent()">Set</button>
+        <button class="btn" onclick="demo.getContent()">Get</button>
+        <button class="btn" onclick="demo.getHTML()">Get HTML</button>
+        <button class="btn" onclick="demo.clearContent()">Clear</button>
+      </div>
+
+      <!-- View Controls -->
+      <div class="toolbar-group">
+        <span class="toolbar-label">View:</span>
+        <button class="btn" onclick="demo.setView('src')" data-view="src">Source</button>
+        <button class="btn" onclick="demo.setView('html')" data-view="html">Preview</button>
+        <button class="btn active" onclick="demo.setView('split')" data-view="split">Split</button>
+        <button class="btn" onclick="demo.toggleView()">Toggle</button>
+      </div>
+
+      <!-- History -->
+      <div class="toolbar-group">
+        <span class="toolbar-label">History:</span>
+        <button class="btn" onclick="demo.undo()" id="undo-btn">↶ Undo</button>
+        <button class="btn" onclick="demo.redo()" id="redo-btn">↷ Redo</button>
+        <button class="btn" onclick="demo.showRevisions()">Revisions</button>
+      </div>
+
+      <!-- Copy Functions -->
+      <div class="toolbar-group">
+        <span class="toolbar-label">Copy as:</span>
+        <button class="btn btn-primary" onclick="demo.copy('formatted', event)">Rich</button>
+        <button class="btn" onclick="demo.copy('markdown', event)">Markdown</button>
+        <button class="btn" onclick="demo.copy('html', event)">HTML</button>
+        <button class="btn" onclick="demo.copy('plain', event)">Plain</button>
+      </div>
+
+      <!-- Selection -->
+      <div class="toolbar-group">
+        <span class="toolbar-label">Selection:</span>
+        <button class="btn" onclick="demo.getSelection()">Get</button>
+        <button class="btn" onclick="demo.replaceSelection()">Replace</button>
+      </div>
+
+      <!-- Content Type -->
+      <div class="toolbar-group">
+        <span class="toolbar-label">Type:</span>
+        <select onchange="demo.setType(this.value)" style="padding: 6px; border: 1px solid #dee2e6; border-radius: 4px;">
+          <option value="md">Markdown</option>
+          <option value="html">HTML</option>
+          <option value="csv">CSV</option>
+        </select>
+      </div>
+
+      <!-- Options -->
+      <div class="toolbar-group">
+        <span class="toolbar-label">Options:</span>
+        <label class="checkbox-label">
+          <input type="checkbox" onchange="demo.toggleControls(this.checked)"> Controls
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" onchange="demo.toggleTitle(this.checked)"> Title
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" onchange="demo.toggleLineNumbers(this.checked)"> Lines
+        </label>
+      </div>
+
+      <!-- Info -->
+      <div class="toolbar-group">
+        <span class="toolbar-label">Info:</span>
+        <button class="btn" onclick="demo.showInfo()">Version</button>
+        <button class="btn btn-success" onclick="demo.toggleOutput()">Console</button>
+      </div>
+    </div>
+
+    <!-- Headless Editor (no built-in controls) -->
+    <div id="editor"></div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <div style="display: flex; gap: 20px;">
+        <div class="status-item">
+          <span class="status-label">View:</span>
+          <span id="status-view">split</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Type:</span>
+          <span id="status-type">md</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Words:</span>
+          <span id="status-words">0</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Characters:</span>
+          <span id="status-chars">0</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 20px;">
+        <div class="status-item">
+          <span class="status-label">Revisions:</span>
+          <span id="status-revisions">0</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Can Undo:</span>
+          <span id="status-undo">No</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Can Redo:</span>
+          <span id="status-redo">No</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Output Console -->
+    <div class="output-box" id="output">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+        <strong>API Console Output</strong>
+        <button onclick="document.getElementById('output-content').innerHTML = ''" style="font-size: 11px;">Clear</button>
+      </div>
+      <div id="output-content"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import SquibView from '../dist/squibview.esm.js';
+
+    // Initialize once DOM is ready
+    async function init() {
+      console.log('Initializing SquibView headless example...');
+      console.log('SquibView class:', SquibView);
+
+    /**
+     * @typedef {Object} EditorConfig
+     * @property {boolean} showControls - Whether to show built-in controls
+     * @property {boolean} titleShow - Whether to show title bar
+     * @property {boolean} showLineNumbers - Whether to show line numbers
+     * @property {string} initialView - Initial view mode ('src', 'html', 'split')
+     * @property {string} inputContentType - Content type ('md', 'html', 'csv')
+     * @property {string} initialContent - Initial markdown content
+     * @property {Object} autoload_deps - Dependency loading configuration
+     */
+
+    /**
+     * Main editor configuration object
+     * @type {EditorConfig}
+     */
+    let editorConfig = {
+      // HEADLESS MODE - No built-in controls
+      showControls: false,
+      titleShow: false,
+      showLineNumbers: false,
+
+      // Initial configuration
+      initialView: 'split',
+      inputContentType: 'md',
+
+      // Sample content
+      initialContent: `# Headless Mode Demo
+
+This editor has **no built-in controls**. All functionality is provided by the custom toolbar above.
+
+## Features Available
+
+All SquibView features work in headless mode:
+- ✅ Content management (set, get, clear)
+- ✅ View modes (source, preview, split)
+- ✅ Undo/Redo with full history
+- ✅ Multiple copy formats
+- ✅ Text selection and replacement
+- ✅ Content type switching
+- ✅ All rendering features
+
+## Try It Out
+
+1. Click buttons in the toolbar to test features
+2. Select text to test selection APIs
+3. Make edits to test undo/redo
+4. Switch views to see different modes
+
+## Code Example
+
+\`\`\`javascript
+// Creating a headless editor
+const editor = new SquibView('#container', {
+  showControls: false,  // Hide default controls
+  titleShow: false      // Hide title bar
+});
+
+// Use full API
+editor.setContent('# Hello');
+editor.copyToClipboard('formatted');
+\`\`\`
+
+**All power, your UI!**`,
+
+      // Enable all features
+      autoload_deps: { all: true }
+    };
+
+    /**
+     * SquibView editor instance - recreated when certain options change
+     * @type {SquibView}
+     */
+    let editor = new SquibView('#editor', editorConfig);
+
+    // Verify editor was created properly
+    if (!editor) {
+      console.error('Failed to create SquibView instance');
+      alert('Failed to create SquibView instance. Check console for errors.');
+      return;
+    }
+
+    console.log('Editor created:', editor);
+
+    /**
+     * Logs a message to the console output panel
+     * @param {string} message - Message to log
+     * @param {string} [type='info'] - Message type ('info', 'success', 'error', 'warning')
+     */
+    function log(message, type = 'info') {
+      const output = document.getElementById('output-content');
+      const line = document.createElement('div');
+      line.className = `output-line ${type}`;
+      line.textContent = `> ${message}`;
+      output.appendChild(line);
+      output.scrollTop = output.scrollHeight;
+    }
+
+    /**
+     * Updates the status bar with current editor state
+     * Updates word count, character count, view mode, content type, revision info
+     * Also updates undo/redo button states
+     */
+    function updateStatus() {
+      const content = editor.getContent();
+      const words = content.trim().split(/\s+/).filter(w => w).length;
+
+      document.getElementById('status-view').textContent = editor.currentView;
+      document.getElementById('status-type').textContent = editor.inputContentType;
+      document.getElementById('status-words').textContent = words;
+      document.getElementById('status-chars').textContent = content.length;
+      document.getElementById('status-revisions').textContent = editor.revisionNumRevsions ? editor.revisionNumRevsions() : 0;
+      const currentIndex = editor.revisionGetCurrentIndex ? editor.revisionGetCurrentIndex() : 0;
+      const totalRevisions = editor.revisionNumRevsions ? editor.revisionNumRevsions() : 0;
+      document.getElementById('status-undo').textContent = currentIndex > 0 ? 'Yes' : 'No';
+      document.getElementById('status-redo').textContent = (totalRevisions > 0 && currentIndex < totalRevisions - 1) ? 'Yes' : 'No';
+
+      // Update button states
+      const canUndo = currentIndex > 0;
+      const canRedo = totalRevisions > 0 && currentIndex < totalRevisions - 1;
+      document.getElementById('undo-btn').disabled = !canUndo;
+      document.getElementById('redo-btn').disabled = !canRedo;
+    }
+
+    /**
+     * Updates the visual state of view mode buttons
+     * Adds 'active' class to button matching current view
+     */
+    function updateViewButtons() {
+      document.querySelectorAll('[data-view]').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.view === editor.currentView) {
+          btn.classList.add('active');
+        }
+      });
+    }
+
+    /**
+     * API object exposed globally for button onclick handlers
+     * Contains all methods for interacting with the headless editor
+     * @global
+     * @namespace demo
+     */
+    window.demo = {
+      /**
+       * Sets editor content via user prompt
+       * @memberof demo
+       */
+      setContent() {
+        const content = prompt('Enter content:', editor.getContent());
+        if (content !== null) {
+          editor.setContent(content, 'md');
+          log(`setContent() called - ${content.length} characters`, 'success');
+          updateStatus();
+        }
+      },
+
+      /**
+       * Gets current markdown content and displays in alert
+       * @memberof demo
+       */
+      getContent() {
+        const content = editor.getContent();
+        log(`getContent() returned ${content.length} characters`, 'info');
+        console.log('Content:', content);
+        alert(`Content has ${content.length} characters\n\nFirst 100 chars:\n${content.substring(0, 100)}...`);
+      },
+
+      /**
+       * Gets rendered HTML output and displays preview
+       * @memberof demo
+       */
+      getHTML() {
+        const html = editor.getHTMLSource();
+        log(`getHTMLSource() returned ${html.length} characters`, 'info');
+        console.log('HTML:', html);
+        alert(`Rendered HTML has ${html.length} characters\n\nFirst 200 chars:\n${html.substring(0, 200)}...`);
+      },
+
+      /**
+       * Clears all editor content after confirmation
+       * @memberof demo
+       */
+      clearContent() {
+        if (confirm('Clear all content?')) {
+          editor.setContent('');
+          log('Content cleared', 'success');
+          updateStatus();
+        }
+      },
+
+      /**
+       * Sets the editor view mode
+       * @memberof demo
+       * @param {'src'|'html'|'split'} view - View mode to set
+       */
+      setView(view) {
+        editor.setView(view);
+        log(`View changed to: ${view}`, 'success');
+        updateViewButtons();
+        updateStatus();
+      },
+
+      /**
+       * Cycles through view modes: src -> html -> split -> src
+       * @memberof demo
+       */
+      toggleView() {
+        editor.toggleView();
+        log(`View toggled to: ${editor.currentView}`, 'success');
+        updateViewButtons();
+        updateStatus();
+      },
+
+      /**
+       * Undoes the last edit if possible
+       * @memberof demo
+       * @returns {boolean} Whether undo was successful
+       */
+      undo() {
+        const result = editor.revisionUndo();
+        if (result) {
+          log('Undo successful', 'success');
+        } else {
+          log('Nothing to undo', 'error');
+        }
+        updateStatus();
+      },
+
+      /**
+       * Redoes the last undone edit if possible
+       * @memberof demo
+       * @returns {boolean} Whether redo was successful
+       */
+      redo() {
+        const result = editor.revisionRedo();
+        if (result) {
+          log('Redo successful', 'success');
+        } else {
+          log('Nothing to redo', 'error');
+        }
+        updateStatus();
+      },
+
+      /**
+       * Displays revision history information
+       * Shows total revision count and undo/redo availability
+       * @memberof demo
+       */
+      showRevisions() {
+        const count = editor.revisionNumRevsions ? editor.revisionNumRevsions() : 0;
+        const currentIndex = editor.revisionGetCurrentIndex ? editor.revisionGetCurrentIndex() : 0;
+        const canUndo = currentIndex > 0;
+        const canRedo = count > 0 && currentIndex < count - 1;
+        log(`Revisions: ${count}, Can Undo: ${canUndo}, Can Redo: ${canRedo}`, 'info');
+        alert(`Revision Information:\n\nTotal Revisions: ${count}\nCan Undo: ${canUndo}\nCan Redo: ${canRedo}`);
+      },
+
+      /**
+       * Copies editor content to clipboard in specified format
+       * @memberof demo
+       * @async
+       * @param {'formatted'|'markdown'|'html'|'plain'} format - Copy format
+       * @param {Event} [event] - Click event for button feedback
+       */
+      async copy(format, event) {
+        try {
+          let success = false;
+
+          switch(format) {
+            case 'markdown':
+            case 'plain':
+              success = await editor.copySource();
+              break;
+            case 'html':
+            case 'formatted':
+              success = await editor.copyHTML();
+              break;
+            default:
+              throw new Error(`Unknown format: ${format}`);
+          }
+
+          if (success !== false) {
+            log(`Copied as ${format}`, 'success');
+
+            // Show a temporary success indicator if event is provided
+            if (event && event.target) {
+              const btn = event.target;
+              const originalText = btn.textContent;
+              btn.textContent = '✓ Copied!';
+              btn.style.background = '#27ae60';
+              setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.background = '';
+              }, 1500);
+            }
+          } else {
+            log(`Copy failed for format: ${format}`, 'error');
+          }
+        } catch (error) {
+          log(`Copy failed: ${error.message}`, 'error');
+        }
+      },
+
+      /**
+       * Gets currently selected text and displays info
+       * @memberof demo
+       */
+      getSelection() {
+        // SquibView doesn't expose a public method to get selection
+        // We need to get it directly from the DOM
+        const selection = window.getSelection();
+        const text = selection ? selection.toString() : '';
+
+        if (text) {
+          log(`Selected text: "${text.substring(0, 50)}..."`, 'info');
+          alert(`Selected Text:\n"${text}"\n\nLength: ${text.length} characters`);
+        } else {
+          log('No text selected', 'info');
+          alert('No text is currently selected');
+        }
+      },
+
+      /**
+       * Replaces currently selected text with user input
+       * @memberof demo
+       */
+      replaceSelection() {
+        // Get selected text from DOM
+        const selection = window.getSelection();
+        const selected = selection ? selection.toString() : '';
+
+        if (selected) {
+          const replacement = prompt('Replace selected text with:', selected);
+          if (replacement !== null) {
+            // Use replaceSelectedText if we have lastSelectionData
+            if (editor.lastSelectionData) {
+              editor.replaceSelectedText(replacement, editor.lastSelectionData);
+              log(`Replaced "${selected.substring(0, 20)}..." with "${replacement.substring(0, 20)}..."`, 'success');
+              updateStatus();
+            } else {
+              log('Unable to replace - selection data not available', 'error');
+            }
+          }
+        } else {
+          log('No text selected to replace', 'error');
+          alert('Please select some text first');
+        }
+      },
+
+      /**
+       * Sets the content type for parsing
+       * @memberof demo
+       * @param {'md'|'html'|'csv'} type - Content type
+       */
+      setType(type) {
+        editor.setContentType(type);
+        log(`Content type changed to: ${type}`, 'success');
+        updateStatus();
+      },
+
+      /**
+       * Toggles built-in controls visibility
+       * Requires recreating the editor instance to apply changes
+       * @memberof demo
+       * @param {boolean} show - Whether to show controls
+       */
+      toggleControls(show) {
+        const currentContent = editor.getContent();
+        const currentView = editor.currentView;
+
+        editorConfig.showControls = show;
+
+        // Destroy old editor and create new one
+        editor.destroy();
+        editor = new SquibView('#editor', { ...editorConfig, initialContent: currentContent, initialView: currentView });
+
+        // Update global reference
+        window.squibEditor = editor;
+
+        // Re-attach event listeners
+        attachEventListeners();
+
+        log(`Controls ${show ? 'shown' : 'hidden'}`, 'success');
+        updateStatus();
+        updateViewButtons();
+      },
+
+      /**
+       * Toggles title bar visibility
+       * Requires recreating the editor instance to apply changes
+       * @memberof demo
+       * @param {boolean} show - Whether to show title
+       */
+      toggleTitle(show) {
+        const currentContent = editor.getContent();
+        const currentView = editor.currentView;
+
+        editorConfig.titleShow = show;
+
+        // Destroy old editor and create new one
+        editor.destroy();
+        editor = new SquibView('#editor', { ...editorConfig, initialContent: currentContent, initialView: currentView });
+
+        // Update global reference
+        window.squibEditor = editor;
+
+        // Re-attach event listeners
+        attachEventListeners();
+
+        log(`Title ${show ? 'shown' : 'hidden'}`, 'success');
+        updateStatus();
+        updateViewButtons();
+      },
+
+      /**
+       * Toggles line numbers visibility in the source editor
+       * Requires recreating the editor instance to apply changes
+       * @memberof demo
+       * @param {boolean} show - Whether to show line numbers
+       */
+      toggleLineNumbers(show) {
+        const currentContent = editor.getContent();
+        const currentView = editor.currentView;
+
+        editorConfig.showLineNumbers = show;
+
+        // Destroy old editor and create new one
+        editor.destroy();
+        editor = new SquibView('#editor', { ...editorConfig, initialContent: currentContent, initialView: currentView });
+
+        // Update global reference
+        window.squibEditor = editor;
+
+        // Re-attach event listeners
+        attachEventListeners();
+
+        log(`Line numbers ${show ? 'shown' : 'hidden'}`, 'success');
+        updateStatus();
+        updateViewButtons();
+      },
+
+      /**
+       * Displays SquibView version and configuration info
+       * @memberof demo
+       */
+      showInfo() {
+        const version = SquibView.version;
+        log(`SquibView version: ${version.version}`, 'info');
+        alert(`SquibView Information:\n\nVersion: ${version.version}\nRepository: ${version.url}\nCurrent View: ${editor.currentView}\nContent Type: ${editor.inputContentType}`);
+      },
+
+      /**
+       * Toggles the visibility of the console output panel
+       * @memberof demo
+       */
+      toggleOutput() {
+        const output = document.getElementById('output');
+        output.classList.toggle('show');
+        if (output.classList.contains('show')) {
+          log('Console opened - API calls will be logged here', 'success');
+        }
+      }
+    };
+
+    /**
+     * Attaches all event listeners to the editor instance
+     * Called after editor creation and recreation
+     * Listens for: content-change, view-change, selection-change, revision-added
+     */
+    function attachEventListeners() {
+      // Check if editor exists
+      if (!editor) {
+        console.error('Editor not properly initialized', editor);
+        return;
+      }
+
+      // Check if we have events object
+      if (!editor.events || typeof editor.events.on !== 'function') {
+        console.warn('Editor events not available, skipping event listeners');
+        return;
+      }
+
+      editor.events.on('content:change', () => {
+        updateStatus();
+        log('Event: content-change', 'info');
+      });
+
+      editor.events.on('view:change', (view) => {
+        updateViewButtons();
+        updateStatus();
+        log(`Event: view-change to ${view}`, 'info');
+      });
+
+      editor.events.on('text:selected', (data) => {
+        if (data && data.text) {
+          log(`Event: text-selected - "${data.text.substring(0, 30)}..."`, 'info');
+        }
+      });
+
+      editor.events.on('revision:undo', () => {
+        updateStatus();
+        log('Event: revision-undo', 'info');
+      });
+
+      editor.events.on('revision:redo', () => {
+        updateStatus();
+        log('Event: revision-redo', 'info');
+      });
+    }
+
+    /**
+     * Initialize event listeners and UI state
+     */
+    attachEventListeners();
+
+    /**
+     * Set initial UI state
+     */
+    updateStatus();
+    updateViewButtons();
+
+    /**
+     * Make editor instance available globally for debugging
+     * Access via browser console: window.squibEditor
+     * @global
+     * @type {SquibView}
+     */
+    window.squibEditor = editor;
+
+    /**
+     * Helper to get current editor instance (changes on recreation)
+     * @returns {SquibView} Current editor instance
+     */
+    window.getEditor = () => editor;
+
+    /**
+     * Update demo methods to use current editor reference
+     * This ensures they work after editor recreation
+     */
+    Object.keys(window.demo).forEach(key => {
+      const originalMethod = window.demo[key];
+      if (key.startsWith('toggle')) {
+        // Keep toggle methods as-is, they handle editor recreation
+        return;
+      }
+      // Wrap other methods to ensure they use current editor
+      window.demo[key] = function(...args) {
+        // Ensure we're using the current editor instance
+        return originalMethod.call(this, ...args);
+      };
+    });
+
+    console.log('Headless SquibView ready. Access via window.squibEditor or window.getEditor()');
+    console.log('All API methods available through custom toolbar');
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>

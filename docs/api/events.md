@@ -4,86 +4,84 @@ Complete reference for all events emitted by SquibView and how to handle them.
 
 ## Event System Overview
 
-SquibView uses an event-driven architecture for communication between components and plugins. Events can be subscribed to using the `on()` method and emitted using the `emit()` method.
+SquibView uses an event-driven architecture for communication between components and plugins. Events are accessed through the `editor.events` object.
 
 ```javascript
 // Subscribe to an event
-editor.on('content-change', (data) => {
-  console.log('Content changed:', data);
+editor.events.on('content:change', (content, contentType) => {
+  console.log('Content changed:', content);
 });
 
 // Unsubscribe from an event
-editor.off('content-change', handler);
+editor.events.off('content:change', handler);
 
-// Emit a custom event
-editor.emit('my-custom-event', { data: 'value' });
+// Note: Event names use colons (:) not hyphens (-)
 ```
 
 ## Core Events
 
-### content-change
+### content:change
 
 Fired when the editor content changes.
 
-**Event Data:**
-```javascript
-{
-  content: string,      // New content
-  contentType: string,  // Current content type
-  source: string        // Change source ('input' or 'api')
-}
-```
+**Event Parameters:**
+- `content` (string) - New content
+- `contentType` (string) - Current content type
 
 **Example:**
 ```javascript
-editor.on('content-change', (data) => {
-  console.log('New content:', data.content);
-  console.log('Type:', data.contentType);
-  saveToServer(data.content);
+editor.events.on('content:change', (content, contentType) => {
+  console.log('New content:', content);
+  console.log('Type:', contentType);
+  saveToServer(content);
 });
 ```
 
 ---
 
-### view-change
+### view:change
 
 Fired when the view mode changes.
 
-**Event Data:**
-```javascript
-{
-  oldView: string,  // Previous view ('src', 'html', 'split')
-  newView: string   // New view ('src', 'html', 'split')
-}
-```
+**Event Parameters:**
+- `view` (string) - New view mode ('src', 'html', 'split')
 
 **Example:**
 ```javascript
-editor.on('view-change', (data) => {
-  console.log(`View changed from ${data.oldView} to ${data.newView}`);
-  updateUIButtons(data.newView);
+editor.events.on('view:change', (view) => {
+  console.log(`View changed to ${view}`);
+  updateUIButtons(view);
 });
 ```
 
 ---
 
-### type-change
+### text:selected
 
-Fired when the content type changes.
+Fired when text is selected in either the source or rendered view.
 
 **Event Data:**
 ```javascript
 {
-  oldType: string,  // Previous type
-  newType: string   // New type ('md', 'html', 'reveal', 'csv', 'tsv')
+  text: string,     // Selected text
+  source: string,   // Selection source ('input' or 'output')
+  range: {          // Selection range (for input only)
+    start: number,
+    end: number
+  }
 }
 ```
 
 **Example:**
 ```javascript
-editor.on('type-change', (data) => {
-  console.log(`Type changed from ${data.oldType} to ${data.newType}`);
-  updateSyntaxHighlighting(data.newType);
+editor.events.on('text:selected', (data) => {
+  console.log('Selected text:', data.text);
+  console.log('From:', data.source);
+
+  // Enable formatting buttons
+  if (data.text) {
+    enableFormatButtons();
+  }
 });
 ```
 
@@ -270,7 +268,7 @@ Fired when the editor is being destroyed.
 
 **Example:**
 ```javascript
-editor.on('destroy', () => {
+editor.events.on('destroy', () => {
   console.log('Editor destroyed');
   cleanupResources();
 });

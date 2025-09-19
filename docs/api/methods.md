@@ -45,19 +45,19 @@ console.log(content);
 
 ---
 
-### getRenderedHTML
+### getHTMLSource
 
 Returns the rendered HTML output.
 
 ```javascript
-getRenderedHTML()
+getHTMLSource()
 ```
 
 **Returns:** `string` - The rendered HTML
 
 **Example:**
 ```javascript
-const html = editor.getRenderedHTML();
+const html = editor.getHTMLSource();
 document.getElementById('preview').innerHTML = html;
 ```
 
@@ -208,143 +208,180 @@ console.log(type); // 'md'
 
 ## Revision Management
 
-### undo
+### revisionUndo
 
 Undoes the last change and restores previous content.
 
 ```javascript
-undo()
+revisionUndo()
 ```
 
 **Returns:** `boolean` - True if undo was performed, false if no history
 
 **Example:**
 ```javascript
-if (editor.undo()) {
+if (editor.revisionUndo()) {
   console.log('Undo performed');
 }
 ```
 
 ---
 
-### redo
+### revisionRedo
 
 Redoes a previously undone change.
 
 ```javascript
-redo()
+revisionRedo()
 ```
 
 **Returns:** `boolean` - True if redo was performed, false if no redo history
 
 **Example:**
 ```javascript
-if (editor.redo()) {
+if (editor.revisionRedo()) {
   console.log('Redo performed');
 }
 ```
 
 ---
 
-### canUndo
+### revisionGetCurrentIndex
 
-Checks if undo is available.
+Gets the current position in the revision history.
 
 ```javascript
-canUndo()
+revisionGetCurrentIndex()
 ```
 
-**Returns:** `boolean` - True if undo is available
+**Returns:** `number` - Current revision index (0-based)
 
 **Example:**
 ```javascript
-if (editor.canUndo()) {
+const currentIndex = editor.revisionGetCurrentIndex();
+const totalRevisions = editor.revisionNumRevsions();
+
+// Check if undo/redo are available
+const canUndo = currentIndex > 0;
+const canRedo = totalRevisions > 0 && currentIndex < totalRevisions - 1;
+
+if (canUndo) {
   document.getElementById('undoBtn').disabled = false;
 }
-```
-
----
-
-### canRedo
-
-Checks if redo is available.
-
-```javascript
-canRedo()
-```
-
-**Returns:** `boolean` - True if redo is available
-
-**Example:**
-```javascript
-if (editor.canRedo()) {
+if (canRedo) {
   document.getElementById('redoBtn').disabled = false;
 }
 ```
 
 ---
 
-### getRevisionCount
+### revisionNumRevsions
 
 Returns the number of revisions in history.
 
 ```javascript
-getRevisionCount()
+revisionNumRevsions()
 ```
 
 **Returns:** `number` - Number of saved revisions
 
 **Example:**
 ```javascript
-const count = editor.getRevisionCount();
+const count = editor.revisionNumRevsions();
 console.log(`${count} revisions saved`);
+```
+
+---
+
+### revisionSet
+
+Jumps to a specific revision by index.
+
+```javascript
+revisionSet(index)
+```
+
+**Parameters:**
+- `index` (number) - The revision index to jump to
+
+**Returns:** `boolean` - True if revision was set successfully
+
+**Example:**
+```javascript
+editor.revisionSet(0); // Jump to first revision
+editor.revisionSet(editor.revisionNumRevsions() - 1); // Jump to latest
 ```
 
 ## Selection & Clipboard
 
-### copyToClipboard
+### copySource
 
-Copies content to the clipboard in the specified format.
+Copies the source content (markdown) to the clipboard.
 
 ```javascript
-copyToClipboard(copyMode = 'auto')
+copySource()
 ```
-
-**Parameters:**
-- `copyMode` (string) - Copy format: 'auto', 'formatted', 'markdown', 'html', or 'plain'
 
 **Returns:** `Promise<boolean>` - True if copy succeeded
 
 **Example:**
 ```javascript
-// Auto-detect best format
-await editor.copyToClipboard();
-
-// Force markdown format
-await editor.copyToClipboard('markdown');
-
-// Copy as formatted HTML
-await editor.copyToClipboard('formatted');
+await editor.copySource();
 ```
 
 ---
 
-### getSelectedText
+### copyHTML
 
-Returns the currently selected text from either source or rendered view.
+Copies the rendered HTML to the clipboard.
 
 ```javascript
-getSelectedText()
+copyHTML()
 ```
 
-**Returns:** `string` - Selected text or empty string
+**Returns:** `Promise<boolean>` - True if copy succeeded
 
 **Example:**
 ```javascript
-const selected = editor.getSelectedText();
-if (selected) {
-  console.log('Selected:', selected);
-}
+await editor.copyHTML();
+```
+
+---
+
+### copyToClipboard
+
+Low-level method to copy any text string to the clipboard.
+
+```javascript
+copyToClipboard(text)
+```
+
+**Parameters:**
+- `text` (string) - The text to copy
+
+**Returns:** `boolean` - True if copy succeeded
+
+**Example:**
+```javascript
+const success = editor.copyToClipboard('Custom text');
+```
+
+---
+
+### Getting Selected Text
+
+SquibView doesn't expose a public method for getting selected text directly. Use the browser's selection API:
+
+```javascript
+// Get selected text from browser
+const selection = window.getSelection();
+const selectedText = selection ? selection.toString() : '';
+
+// Or listen for selection events
+editor.events.on('text:selected', (data) => {
+  console.log('Selected text:', data.text);
+  console.log('Source:', data.source); // 'input' or 'output'
+});
 ```
 
 ---
@@ -399,20 +436,30 @@ editor.setOnReplaceSelectedText((data) => {
 
 ### replaceSelectedText
 
-Replaces the currently selected text with new text.
+Replaces selected text with new text. Requires selection data from the text:selected event.
 
 ```javascript
-replaceSelectedText(newText)
+replaceSelectedText(newText, selectionData)
 ```
 
 **Parameters:**
 - `newText` (string) - Text to replace selection with
+- `selectionData` (object) - Selection data from text:selected event or lastSelectionData
 
 **Returns:** `void`
 
 **Example:**
 ```javascript
-editor.replaceSelectedText('**' + editor.getSelectedText() + '**');
+// Listen for text selection and wrap in bold
+editor.events.on('text:selected', (data) => {
+  editor.replaceSelectedText(`**${data.text}**`, data);
+});
+
+// Or use lastSelectionData if available
+if (editor.lastSelectionData) {
+  const text = editor.lastSelectionData.text;
+  editor.replaceSelectedText(`**${text}**`, editor.lastSelectionData);
+}
 ```
 
 ## Renderer System

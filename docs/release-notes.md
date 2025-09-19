@@ -4,6 +4,37 @@ Complete changelog and release history for SquibView.
 
 ---
 
+## v1.0.19 (September 19, 2024)
+
+### 🎯 Headless Mode & Documentation Improvements
+
+#### Features
+- **Enhanced Headless Mode Example** - Complete working example demonstrating all API methods with custom UI controls (`examples/example_headless.html`)
+- **Comprehensive API Documentation** - Corrected and updated all API method documentation to reflect actual implementation
+
+#### Bug Fixes
+- Fixed headless mode Options toggles (Controls, Title, Lines) to actually recreate editor instance with new settings
+- Fixed Copy functionality to use correct `copySource()` and `copyHTML()` methods
+- Fixed event system documentation to use `editor.events.on()` instead of `editor.on()`
+- Fixed revision methods documentation (`revisionUndo()`, `revisionRedo()`, `revisionNumRevsions()`)
+- Added JSDoc comments to all functions and key attributes in headless example
+
+#### Documentation Updates
+- **API Methods Reference** - Corrected method names and signatures in `docs/api/methods.md`
+- **Events Reference** - Updated event names to use colons (e.g., `content:change`, `view:change`) in `docs/api/events.md`
+- **Headless Mode Guide** - Updated all code examples with correct API usage in `docs/guides/headless-mode.md`
+- Added standard favicon to headless example
+
+#### API Corrections
+- `undo()`/`redo()` → `revisionUndo()`/`revisionRedo()`
+- `getRevisionCount()` → `revisionNumRevsions()`
+- `getRenderedHTML()` → `getHTMLSource()`
+- `copyToClipboard(format)` → `copySource()` or `copyHTML()`
+- Event access via `editor.events.on()` not `editor.on()`
+- Event names use colons: `content:change`, `text:selected`, `revision:undo`
+
+---
+
 ## v1.0.18 (September 17, 2024)
 
 ### Major Features

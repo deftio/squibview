@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SquibView Headless Mode Guide</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; viewBox=&#39;0 0 32 32&#39;&gt;&lt;circle cx=&#39;16&#39; cy=&#39;16&#39; r=&#39;14&#39; fill=&#39;%23f57c00&#39; stroke=&#39;%23000&#39; stroke-width=&#39;1&#39;/&gt;&lt;path d=&#39;M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z&#39; fill=&#39;none&#39; stroke=&#39;%23000&#39; stroke-width=&#39;1&#39;/&gt;&lt;/svg&gt;">
+  <style>
+
+
+/* Additional CSS */
+/* SquibView CLI Generated Styles */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  line-height: 1.6;
+  color: #333;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 3rem;
+  background-color: #fff;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+h1 { 
+  font-size: 2rem;
+  
+}
+h2 { 
+  font-size: 1.5rem;
+  
+}
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1rem; }
+h5 { font-size: 0.875rem; }
+h6 { font-size: 0.85rem; color: #666; }
+
+p { margin-bottom: 1rem; }
+
+a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #0066cc;
+  text-decoration: underline;
+}
+
+ul, ol {
+  margin-bottom: 1rem;
+  padding-left: 2rem;
+}
+
+li {
+  margin-bottom: 0.25rem;
+}
+
+blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 4px solid #ddd;
+  background-color: #f9f9f9;
+  color: #666;
+}
+
+code {
+  background-color: #f5f5f5;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.85em;
+}
+
+pre {
+  background-color: #f8f8f8;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  border-radius: 4px;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 1rem;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 2rem 0;
+}
+
+/* Badge images - inline display */
+p img {
+  display: inline;
+  margin: 0 2px;
+  vertical-align: middle;
+}
+
+/* Math styling */
+.MathJax {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  body {
+    padding: 1rem 1.5rem;
+  }
+  
+  table {
+    font-size: 0.875rem;
+  }
+  
+  th, td {
+    padding: 0.25rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    padding: 0;
+    color: #000;
+  }
+  
+  a {
+    color: #000;
+    text-decoration: underline;
+  }
+  
+  pre, blockquote {
+    page-break-inside: avoid;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+}
+  </style>
+    <!-- Highlight.js for syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <!-- Leaflet for GeoJSON/TopoJSON maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <!-- Three.js for STL 3D models -->
+  <script src="https://unpkg.com/three@0.171.0/build/three.min.js"></script>
+  <!-- MathJax for math rendering -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true
+      },
+      options: {
+        ignoreHtmlClass: 'tex2jax_ignore',
+        processHtmlClass: 'tex2jax_process'
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+  </script>
+  <!-- Mermaid for diagram rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+</head>
+<body>
+<div><h1>SquibView Headless Mode Guide</h1><p>This guide explains how to use SquibView in headless mode to build custom UIs while leveraging SquibView’s powerful rendering and copy/paste capabilities.</p><h2>What is Headless Mode?</h2><p>Headless mode allows you to use SquibView’s core rendering engine without its built-in UI controls. This lets you:</p><ul><li><strong>Build custom UIs</strong> with your own buttons, toolbars, and controls</li><li><strong>Integrate seamlessly</strong> into existing applications</li><li><strong>Maintain consistent design</strong> with your app’s look and feel</li><li><strong>Keep all the power</strong> of SquibView’s rendering, bidirectional editing, and smart copy/paste</li></ul><h2>Why Use Headless Mode?</h2><h3>You Want SquibView’s Power</h3><ul><li>Rich markdown → HTML rendering</li><li>Bidirectional editing capabilities</li><li>Smart copy/paste with image handling</li><li>Support for diagrams, math, tables, code highlighting</li><li>Revision history and undo/redo</li></ul><h3>But With Your Own UI</h3><ul><li>Custom buttons matching your design system</li><li>Specialized toolbars for your use case</li><li>Integrated controls within your app</li><li>Branded experience for your users</li></ul><h2>Basic Headless Setup</h2><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-keyword">import</span><span class="hljs-title class_">SquibView</span><span class="hljs-keyword">from</span><span class="hljs-string">'squibview'</span>;
+
+<span class="hljs-comment">// Create headless instance - no controls, just rendering</span><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editor-container'</span>, {
+  <span class="hljs-attr">showControls</span>: <span class="hljs-literal">false</span>,      <span class="hljs-comment">// Hide built-in controls</span><span class="hljs-attr">titleShow</span>: <span class="hljs-literal">false</span>,         <span class="hljs-comment">// Hide title bar</span><span class="hljs-attr">initialView</span>: <span class="hljs-string">'split'</span>,     <span class="hljs-comment">// Can still use any view mode</span><span class="hljs-attr">baseClass</span>: <span class="hljs-string">'my-editor'</span><span class="hljs-comment">// Custom CSS class for styling</span>
+});
+
+<span class="hljs-comment">// Now you have full API access without any UI</span>
+editor.<span class="hljs-title function_">setContent</span>(<span class="hljs-string">'# Hello World'</span>);
+<span class="hljs-keyword">const</span> html = editor.<span class="hljs-title function_">getHTMLSource</span>();  <span class="hljs-comment">// Get rendered HTML</span></code></pre></div><h2>Building Custom Controls</h2><h3>Example: Custom Toolbar</h3><div data-source-type="html"><pre><code class="hljs language-html" data-source-type="code" data-lang="html"><span class="hljs-comment">&lt;!-- Your custom UI --&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">div</span><span class="hljs-attr">class</span>=<span class="hljs-string">"my-toolbar"</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">button</span><span class="hljs-attr">onclick</span>=<span class="hljs-string">"customBold()"</span>&gt;</span>Bold<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">button</span><span class="hljs-attr">onclick</span>=<span class="hljs-string">"customItalic()"</span>&gt;</span>Italic<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">button</span><span class="hljs-attr">onclick</span>=<span class="hljs-string">"customLink()"</span>&gt;</span>Insert Link<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">button</span><span class="hljs-attr">onclick</span>=<span class="hljs-string">"switchView()"</span>&gt;</span>Toggle View<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">button</span><span class="hljs-attr">onclick</span>=<span class="hljs-string">"copyFormatted()"</span>&gt;</span>Copy<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">button</span><span class="hljs-attr">onclick</span>=<span class="hljs-string">"undoChange()"</span>&gt;</span>Undo<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span><span class="hljs-comment">&lt;!-- Headless SquibView container --&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">div</span><span class="hljs-attr">id</span>=<span class="hljs-string">"editor"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></code></pre></div><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Initialize headless SquibView</span><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editor'</span>, {
+  <span class="hljs-attr">showControls</span>: <span class="hljs-literal">false</span>,
+  <span class="hljs-attr">initialContent</span>: <span class="hljs-string">'# My Document'</span>
+});
+
+<span class="hljs-comment">// Custom control functions</span><span class="hljs-keyword">function</span><span class="hljs-title function_">customBold</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-keyword">const</span> selection = <span class="hljs-variable language_">window</span>.<span class="hljs-title function_">getSelection</span>();
+  <span class="hljs-keyword">const</span> selected = selection ? selection.<span class="hljs-title function_">toString</span>() : <span class="hljs-string">''</span>;
+  <span class="hljs-keyword">if</span> (selected &amp;&amp; editor.<span class="hljs-property">lastSelectionData</span>) {
+    editor.<span class="hljs-title function_">replaceSelectedText</span>(<span class="hljs-string">`**<span class="hljs-subst">${selected}</span>**`</span>, editor.<span class="hljs-property">lastSelectionData</span>);
+  }
+}
+
+<span class="hljs-keyword">function</span><span class="hljs-title function_">customItalic</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-keyword">const</span> selection = <span class="hljs-variable language_">window</span>.<span class="hljs-title function_">getSelection</span>();
+  <span class="hljs-keyword">const</span> selected = selection ? selection.<span class="hljs-title function_">toString</span>() : <span class="hljs-string">''</span>;
+  <span class="hljs-keyword">if</span> (selected &amp;&amp; editor.<span class="hljs-property">lastSelectionData</span>) {
+    editor.<span class="hljs-title function_">replaceSelectedText</span>(<span class="hljs-string">`*<span class="hljs-subst">${selected}</span>*`</span>, editor.<span class="hljs-property">lastSelectionData</span>);
+  }
+}
+
+<span class="hljs-keyword">function</span><span class="hljs-title function_">customLink</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-keyword">const</span> url = <span class="hljs-title function_">prompt</span>(<span class="hljs-string">'Enter URL:'</span>);
+  <span class="hljs-keyword">const</span> selection = <span class="hljs-variable language_">window</span>.<span class="hljs-title function_">getSelection</span>();
+  <span class="hljs-keyword">const</span> text = selection ? selection.<span class="hljs-title function_">toString</span>() : <span class="hljs-string">'link text'</span>;
+  <span class="hljs-keyword">if</span> (editor.<span class="hljs-property">lastSelectionData</span>) {
+    editor.<span class="hljs-title function_">replaceSelectedText</span>(<span class="hljs-string">`[<span class="hljs-subst">${text}</span>](<span class="hljs-subst">${url}</span>)`</span>, editor.<span class="hljs-property">lastSelectionData</span>);
+  }
+}
+
+<span class="hljs-keyword">function</span><span class="hljs-title function_">switchView</span>(<span class="hljs-params"></span>) {
+  editor.<span class="hljs-title function_">toggleView</span>(); <span class="hljs-comment">// Still works without controls!</span>
+}
+
+<span class="hljs-keyword">function</span><span class="hljs-title function_">copyFormatted</span>(<span class="hljs-params"></span>) {
+  editor.<span class="hljs-title function_">copyHTML</span>();  <span class="hljs-comment">// Copy as rich HTML</span>
+}
+
+<span class="hljs-keyword">function</span><span class="hljs-title function_">undoChange</span>(<span class="hljs-params"></span>) {
+  editor.<span class="hljs-title function_">revisionUndo</span>();  <span class="hljs-comment">// Undo last change</span>
+}
+</code></pre></div><h2>Advanced Custom UI Integration</h2><h3>Material Design Integration</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Use with Material Design components</span><span class="hljs-keyword">import</span> { <span class="hljs-title class_">MDCRipple</span> } <span class="hljs-keyword">from</span><span class="hljs-string">'@material/ripple'</span>;
+
+<span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editor'</span>, {
+  <span class="hljs-attr">showControls</span>: <span class="hljs-literal">false</span>,
+  <span class="hljs-attr">baseClass</span>: <span class="hljs-string">'mdc-editor'</span>
+});
+
+<span class="hljs-comment">// Create Material Design toolbar</span><span class="hljs-keyword">const</span> toolbar = <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">createElement</span>(<span class="hljs-string">'div'</span>);
+toolbar.<span class="hljs-property">className</span> = <span class="hljs-string">'mdc-toolbar'</span>;
+toolbar.<span class="hljs-property">innerHTML</span> = <span class="hljs-string">`
+  &lt;button class="mdc-icon-button material-icons"&gt;format_bold&lt;/button&gt;
+  &lt;button class="mdc-icon-button material-icons"&gt;format_italic&lt;/button&gt;
+  &lt;button class="mdc-icon-button material-icons"&gt;link&lt;/button&gt;
+`</span>;
+
+<span class="hljs-comment">// Attach handlers</span>
+toolbar.<span class="hljs-title function_">querySelectorAll</span>(<span class="hljs-string">'button'</span>).<span class="hljs-title function_">forEach</span>(<span class="hljs-function"><span class="hljs-params">btn</span> =&gt;</span> {
+  <span class="hljs-keyword">new</span><span class="hljs-title class_">MDCRipple</span>(btn);
+  btn.<span class="hljs-title function_">addEventListener</span>(<span class="hljs-string">'click'</span>, handleToolbarClick);
+});
+</code></pre></div><h3>React Component Wrapper</h3><div data-source-type="jsx"><pre><code class="hljs language-jsx" data-source-type="code" data-lang="jsx"><span class="hljs-keyword">import</span><span class="hljs-title class_">React</span>, { useRef, useEffect, useState } <span class="hljs-keyword">from</span><span class="hljs-string">'react'</span>;
+<span class="hljs-keyword">import</span><span class="hljs-title class_">SquibView</span><span class="hljs-keyword">from</span><span class="hljs-string">'squibview'</span>;
+
+<span class="hljs-keyword">function</span><span class="hljs-title function_">CustomMarkdownEditor</span>(<span class="hljs-params">{ initialContent, onChange }</span>) {
+  <span class="hljs-keyword">const</span> containerRef = <span class="hljs-title function_">useRef</span>(<span class="hljs-literal">null</span>);
+  <span class="hljs-keyword">const</span> editorRef = <span class="hljs-title function_">useRef</span>(<span class="hljs-literal">null</span>);
+  <span class="hljs-keyword">const</span> [view, setView] = <span class="hljs-title function_">useState</span>(<span class="hljs-string">'split'</span>);
+
+  <span class="hljs-title function_">useEffect</span>(<span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-comment">// Initialize headless editor</span>
+    editorRef.<span class="hljs-property">current</span> = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(containerRef.<span class="hljs-property">current</span>, {
+      <span class="hljs-attr">showControls</span>: <span class="hljs-literal">false</span>,
+      initialContent,
+      <span class="hljs-attr">initialView</span>: view
+    });
+
+    <span class="hljs-comment">// Listen for changes</span>
+    editorRef.<span class="hljs-property">current</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'content-change'</span>, <span class="hljs-function">(<span class="hljs-params">data</span>) =&gt;</span> {
+      onChange?.(data.<span class="hljs-property">content</span>);
+    });
+
+    <span class="hljs-keyword">return</span><span class="hljs-function">() =&gt;</span> editorRef.<span class="hljs-property">current</span>.<span class="hljs-title function_">destroy</span>();
+  }, []);
+
+  <span class="hljs-keyword">return</span> (
+    <span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span><span class="hljs-attr">className</span>=<span class="hljs-string">"custom-editor"</span>&gt;</span>
+      {/* Custom toolbar */}
+      <span class="hljs-tag">&lt;<span class="hljs-name">div</span><span class="hljs-attr">className</span>=<span class="hljs-string">"toolbar"</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">button</span><span class="hljs-attr">onClick</span>=<span class="hljs-string">{()</span> =&gt;</span> editorRef.current.undo()}&gt;
+          Undo
+        <span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">button</span><span class="hljs-attr">onClick</span>=<span class="hljs-string">{()</span> =&gt;</span> editorRef.current.redo()}&gt;
+          Redo
+        <span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">button</span><span class="hljs-attr">onClick</span>=<span class="hljs-string">{()</span> =&gt;</span> {
+          setView(v =&gt; v === 'split' ? 'src' : v === 'src' ? 'html' : 'split');
+          editorRef.current.setView(view);
+        }}&gt;
+          View: {view}
+        <span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">button</span><span class="hljs-attr">onClick</span>=<span class="hljs-string">{()</span> =&gt;</span> editorRef.current.copyToClipboard()}&gt;
+          Copy
+        <span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+      {/* Headless SquibView */}
+      <span class="hljs-tag">&lt;<span class="hljs-name">div</span><span class="hljs-attr">ref</span>=<span class="hljs-string">{containerRef}</span> /&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span>
+  );
+}
+</code></pre></div><h3>Vue Integration</h3><div data-source-type="vue"><pre><code class="hljs language-vue" data-source-type="code" data-lang="vue">&lt;template&gt;
+  &lt;div class="vue-markdown-editor"&gt;
+    &lt;!-- Custom controls --&gt;
+    &lt;div class="editor-toolbar"&gt;
+      &lt;button @click="bold"&gt;B&lt;/button&gt;
+      &lt;button @click="italic"&gt;I&lt;/button&gt;
+      &lt;button @click="insertHeading"&gt;H1&lt;/button&gt;
+      &lt;button @click="toggleView"&gt;{{ viewMode }}&lt;/button&gt;
+      &lt;button @click="copyContent"&gt;Copy&lt;/button&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Headless editor --&gt;
+    &lt;div ref="editorContainer"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+import SquibView from 'squibview';
+
+export default {
+  data() {
+    return {
+      editor: null,
+      viewMode: 'split'
+    };
+  },
+
+  mounted() {
+    // Initialize headless
+    this.editor = new SquibView(this.$refs.editorContainer, {
+      showControls: false,
+      initialContent: this.content
+    });
+  },
+
+  methods: {
+    bold() {
+      const selected = this.editor.getSelectedText();
+      this.editor.replaceSelectedText(`**${selected}**`);
+    },
+
+    italic() {
+      const selected = this.editor.getSelectedText();
+      this.editor.replaceSelectedText(`*${selected}*`);
+    },
+
+    insertHeading() {
+      this.editor.setContent('# ' + this.editor.getContent());
+    },
+
+    toggleView() {
+      this.editor.toggleView();
+      this.viewMode = this.editor.currentView;
+    },
+
+    copyContent() {
+      this.editor.copyToClipboard('formatted');
+    }
+  }
+};
+&lt;/script&gt;
+</code></pre></div><h2>Leveraging Core Features</h2><h3>Smart Copy/Paste</h3><p>Even in headless mode, you get SquibView’s intelligent copy/paste:</p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editor'</span>, {
+  <span class="hljs-attr">showControls</span>: <span class="hljs-literal">false</span>,
+  <span class="hljs-attr">preserveImageTags</span>: <span class="hljs-literal">false</span><span class="hljs-comment">// Convert images to data URLs for portability</span>
+});
+
+<span class="hljs-comment">// Custom copy button with format selection</span><span class="hljs-keyword">function</span><span class="hljs-title function_">customCopy</span>(<span class="hljs-params">format</span>) {
+  <span class="hljs-comment">// Use different methods based on format</span><span class="hljs-keyword">switch</span>(format) {
+    <span class="hljs-keyword">case</span><span class="hljs-string">'markdown'</span>:
+    <span class="hljs-keyword">case</span><span class="hljs-string">'plain'</span>:
+      editor.<span class="hljs-title function_">copySource</span>();  <span class="hljs-comment">// Copy source markdown</span><span class="hljs-keyword">break</span>;
+    <span class="hljs-keyword">case</span><span class="hljs-string">'html'</span>:
+    <span class="hljs-keyword">case</span><span class="hljs-string">'formatted'</span>:
+      editor.<span class="hljs-title function_">copyHTML</span>();    <span class="hljs-comment">// Copy rendered HTML</span><span class="hljs-keyword">break</span>;
+  }
+  <span class="hljs-title function_">showNotification</span>(<span class="hljs-string">`Copied as <span class="hljs-subst">${format}</span>`</span>);
+}
+
+<span class="hljs-comment">// Handle paste with custom processing</span>
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'content:change'</span>, <span class="hljs-function">(<span class="hljs-params">content, contentType</span>) =&gt;</span> {
+  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">'Content changed:'</span>, content);
+});
+</code></pre></div><h3>Revision History</h3><p>Build custom undo/redo UI:</p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Custom revision control UI</span><span class="hljs-keyword">function</span><span class="hljs-title function_">updateRevisionButtons</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-keyword">const</span> currentIndex = editor.<span class="hljs-title function_">revisionGetCurrentIndex</span>();
+  <span class="hljs-keyword">const</span> totalRevisions = editor.<span class="hljs-title function_">revisionNumRevsions</span>();
+  <span class="hljs-keyword">const</span> canUndo = currentIndex &gt; <span class="hljs-number">0</span>;
+  <span class="hljs-keyword">const</span> canRedo = totalRevisions &gt; <span class="hljs-number">0</span> &amp;&amp; currentIndex &lt; totalRevisions - <span class="hljs-number">1</span>;
+
+  <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">getElementById</span>(<span class="hljs-string">'undo-btn'</span>).<span class="hljs-property">disabled</span> = !canUndo;
+  <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">getElementById</span>(<span class="hljs-string">'redo-btn'</span>).<span class="hljs-property">disabled</span> = !canRedo;
+  <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">getElementById</span>(<span class="hljs-string">'revision-count'</span>).<span class="hljs-property">textContent</span> =
+    <span class="hljs-string">`Revision <span class="hljs-subst">${totalRevisions}</span>`</span>;
+}
+
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'revision:undo'</span>, updateRevisionButtons);
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'revision:redo'</span>, updateRevisionButtons);
+</code></pre></div><h3>Selection Handling</h3><p>Create context menus and formatting tools:</p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript">editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'text:selected'</span>, <span class="hljs-function">(<span class="hljs-params">data</span>) =&gt;</span> {
+  <span class="hljs-keyword">if</span> (data &amp;&amp; data.<span class="hljs-property">text</span>) {
+    <span class="hljs-comment">// Show custom context menu</span><span class="hljs-title function_">showContextMenu</span>({
+      <span class="hljs-attr">text</span>: data.<span class="hljs-property">text</span>,
+      <span class="hljs-attr">position</span>: <span class="hljs-title function_">getMousePosition</span>(),
+      <span class="hljs-attr">actions</span>: [
+        { <span class="hljs-attr">label</span>: <span class="hljs-string">'Bold'</span>, <span class="hljs-attr">action</span>: <span class="hljs-function">() =&gt;</span><span class="hljs-title function_">wrapSelection</span>(<span class="hljs-string">'**'</span>, data) },
+        { <span class="hljs-attr">label</span>: <span class="hljs-string">'Italic'</span>, <span class="hljs-attr">action</span>: <span class="hljs-function">() =&gt;</span><span class="hljs-title function_">wrapSelection</span>(<span class="hljs-string">'*'</span>, data) },
+        { <span class="hljs-attr">label</span>: <span class="hljs-string">'Code'</span>, <span class="hljs-attr">action</span>: <span class="hljs-function">() =&gt;</span><span class="hljs-title function_">wrapSelection</span>(<span class="hljs-string">'`'</span>, data) }
+      ]
+    });
+  }
+});
+
+<span class="hljs-keyword">function</span><span class="hljs-title function_">wrapSelection</span>(<span class="hljs-params">wrapper, selectionData</span>) {
+  <span class="hljs-keyword">const</span> text = selectionData.<span class="hljs-property">text</span>;
+  editor.<span class="hljs-title function_">replaceSelectedText</span>(<span class="hljs-string">`<span class="hljs-subst">${wrapper}</span><span class="hljs-subst">${text}</span><span class="hljs-subst">${wrapper}</span>`</span>, selectionData);
+}
+</code></pre></div><h2>Common Patterns</h2><h3>Floating Toolbar</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Show toolbar near selection</span>
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'text:selected'</span>, <span class="hljs-function">(<span class="hljs-params">data</span>) =&gt;</span> {
+  <span class="hljs-keyword">const</span> toolbar = <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">getElementById</span>(<span class="hljs-string">'floating-toolbar'</span>);
+
+  <span class="hljs-keyword">if</span> (data &amp;&amp; data.<span class="hljs-property">text</span>) {
+    <span class="hljs-keyword">const</span> selection = <span class="hljs-variable language_">window</span>.<span class="hljs-title function_">getSelection</span>();
+    <span class="hljs-keyword">if</span> (selection.<span class="hljs-property">rangeCount</span> &gt; <span class="hljs-number">0</span>) {
+      <span class="hljs-keyword">const</span> range = selection.<span class="hljs-title function_">getRangeAt</span>(<span class="hljs-number">0</span>);
+      <span class="hljs-keyword">const</span> rect = range.<span class="hljs-title function_">getBoundingClientRect</span>();
+
+      toolbar.<span class="hljs-property">style</span>.<span class="hljs-property">display</span> = <span class="hljs-string">'block'</span>;
+      toolbar.<span class="hljs-property">style</span>.<span class="hljs-property">left</span> = <span class="hljs-string">`<span class="hljs-subst">${rect.left}</span>px`</span>;
+      toolbar.<span class="hljs-property">style</span>.<span class="hljs-property">top</span> = <span class="hljs-string">`<span class="hljs-subst">${rect.top - <span class="hljs-number">40</span>}</span>px`</span>;
+    }
+  } <span class="hljs-keyword">else</span> {
+    toolbar.<span class="hljs-property">style</span>.<span class="hljs-property">display</span> = <span class="hljs-string">'none'</span>;
+  }
+});
+</code></pre></div><h3>Command Palette</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Keyboard shortcut system</span><span class="hljs-variable language_">document</span>.<span class="hljs-title function_">addEventListener</span>(<span class="hljs-string">'keydown'</span>, <span class="hljs-function">(<span class="hljs-params">e</span>) =&gt;</span> {
+  <span class="hljs-keyword">if</span> (e.<span class="hljs-property">ctrlKey</span> || e.<span class="hljs-property">metaKey</span>) {
+    <span class="hljs-keyword">switch</span>(e.<span class="hljs-property">key</span>) {
+      <span class="hljs-keyword">case</span><span class="hljs-string">'b'</span>:
+        e.<span class="hljs-title function_">preventDefault</span>();
+        <span class="hljs-title function_">makeSelectionBold</span>();
+        <span class="hljs-keyword">break</span>;
+      <span class="hljs-keyword">case</span><span class="hljs-string">'i'</span>:
+        e.<span class="hljs-title function_">preventDefault</span>();
+        <span class="hljs-title function_">makeSelectionItalic</span>();
+        <span class="hljs-keyword">break</span>;
+      <span class="hljs-keyword">case</span><span class="hljs-string">'k'</span>:
+        e.<span class="hljs-title function_">preventDefault</span>();
+        <span class="hljs-title function_">insertLink</span>();
+        <span class="hljs-keyword">break</span>;
+      <span class="hljs-keyword">case</span><span class="hljs-string">'s'</span>:
+        e.<span class="hljs-title function_">preventDefault</span>();
+        <span class="hljs-title function_">saveDocument</span>();
+        <span class="hljs-keyword">break</span>;
+    }
+  }
+});
+</code></pre></div><h3>Status Bar</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Custom status bar</span><span class="hljs-keyword">function</span><span class="hljs-title function_">updateStatusBar</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-keyword">const</span> content = editor.<span class="hljs-title function_">getContent</span>();
+  <span class="hljs-keyword">const</span> wordCount = content.<span class="hljs-title function_">split</span>(<span class="hljs-regexp">/\s+/</span>).<span class="hljs-property">length</span>;
+  <span class="hljs-keyword">const</span> charCount = content.<span class="hljs-property">length</span>;
+
+  <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">getElementById</span>(<span class="hljs-string">'status'</span>).<span class="hljs-property">innerHTML</span> = <span class="hljs-string">`
+    Words: <span class="hljs-subst">${wordCount}</span> |
+    Characters: <span class="hljs-subst">${charCount}</span> |
+    View: <span class="hljs-subst">${editor.currentView}</span> |
+    Type: <span class="hljs-subst">${editor.inputContentType}</span>
+  `</span>;
+}
+
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'content:change'</span>, updateStatusBar);
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'view:change'</span>, updateStatusBar);
+</code></pre></div><h2>Styling Headless Mode</h2><h3>Remove All Default Styling</h3><div data-source-type="css"><pre><code class="hljs language-css" data-source-type="code" data-lang="css"><span class="hljs-comment">/* Hide any remaining controls */</span><span class="hljs-selector-class">.my-editor</span><span class="hljs-selector-class">.squibview-controls</span> {
+  <span class="hljs-attribute">display</span>: none <span class="hljs-meta">!important</span>;
+}
+
+<span class="hljs-comment">/* Custom editor styling */</span><span class="hljs-selector-class">.my-editor</span><span class="hljs-selector-class">.squibview-input</span> {
+  <span class="hljs-attribute">border</span>: <span class="hljs-number">2px</span> solid <span class="hljs-number">#e0e0e0</span>;
+  <span class="hljs-attribute">border-radius</span>: <span class="hljs-number">8px</span>;
+  <span class="hljs-attribute">font-family</span>: <span class="hljs-string">'JetBrains Mono'</span>, monospace;
+}
+
+<span class="hljs-selector-class">.my-editor</span><span class="hljs-selector-class">.squibview-output</span> {
+  <span class="hljs-attribute">background</span>: <span class="hljs-number">#f8f9fa</span>;
+  <span class="hljs-attribute">padding</span>: <span class="hljs-number">20px</span>;
+}
+</code></pre></div><h3>Match Your Design System</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editor'</span>, {
+  <span class="hljs-attr">showControls</span>: <span class="hljs-literal">false</span>,
+  <span class="hljs-attr">baseClass</span>: <span class="hljs-string">'custom-editor'</span><span class="hljs-comment">// Your CSS namespace</span>
+});
+
+<span class="hljs-comment">// Apply your theme</span><span class="hljs-variable language_">document</span>.<span class="hljs-title function_">querySelector</span>(<span class="hljs-string">'.custom-editor'</span>).<span class="hljs-property">classList</span>.<span class="hljs-title function_">add</span>(<span class="hljs-string">'dark-theme'</span>);
+</code></pre></div><h2>Best Practices</h2><h3>1. Keep the Editor Instance</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Good: Create once, reuse</span><span class="hljs-keyword">class</span><span class="hljs-title class_">CustomEditor</span> {
+  <span class="hljs-title function_">constructor</span>(<span class="hljs-params">container</span>) {
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">editor</span> = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(container, {
+      <span class="hljs-attr">showControls</span>: <span class="hljs-literal">false</span>
+    });
+  }
+
+  <span class="hljs-comment">// Methods use this.editor</span><span class="hljs-title function_">bold</span>(<span class="hljs-params"></span>) { <span class="hljs-comment">/* ... */</span> }
+  <span class="hljs-title function_">italic</span>(<span class="hljs-params"></span>) { <span class="hljs-comment">/* ... */</span> }
+}
+</code></pre></div><h3>2. Listen to Events</h3><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Stay in sync with editor state</span>
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'content:change'</span>, updateUI);
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'view:change'</span>, updateViewButton);
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'text:selected'</span>, updateFormatButtons);
+</code></pre></div><h3>3. Preserve Features</h3><p>Don’t disable features unnecessarily:</p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Good: Keep all features, just hide UI</span><span class="hljs-keyword">const</span> editor = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editor'</span>, {
+  <span class="hljs-attr">showControls</span>: <span class="hljs-literal">false</span>,
+  <span class="hljs-comment">// Keep these enabled:</span><span class="hljs-attr">autoload_deps</span>: { <span class="hljs-attr">all</span>: <span class="hljs-literal">true</span> },  <span class="hljs-comment">// Keep diagram, math support</span><span class="hljs-attr">preserveImageTags</span>: <span class="hljs-literal">false</span><span class="hljs-comment">// Keep smart image handling</span>
+});
+</code></pre></div><h2>Example: Complete Custom UI</h2><div data-source-type="html"><pre><code class="hljs language-html" data-source-type="code" data-lang="html"><span class="hljs-meta">&lt;!DOCTYPE <span class="hljs-keyword">html</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">html</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">head</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">link</span><span class="hljs-attr">rel</span>=<span class="hljs-string">"stylesheet"</span><span class="hljs-attr">href</span>=<span class="hljs-string">"squibview.min.css"</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">style</span>&gt;</span><span class="language-css"><span class="hljs-selector-class">.editor-wrapper</span> {
+      <span class="hljs-attribute">display</span>: flex;
+      <span class="hljs-attribute">flex-direction</span>: column;
+      <span class="hljs-attribute">height</span>: <span class="hljs-number">100vh</span>;
+    }
+
+    <span class="hljs-selector-class">.custom-toolbar</span> {
+      <span class="hljs-attribute">display</span>: flex;
+      <span class="hljs-attribute">gap</span>: <span class="hljs-number">8px</span>;
+      <span class="hljs-attribute">padding</span>: <span class="hljs-number">12px</span>;
+      <span class="hljs-attribute">background</span>: <span class="hljs-number">#2c3e50</span>;
+    }
+
+    <span class="hljs-selector-class">.toolbar-btn</span> {
+      <span class="hljs-attribute">padding</span>: <span class="hljs-number">8px</span><span class="hljs-number">16px</span>;
+      <span class="hljs-attribute">background</span>: <span class="hljs-number">#34495e</span>;
+      <span class="hljs-attribute">color</span>: white;
+      <span class="hljs-attribute">border</span>: none;
+      <span class="hljs-attribute">border-radius</span>: <span class="hljs-number">4px</span>;
+      <span class="hljs-attribute">cursor</span>: pointer;
+    }
+
+    <span class="hljs-selector-class">.toolbar-btn</span><span class="hljs-selector-pseudo">:hover</span> {
+      <span class="hljs-attribute">background</span>: <span class="hljs-number">#4a5f7f</span>;
+    }
+
+    <span class="hljs-selector-class">.toolbar-btn</span><span class="hljs-selector-class">.active</span> {
+      <span class="hljs-attribute">background</span>: <span class="hljs-number">#3498db</span>;
+    }
+
+    <span class="hljs-selector-id">#editor</span> {
+      <span class="hljs-attribute">flex</span>: <span class="hljs-number">1</span>;
+      <span class="hljs-attribute">overflow</span>: auto;
+    }
+  </span><span class="hljs-tag">&lt;/<span class="hljs-name">style</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">head</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">body</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">div</span><span class="hljs-attr">class</span>=<span class="hljs-string">"editor-wrapper"</span>&gt;</span><span class="hljs-comment">&lt;!-- Custom Toolbar --&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">div</span><span class="hljs-attr">class</span>=<span class="hljs-string">"custom-toolbar"</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">button</span><span class="hljs-attr">class</span>=<span class="hljs-string">"toolbar-btn"</span><span class="hljs-attr">onclick</span>=<span class="hljs-string">"app.format('bold')"</span>&gt;</span>Bold<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">button</span><span class="hljs-attr">class</span>=<span class="hljs-string">"toolbar-btn"</span><span class="hljs-attr">onclick</span>=<span class="hljs-string">"app.format('italic')"</span>&gt;</span>Italic<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">button</span><span class="hljs-attr">class</span>=<span class="hljs-string">"toolbar-btn"</span><span class="hljs-attr">onclick</span>=<span class="hljs-string">"app.format('code')"</span>&gt;</span>Code<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">div</span><span class="hljs-attr">style</span>=<span class="hljs-string">"flex: 1"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">button</span><span class="hljs-attr">class</span>=<span class="hljs-string">"toolbar-btn"</span><span class="hljs-attr">onclick</span>=<span class="hljs-string">"app.changeView()"</span>&gt;</span>View<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">button</span><span class="hljs-attr">class</span>=<span class="hljs-string">"toolbar-btn"</span><span class="hljs-attr">onclick</span>=<span class="hljs-string">"app.copy()"</span>&gt;</span>Copy<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">button</span><span class="hljs-attr">class</span>=<span class="hljs-string">"toolbar-btn"</span><span class="hljs-attr">onclick</span>=<span class="hljs-string">"app.undo()"</span>&gt;</span>Undo<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">button</span><span class="hljs-attr">class</span>=<span class="hljs-string">"toolbar-btn"</span><span class="hljs-attr">onclick</span>=<span class="hljs-string">"app.redo()"</span>&gt;</span>Redo<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span><span class="hljs-comment">&lt;!-- Headless Editor --&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">div</span><span class="hljs-attr">id</span>=<span class="hljs-string">"editor"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">script</span><span class="hljs-attr">type</span>=<span class="hljs-string">"module"</span>&gt;</span><span class="language-javascript"><span class="hljs-keyword">import</span><span class="hljs-title class_">SquibView</span><span class="hljs-keyword">from</span><span class="hljs-string">'./squibview.esm.min.js'</span>;
+
+    <span class="hljs-keyword">class</span><span class="hljs-title class_">CustomMarkdownApp</span> {
+      <span class="hljs-title function_">constructor</span>(<span class="hljs-params"></span>) {
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">editor</span> = <span class="hljs-keyword">new</span><span class="hljs-title class_">SquibView</span>(<span class="hljs-string">'#editor'</span>, {
+          <span class="hljs-attr">showControls</span>: <span class="hljs-literal">false</span>,
+          <span class="hljs-attr">initialContent</span>: <span class="hljs-string">'# Welcome\n\nStart writing...'</span>,
+          <span class="hljs-attr">initialView</span>: <span class="hljs-string">'split'</span>
+        });
+
+        <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">setupEventListeners</span>();
+      }
+
+      <span class="hljs-title function_">format</span>(<span class="hljs-params">type</span>) {
+        <span class="hljs-keyword">const</span> selected = <span class="hljs-variable language_">this</span>.<span class="hljs-property">editor</span>.<span class="hljs-title function_">getSelectedText</span>();
+        <span class="hljs-keyword">if</span> (!selected) <span class="hljs-keyword">return</span>;
+
+        <span class="hljs-keyword">const</span> formats = {
+          <span class="hljs-attr">bold</span>: <span class="hljs-string">`**<span class="hljs-subst">${selected}</span>**`</span>,
+          <span class="hljs-attr">italic</span>: <span class="hljs-string">`*<span class="hljs-subst">${selected}</span>*`</span>,
+          <span class="hljs-attr">code</span>: <span class="hljs-string">`\`<span class="hljs-subst">${selected}</span>\``</span>
+        };
+
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">editor</span>.<span class="hljs-title function_">replaceSelectedText</span>(formats[type]);
+      }
+
+      <span class="hljs-title function_">changeView</span>(<span class="hljs-params"></span>) {
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">editor</span>.<span class="hljs-title function_">toggleView</span>();
+        <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">updateViewButton</span>();
+      }
+
+      <span class="hljs-title function_">copy</span>(<span class="hljs-params"></span>) {
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">editor</span>.<span class="hljs-title function_">copyToClipboard</span>(<span class="hljs-string">'formatted'</span>);
+        <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">showNotification</span>(<span class="hljs-string">'Copied!'</span>);
+      }
+
+      <span class="hljs-title function_">undo</span>(<span class="hljs-params"></span>) {
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">editor</span>.<span class="hljs-title function_">undo</span>();
+      }
+
+      <span class="hljs-title function_">redo</span>(<span class="hljs-params"></span>) {
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">editor</span>.<span class="hljs-title function_">redo</span>();
+      }
+
+      <span class="hljs-title function_">setupEventListeners</span>(<span class="hljs-params"></span>) {
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">editor</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'content-change'</span>, <span class="hljs-function">() =&gt;</span> {
+          <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">'Content updated'</span>);
+        });
+
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">editor</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'view-change'</span>, <span class="hljs-function">(<span class="hljs-params">data</span>) =&gt;</span> {
+          <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">'View changed to:'</span>, data.<span class="hljs-property">newView</span>);
+        });
+      }
+
+      <span class="hljs-title function_">showNotification</span>(<span class="hljs-params">message</span>) {
+        <span class="hljs-comment">// Your notification system</span><span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(message);
+      }
+
+      <span class="hljs-title function_">updateViewButton</span>(<span class="hljs-params"></span>) {
+        <span class="hljs-comment">// Update button state based on current view</span>
+      }
+    }
+
+    <span class="hljs-comment">// Initialize app</span><span class="hljs-variable language_">window</span>.<span class="hljs-property">app</span> = <span class="hljs-keyword">new</span><span class="hljs-title class_">CustomMarkdownApp</span>();
+  </span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">body</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">html</span>&gt;</span></code></pre></div><h2>Summary</h2><p>Headless mode lets you use SquibView as a powerful rendering engine while building your own UI. You get:</p><ul><li>Full markdown rendering capabilities</li><li>Bidirectional editing</li><li>Smart copy/paste</li><li>All rich content support (diagrams, math, etc.)</li><li>Complete API access</li></ul><p>Without:</p><ul><li>Default buttons and controls</li><li>Built-in toolbar</li><li>Standard UI elements</li></ul><p>This makes SquibView perfect for integrating into existing applications, building custom editors, or creating branded experiences while keeping all the powerful rendering and editing capabilities.</p><h2>Related Documentation</h2><ul><li><a href="../api/methods.html">API Methods</a> - All available methods for custom controls</li><li><a href="../api/events.html">Events Reference</a> - Events to listen for in your custom UI</li><li><a href="../api/options.html">Options Reference</a> - Configuration options</li><li><a href="../../examples/example_headless.html">Examples</a> - Live headless mode example</li></ul></div>
+  <script>
+    // Initialize MathJax after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise().catch(function(err) {
+          console.warn('MathJax typesetting failed:', err);
+        });
+      }
+    });
+  </script>
+  <script>
+    // Initialize Mermaid after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.mermaid) {
+        try {
+          window.mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose',
+            fontFamily: 'inherit'
+          });
+          
+          // Manually render all mermaid diagrams
+          const mermaidElements = document.querySelectorAll('.mermaid');
+          mermaidElements.forEach(function(element, index) {
+            const id = 'mermaid-' + index;
+            element.id = id;
+            try {
+              window.mermaid.render(id + '-svg', element.textContent, function(svgCode) {
+                element.innerHTML = svgCode;
+              });
+            } catch (err) {
+              console.warn('Mermaid rendering failed for element', index, ':', err);
+              // Fallback: show the text content
+              element.innerHTML = '<pre>' + element.textContent + '</pre>';
+            }
+          });
+        } catch (err) {
+          console.warn('Mermaid initialization failed:', err);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

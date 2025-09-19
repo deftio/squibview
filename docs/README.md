@@ -15,6 +15,7 @@ Complete API documentation for SquibView classes and methods.
 Step-by-step guides and tutorials.
 - [Getting Started](./guides/getting-started.md)
 - [Installation](./guides/installation.md)
+- [Headless Mode](./guides/headless-mode.md) - Using SquibView without UI
 - [Programmer's Guide](./programmers-guide.md) - Comprehensive usage guide
 
 ### 🔧 [Development](./development/)

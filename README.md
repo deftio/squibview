@@ -134,13 +134,15 @@ editor.exportHTML();   // Download as file
 
 **Live Examples** (GitHub Pages)
 - [Basic Usage](https://deftio.github.io/squibview/examples/example_autoload_simple.html) - Simple editor setup
+- [Headless Mode](https://deftio.github.io/squibview/examples/example_headless.html) - Custom UI with full API
 - [Diff Viewer](https://deftio.github.io/squibview/examples/diff_view_inline.html) - Compare revisions
 - [Live Diff](https://deftio.github.io/squibview/examples/diff_view_live.html) - Track changes in real-time
 - [React Integration](https://deftio.github.io/squibview/examples/example_react.html) - Use with React
 
 **Local Examples** (after cloning repo)
 - [Basic Usage](./examples/example_autoload_simple.html)
-- [Diff Viewer](./examples/diff_view_inline.html) 
+- [Headless Mode](./examples/example_headless.html)
+- [Diff Viewer](./examples/diff_view_inline.html)
 - [Live Diff](./examples/diff_view_live.html)
 - [All Examples](./examples/index.html)
 
@@ -150,6 +152,7 @@ editor.exportHTML();   // Download as file
 - [📚 Full Documentation](docs/) - All documentation in organized structure
 - [API Reference](docs/api/) - Comprehensive API documentation
 - [Programmer's Guide](docs/programmers-guide.md) - Detailed usage guide
+- [Headless Mode Guide](docs/guides/headless-mode.md) - Using SquibView without built-in UI
 - [CLI Documentation](docs/cli/CLI.md) - Command line interface guide
 - [Examples](examples/) - Live examples and demos
 - [Release Notes](docs/release-notes.md) - Version history and changelog

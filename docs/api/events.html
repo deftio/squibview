@@ -203,37 +203,35 @@ p img {
   <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 </head>
 <body>
-<div><h1>SquibView Events Reference</h1><p>Complete reference for all events emitted by SquibView and how to handle them.</p><h2>Event System Overview</h2><p>SquibView uses an event-driven architecture for communication between components and plugins. Events can be subscribed to using the <code>on()</code> method and emitted using the <code>emit()</code> method.</p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Subscribe to an event</span>
-editor.<span class="hljs-title function_">on</span>(<span class="hljs-string">'content-change'</span>, <span class="hljs-function">(<span class="hljs-params">data</span>) =&gt;</span> {
-  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">'Content changed:'</span>, data);
+<div><h1>SquibView Events Reference</h1><p>Complete reference for all events emitted by SquibView and how to handle them.</p><h2>Event System Overview</h2><p>SquibView uses an event-driven architecture for communication between components and plugins. Events are accessed through the <code>editor.events</code> object.</p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript"><span class="hljs-comment">// Subscribe to an event</span>
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'content:change'</span>, <span class="hljs-function">(<span class="hljs-params">content, contentType</span>) =&gt;</span> {
+  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">'Content changed:'</span>, content);
 });
 
 <span class="hljs-comment">// Unsubscribe from an event</span>
-editor.<span class="hljs-title function_">off</span>(<span class="hljs-string">'content-change'</span>, handler);
+editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">off</span>(<span class="hljs-string">'content:change'</span>, handler);
 
-<span class="hljs-comment">// Emit a custom event</span>
-editor.<span class="hljs-title function_">emit</span>(<span class="hljs-string">'my-custom-event'</span>, { <span class="hljs-attr">data</span>: <span class="hljs-string">'value'</span> });
-</code></pre></div><h2>Core Events</h2><h3>content-change</h3><p>Fired when the editor content changes.</p><p><strong>Event Data:</strong></p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript">{
-  <span class="hljs-attr">content</span>: string,      <span class="hljs-comment">// New content</span><span class="hljs-attr">contentType</span>: string,  <span class="hljs-comment">// Current content type</span><span class="hljs-attr">source</span>: string        <span class="hljs-comment">// Change source ('input' or 'api')</span>
-}
-</code></pre></div><p><strong>Example:</strong></p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript">editor.<span class="hljs-title function_">on</span>(<span class="hljs-string">'content-change'</span>, <span class="hljs-function">(<span class="hljs-params">data</span>) =&gt;</span> {
-  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">'New content:'</span>, data.<span class="hljs-property">content</span>);
-  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">'Type:'</span>, data.<span class="hljs-property">contentType</span>);
-  <span class="hljs-title function_">saveToServer</span>(data.<span class="hljs-property">content</span>);
+<span class="hljs-comment">// Note: Event names use colons (:) not hyphens (-)</span></code></pre></div><h2>Core Events</h2><h3>content:change</h3><p>Fired when the editor content changes.</p><p><strong>Event Parameters:</strong></p><ul><li><code>content</code> (string) - New content</li><li><code>contentType</code> (string) - Current content type</li></ul><p><strong>Example:</strong></p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript">editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'content:change'</span>, <span class="hljs-function">(<span class="hljs-params">content, contentType</span>) =&gt;</span> {
+  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">'New content:'</span>, content);
+  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">'Type:'</span>, contentType);
+  <span class="hljs-title function_">saveToServer</span>(content);
 });
-</code></pre></div><hr><h3>view-change</h3><p>Fired when the view mode changes.</p><p><strong>Event Data:</strong></p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript">{
-  <span class="hljs-attr">oldView</span>: string,  <span class="hljs-comment">// Previous view ('src', 'html', 'split')</span><span class="hljs-attr">newView</span>: string   <span class="hljs-comment">// New view ('src', 'html', 'split')</span>
-}
-</code></pre></div><p><strong>Example:</strong></p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript">editor.<span class="hljs-title function_">on</span>(<span class="hljs-string">'view-change'</span>, <span class="hljs-function">(<span class="hljs-params">data</span>) =&gt;</span> {
-  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">`View changed from <span class="hljs-subst">${data.oldView}</span> to <span class="hljs-subst">${data.newView}</span>`</span>);
-  <span class="hljs-title function_">updateUIButtons</span>(data.<span class="hljs-property">newView</span>);
+</code></pre></div><hr><h3>view:change</h3><p>Fired when the view mode changes.</p><p><strong>Event Parameters:</strong></p><ul><li><code>view</code> (string) - New view mode (‘src’, ‘html’, ‘split’)</li></ul><p><strong>Example:</strong></p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript">editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'view:change'</span>, <span class="hljs-function">(<span class="hljs-params">view</span>) =&gt;</span> {
+  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">`View changed to <span class="hljs-subst">${view}</span>`</span>);
+  <span class="hljs-title function_">updateUIButtons</span>(view);
 });
-</code></pre></div><hr><h3>type-change</h3><p>Fired when the content type changes.</p><p><strong>Event Data:</strong></p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript">{
-  <span class="hljs-attr">oldType</span>: string,  <span class="hljs-comment">// Previous type</span><span class="hljs-attr">newType</span>: string   <span class="hljs-comment">// New type ('md', 'html', 'reveal', 'csv', 'tsv')</span>
+</code></pre></div><hr><h3>text:selected</h3><p>Fired when text is selected in either the source or rendered view.</p><p><strong>Event Data:</strong></p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript">{
+  <span class="hljs-attr">text</span>: string,     <span class="hljs-comment">// Selected text</span><span class="hljs-attr">source</span>: string,   <span class="hljs-comment">// Selection source ('input' or 'output')</span><span class="hljs-attr">range</span>: {          <span class="hljs-comment">// Selection range (for input only)</span><span class="hljs-attr">start</span>: number,
+    <span class="hljs-attr">end</span>: number
+  }
 }
-</code></pre></div><p><strong>Example:</strong></p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript">editor.<span class="hljs-title function_">on</span>(<span class="hljs-string">'type-change'</span>, <span class="hljs-function">(<span class="hljs-params">data</span>) =&gt;</span> {
-  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">`Type changed from <span class="hljs-subst">${data.oldType}</span> to <span class="hljs-subst">${data.newType}</span>`</span>);
-  <span class="hljs-title function_">updateSyntaxHighlighting</span>(data.<span class="hljs-property">newType</span>);
+</code></pre></div><p><strong>Example:</strong></p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript">editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'text:selected'</span>, <span class="hljs-function">(<span class="hljs-params">data</span>) =&gt;</span> {
+  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">'Selected text:'</span>, data.<span class="hljs-property">text</span>);
+  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">'From:'</span>, data.<span class="hljs-property">source</span>);
+
+  <span class="hljs-comment">// Enable formatting buttons</span><span class="hljs-keyword">if</span> (data.<span class="hljs-property">text</span>) {
+    <span class="hljs-title function_">enableFormatButtons</span>();
+  }
 });
 </code></pre></div><hr><h3>render</h3><p>Fired after content is rendered.</p><p><strong>Event Data:</strong></p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript">{
   <span class="hljs-attr">content</span>: string,      <span class="hljs-comment">// Source content</span><span class="hljs-attr">rendered</span>: string,     <span class="hljs-comment">// Rendered HTML</span><span class="hljs-attr">contentType</span>: string,  <span class="hljs-comment">// Content type</span><span class="hljs-attr">duration</span>: number      <span class="hljs-comment">// Render time in milliseconds</span>
@@ -289,7 +287,7 @@ editor.<span class="hljs-title function_">emit</span>(<span class="hljs-string">
   <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">'Editor ready:'</span>, data);
   <span class="hljs-title function_">loadInitialContent</span>();
 });
-</code></pre></div><hr><h3>destroy</h3><p>Fired when the editor is being destroyed.</p><p><strong>Event Data:</strong> None</p><p><strong>Example:</strong></p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript">editor.<span class="hljs-title function_">on</span>(<span class="hljs-string">'destroy'</span>, <span class="hljs-function">() =&gt;</span> {
+</code></pre></div><hr><h3>destroy</h3><p>Fired when the editor is being destroyed.</p><p><strong>Event Data:</strong> None</p><p><strong>Example:</strong></p><div data-source-type="javascript"><pre><code class="hljs language-javascript" data-source-type="code" data-lang="javascript">editor.<span class="hljs-property">events</span>.<span class="hljs-title function_">on</span>(<span class="hljs-string">'destroy'</span>, <span class="hljs-function">() =&gt;</span> {
   <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">'Editor destroyed'</span>);
   <span class="hljs-title function_">cleanupResources</span>();
 });

@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SquibView Comprehensive API Example</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f57c00' stroke='%23000' stroke-width='1'/><path d='M2 16h28M16 2a14 14 0 0114 14 14 14 0 01-14 14 14 14 0 01-14-14A14 14 0 0116 2zm0 0v28M9 16a7 7 0 0014 0 7 7 0 00-14 0z' fill='none' stroke='%23000' stroke-width='1'/></svg>">
+
+  <!-- SquibView CSS -->
+  <link rel="stylesheet" href="../dist/squibview.min.css">
+
+  <!-- Example styles -->
+  <link rel="stylesheet" href="examples.css">
+
+  <style>
+    .api-demo {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .api-header {
+      padding: 20px;
+      background: #f8f9fa;
+      border-bottom: 2px solid #dee2e6;
+    }
+
+    .api-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 15px;
+      background: #ffffff;
+      border-bottom: 1px solid #dee2e6;
+    }
+
+    .control-group {
+      display: flex;
+      gap: 5px;
+      padding: 5px 10px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      align-items: center;
+    }
+
+    .control-label {
+      font-size: 12px;
+      color: #6c757d;
+      font-weight: 600;
+      margin-right: 5px;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      border: 1px solid #dee2e6;
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: #e9ecef;
+    }
+
+    .btn.active {
+      background: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+
+    .btn-primary:hover {
+      background: #0056b3;
+    }
+
+    .btn-success {
+      background: #28a745;
+      color: white;
+      border-color: #28a745;
+    }
+
+    .btn-warning {
+      background: #ffc107;
+      color: #212529;
+      border-color: #ffc107;
+    }
+
+    .editor-wrapper {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    #editor {
+      flex: 1;
+    }
+
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 15px;
+      background: #f8f9fa;
+      border-top: 1px solid #dee2e6;
+      font-size: 12px;
+      color: #6c757d;
+    }
+
+    .status-group {
+      display: flex;
+      gap: 20px;
+    }
+
+    .status-item {
+      display: flex;
+      gap: 5px;
+    }
+
+    .status-label {
+      font-weight: 600;
+    }
+
+    .status-value {
+      color: #212529;
+    }
+
+    /* Console output */
+    .console-output {
+      position: fixed;
+      bottom: 40px;
+      right: 20px;
+      width: 400px;
+      max-height: 300px;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .console-output.show {
+      display: block;
+    }
+
+    .console-header {
+      padding: 8px 12px;
+      background: #2d2d2d;
+      border-bottom: 1px solid #3e3e3e;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .console-messages {
+      padding: 10px;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    .console-message {
+      margin: 4px 0;
+      padding: 2px 0;
+    }
+
+    .console-message.info {
+      color: #3794ff;
+    }
+
+    .console-message.success {
+      color: #4ec9b0;
+    }
+
+    .console-message.error {
+      color: #f48771;
+    }
+
+    .select-control {
+      padding: 6px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      font-size: 13px;
+      background: white;
+    }
+
+    .checkbox-control {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="api-demo">
+    <!-- Header -->
+    <div class="api-header">
+      <h1>SquibView Comprehensive API Demo</h1>
+      <p>Interactive demonstration of all SquibView API methods and options</p>
+    </div>
+
+    <!-- Controls showing all API methods -->
+    <div class="api-controls">
+      <!-- Content Management -->
+      <div class="control-group">
+        <span class="control-label">CONTENT:</span>
+        <button class="btn" onclick="api.setContent()">setContent()</button>
+        <button class="btn" onclick="api.getContent()">getContent()</button>
+        <button class="btn" onclick="api.getRenderedHTML()">getRenderedHTML()</button>
+        <button class="btn" onclick="api.clearContent()">clearContent()</button>
+      </div>
+
+      <!-- View Controls -->
+      <div class="control-group">
+        <span class="control-label">VIEW:</span>
+        <button class="btn" onclick="api.setView('src')" id="view-src">Source</button>
+        <button class="btn" onclick="api.setView('html')" id="view-html">HTML</button>
+        <button class="btn" onclick="api.setView('split')" id="view-split">Split</button>
+        <button class="btn" onclick="api.toggleView()">toggleView()</button>
+      </div>
+
+      <!-- Content Type -->
+      <div class="control-group">
+        <span class="control-label">TYPE:</span>
+        <select class="select-control" onchange="api.setContentType(this.value)" id="content-type">
+          <option value="md">Markdown</option>
+          <option value="html">HTML</option>
+          <option value="csv">CSV</option>
+          <option value="reveal">RevealJS</option>
+        </select>
+        <button class="btn" onclick="api.getContentType()">getType()</button>
+      </div>
+
+      <!-- Revision History -->
+      <div class="control-group">
+        <span class="control-label">HISTORY:</span>
+        <button class="btn" onclick="api.undo()" id="undo-btn">↶ Undo</button>
+        <button class="btn" onclick="api.redo()" id="redo-btn">↷ Redo</button>
+        <button class="btn" onclick="api.canUndo()">canUndo()</button>
+        <button class="btn" onclick="api.canRedo()">canRedo()</button>
+        <button class="btn" onclick="api.getRevisionCount()">Count</button>
+      </div>
+
+      <!-- Clipboard Operations -->
+      <div class="control-group">
+        <span class="control-label">COPY:</span>
+        <button class="btn btn-primary" onclick="api.copy('formatted')">Formatted</button>
+        <button class="btn" onclick="api.copy('markdown')">Markdown</button>
+        <button class="btn" onclick="api.copy('html')">HTML</button>
+        <button class="btn" onclick="api.copy('plain')">Plain</button>
+      </div>
+
+      <!-- Selection -->
+      <div class="control-group">
+        <span class="control-label">SELECTION:</span>
+        <button class="btn" onclick="api.getSelectedText()">getText()</button>
+        <button class="btn" onclick="api.getSelectionData()">getData()</button>
+        <button class="btn" onclick="api.replaceSelected()">Replace</button>
+      </div>
+
+      <!-- UI Options -->
+      <div class="control-group">
+        <span class="control-label">UI:</span>
+        <div class="checkbox-control">
+          <input type="checkbox" id="show-controls" checked onchange="api.toggleControls(this.checked)">
+          <label for="show-controls">Controls</label>
+        </div>
+        <div class="checkbox-control">
+          <input type="checkbox" id="show-title" onchange="api.toggleTitle(this.checked)">
+          <label for="show-title">Title</label>
+        </div>
+        <div class="checkbox-control">
+          <input type="checkbox" id="show-lines" onchange="api.toggleLineNumbers(this.checked)">
+          <label for="show-lines">Lines</label>
+        </div>
+      </div>
+
+      <!-- Advanced -->
+      <div class="control-group">
+        <span class="control-label">ADVANCED:</span>
+        <button class="btn" onclick="api.render()">render()</button>
+        <button class="btn" onclick="api.getVersion()">version()</button>
+        <button class="btn btn-warning" onclick="api.destroy()">destroy()</button>
+      </div>
+
+      <!-- Console Toggle -->
+      <div class="control-group">
+        <button class="btn btn-success" onclick="toggleConsole()">📋 Console</button>
+      </div>
+    </div>
+
+    <!-- Editor -->
+    <div class="editor-wrapper">
+      <div id="editor"></div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <div class="status-group">
+        <div class="status-item">
+          <span class="status-label">View:</span>
+          <span class="status-value" id="status-view">split</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Type:</span>
+          <span class="status-value" id="status-type">md</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Revisions:</span>
+          <span class="status-value" id="status-revisions">0</span>
+        </div>
+      </div>
+      <div class="status-group">
+        <div class="status-item">
+          <span class="status-label">Words:</span>
+          <span class="status-value" id="status-words">0</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Chars:</span>
+          <span class="status-value" id="status-chars">0</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Undo:</span>
+          <span class="status-value" id="status-undo">✗</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Redo:</span>
+          <span class="status-value" id="status-redo">✗</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Console Output -->
+  <div class="console-output" id="console">
+    <div class="console-header">
+      <span>API Console</span>
+      <button onclick="clearConsole()" style="background: none; border: none; color: #999; cursor: pointer;">Clear</button>
+    </div>
+    <div class="console-messages" id="console-messages"></div>
+  </div>
+
+  <script type="module">
+    import SquibView from '../dist/squibview.esm.min.js';
+
+    // Initialize SquibView with full configuration
+    const editor = new SquibView('#editor', {
+      // Initial content
+      initialContent: `# SquibView API Demo
+
+Welcome to the comprehensive API demonstration!
+
+## Try These Features:
+
+1. **Content Management** - Set, get, clear content
+2. **View Modes** - Switch between source, HTML, and split views
+3. **Content Types** - Change between Markdown, HTML, CSV
+4. **Revision History** - Undo/redo changes
+5. **Clipboard** - Copy in various formats
+6. **Selection** - Select text and manipulate it
+7. **UI Controls** - Toggle various UI elements
+
+## Sample Content
+
+This is a **markdown** document with various elements:
+
+- Lists
+- **Bold** and *italic* text
+- \`Code snippets\`
+
+\`\`\`javascript
+// Code block
+const demo = new SquibView('#editor');
+demo.setContent('Hello World');
+\`\`\`
+
+### Table Example
+
+| Feature | Status | Description |
+|---------|--------|-------------|
+| Markdown | ✓ | Full CommonMark support |
+| HTML | ✓ | Rich HTML rendering |
+| Copy/Paste | ✓ | Smart clipboard operations |
+
+### Try Selecting Text!
+
+Select any text in either the source or rendered view to test selection APIs.`,
+
+      // Configuration
+      inputContentType: 'md',
+      initialView: 'split',
+      showControls: true,
+      titleShow: false,
+      titleContent: 'API Demo Document',
+      baseClass: 'squibview',
+      preserveImageTags: true,
+      showLineNumbers: false,
+      lineNumberStart: 1,
+      lineNumberMinDigits: 2,
+
+      // Autoload configuration
+      autoload_deps: {
+        all: true  // Enable all features
+      },
+
+      // Event handler
+      onReplaceSelectedText: (data) => {
+        logToConsole(`Selection handler called: "${data.text}"`, 'info');
+        return data.text.toUpperCase(); // Example transformation
+      }
+    });
+
+    // Make editor globally available
+    window.squibEditor = editor;
+
+    // Console logging
+    function logToConsole(message, type = 'info') {
+      const consoleEl = document.getElementById('console-messages');
+      const messageEl = document.createElement('div');
+      messageEl.className = `console-message ${type}`;
+      messageEl.textContent = `> ${message}`;
+      consoleEl.appendChild(messageEl);
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+
+      // Also log to browser console
+      console.log(message);
+    }
+
+    // API wrapper object with all methods
+    window.api = {
+      // Content Management
+      setContent() {
+        const content = prompt('Enter new content:', editor.getContent());
+        if (content !== null) {
+          editor.setContent(content);
+          logToConsole(`setContent() called with ${content.length} characters`, 'success');
+          updateStatus();
+        }
+      },
+
+      getContent() {
+        const content = editor.getContent();
+        logToConsole(`getContent() returned ${content.length} characters`, 'info');
+        logToConsole(`First 100 chars: "${content.substring(0, 100)}..."`, 'info');
+      },
+
+      getRenderedHTML() {
+        const html = editor.getRenderedHTML();
+        logToConsole(`getRenderedHTML() returned ${html.length} characters`, 'info');
+        logToConsole(`First 100 chars: "${html.substring(0, 100)}..."`, 'info');
+      },
+
+      clearContent() {
+        if (confirm('Clear all content?')) {
+          editor.setContent('');
+          logToConsole('clearContent() - Content cleared', 'success');
+          updateStatus();
+        }
+      },
+
+      // View Controls
+      setView(view) {
+        editor.setView(view);
+        logToConsole(`setView('${view}') called`, 'success');
+        updateViewButtons(view);
+        updateStatus();
+      },
+
+      toggleView() {
+        editor.toggleView();
+        const newView = editor.currentView;
+        logToConsole(`toggleView() - Changed to: ${newView}`, 'success');
+        updateViewButtons(newView);
+        updateStatus();
+      },
+
+      // Content Type
+      setContentType(type) {
+        editor.setContentType(type);
+        logToConsole(`setContentType('${type}') called`, 'success');
+        updateStatus();
+      },
+
+      getContentType() {
+        const type = editor.getContentType();
+        logToConsole(`getContentType() returned: "${type}"`, 'info');
+      },
+
+      // Revision History
+      undo() {
+        const result = editor.undo();
+        logToConsole(`undo() ${result ? 'successful' : 'failed (no history)'}`, result ? 'success' : 'error');
+        updateStatus();
+      },
+
+      redo() {
+        const result = editor.redo();
+        logToConsole(`redo() ${result ? 'successful' : 'failed (no redo history)'}`, result ? 'success' : 'error');
+        updateStatus();
+      },
+
+      canUndo() {
+        const result = editor.canUndo();
+        logToConsole(`canUndo() returned: ${result}`, 'info');
+      },
+
+      canRedo() {
+        const result = editor.canRedo();
+        logToConsole(`canRedo() returned: ${result}`, 'info');
+      },
+
+      getRevisionCount() {
+        const count = editor.getRevisionCount();
+        logToConsole(`getRevisionCount() returned: ${count}`, 'info');
+      },
+
+      // Clipboard
+      async copy(format) {
+        try {
+          await editor.copyToClipboard(format);
+          logToConsole(`copyToClipboard('${format}') successful`, 'success');
+          alert(`Copied as ${format}!`);
+        } catch (error) {
+          logToConsole(`copyToClipboard('${format}') failed: ${error.message}`, 'error');
+        }
+      },
+
+      // Selection
+      getSelectedText() {
+        const text = editor.getSelectedText();
+        if (text) {
+          logToConsole(`getSelectedText() returned: "${text}"`, 'info');
+        } else {
+          logToConsole('getSelectedText() - No text selected', 'info');
+        }
+      },
+
+      getSelectionData() {
+        const data = editor.getSelectionData();
+        logToConsole(`getSelectionData() returned:`, 'info');
+        logToConsole(`  text: "${data.text}"`, 'info');
+        logToConsole(`  source: ${data.source}`, 'info');
+        logToConsole(`  start: ${data.start}, end: ${data.end}`, 'info');
+      },
+
+      replaceSelected() {
+        const selected = editor.getSelectedText();
+        if (selected) {
+          const replacement = prompt('Replace with:', selected);
+          if (replacement !== null) {
+            editor.replaceSelectedText(replacement);
+            logToConsole(`replaceSelectedText() - Replaced "${selected}" with "${replacement}"`, 'success');
+            updateStatus();
+          }
+        } else {
+          logToConsole('replaceSelectedText() - No text selected', 'error');
+        }
+      },
+
+      // UI Options
+      toggleControls(show) {
+        // This would require recreating the editor with new options
+        // For demo, we'll just log it
+        logToConsole(`toggleControls(${show}) - Would ${show ? 'show' : 'hide'} controls (requires recreation)`, 'info');
+      },
+
+      toggleTitle(show) {
+        // This would require recreating the editor with new options
+        logToConsole(`toggleTitle(${show}) - Would ${show ? 'show' : 'hide'} title (requires recreation)`, 'info');
+      },
+
+      toggleLineNumbers(show) {
+        // Note: This is a simplified version - full implementation would use setLineNumbers method if available
+        logToConsole(`toggleLineNumbers(${show}) - Would ${show ? 'show' : 'hide'} line numbers`, 'info');
+      },
+
+      // Advanced
+      render() {
+        editor.render();
+        logToConsole('render() - Forced re-render', 'success');
+      },
+
+      getVersion() {
+        const version = SquibView.version;
+        logToConsole(`getVersion() returned: ${version.version}`, 'info');
+        logToConsole(`Repository: ${version.url}`, 'info');
+      },
+
+      destroy() {
+        if (confirm('Destroy the editor instance? (You will need to reload the page)')) {
+          editor.destroy();
+          logToConsole('destroy() - Editor destroyed', 'error');
+          document.getElementById('editor').innerHTML = '<div style="padding: 40px; text-align: center; color: #999;">Editor destroyed - Reload page to restart</div>';
+        }
+      }
+    };
+
+    // Update status bar
+    function updateStatus() {
+      const content = editor.getContent();
+      const words = content.trim().split(/\s+/).filter(w => w).length;
+
+      document.getElementById('status-view').textContent = editor.currentView;
+      document.getElementById('status-type').textContent = editor.inputContentType;
+      document.getElementById('status-revisions').textContent = editor.getRevisionCount();
+      document.getElementById('status-words').textContent = words;
+      document.getElementById('status-chars').textContent = content.length;
+      document.getElementById('status-undo').textContent = editor.canUndo() ? '✓' : '✗';
+      document.getElementById('status-redo').textContent = editor.canRedo() ? '✓' : '✗';
+
+      // Update button states
+      document.getElementById('undo-btn').disabled = !editor.canUndo();
+      document.getElementById('redo-btn').disabled = !editor.canRedo();
+    }
+
+    // Update view buttons
+    function updateViewButtons(view) {
+      document.querySelectorAll('[id^="view-"]').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.getElementById(`view-${view}`).classList.add('active');
+    }
+
+    // Toggle console
+    window.toggleConsole = function() {
+      const console = document.getElementById('console');
+      console.classList.toggle('show');
+      if (console.classList.contains('show')) {
+        logToConsole('Console opened - All API calls will be logged here', 'success');
+      }
+    };
+
+    // Clear console
+    window.clearConsole = function() {
+      document.getElementById('console-messages').innerHTML = '';
+      logToConsole('Console cleared', 'info');
+    };
+
+    // Listen to editor events
+    editor.on('content-change', () => {
+      updateStatus();
+    });
+
+    editor.on('view-change', (data) => {
+      updateViewButtons(data.newView);
+      updateStatus();
+    });
+
+    editor.on('selection-change', (data) => {
+      if (data.hasSelection) {
+        logToConsole(`Selection changed: "${data.text.substring(0, 50)}..."`, 'info');
+      }
+    });
+
+    editor.on('revision-added', () => {
+      updateStatus();
+    });
+
+    // Initial setup
+    updateStatus();
+    updateViewButtons('split');
+
+    // Show console by default
+    toggleConsole();
+    logToConsole('SquibView API Demo initialized', 'success');
+    logToConsole('Click any button to test API methods', 'info');
+    logToConsole('All calls and returns are logged here', 'info');
+  </script>
+</body>
+</html>
