@@ -40,7 +40,7 @@ SquibView renders Markdown (or HTML) with live preview and allows editing in bot
 ## Quick Start
 
 ### Browser - Zero Configuration Quick Start
-The easiest way to get started - with fence libraries (math, mermaid, etc) loading automatically from CDN when your content needs them.  Special care is taken to not load dependancies that may have already been provisioned so there is no double-loading.
+The easiest way to get started - with fence libraries (math, mermaid, etc) loading automatically from CDN when your content needs them.  Note that special care is taken to not load dependancies that may have already been provisioned so there is no double-loading.
 
 ```html
 <!-- SquibView CSS -->
