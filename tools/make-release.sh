@@ -159,7 +159,7 @@ log_success "Release notes updated"
 
 # Commit release files
 log_info "Checking for changes to commit..."
-git add package.json package-lock.json src/version.js dist/ cli/ release_notes.md
+git add package.json package-lock.json src/version.js dist/ cli/ docs/release-notes.md
 
 if git diff --cached --quiet; then
     log_info "No changes to commit - files already committed"

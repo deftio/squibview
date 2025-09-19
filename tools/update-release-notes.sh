@@ -58,7 +58,7 @@ fi
 
 VERSION="$1"
 CUSTOM_NOTES="$2"
-RELEASE_NOTES_FILE="release_notes.md"
+RELEASE_NOTES_FILE="docs/release-notes.md"
 
 # Validate version format (basic check)
 if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-.*)?$ ]]; then
