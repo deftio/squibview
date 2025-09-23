@@ -115,6 +115,30 @@
     background-color: var(--squibview-output-background-color);
 }
 
+/* Fix for list bullets appearing in margin/gutter (Issue #1 v1.0.20)
+   Problem: Default browser list styling places bullets outside the content box.
+   Solution: Explicitly set padding for lists to ensure bullets remain within
+   the content area while maintaining proper alignment and readability. */
+.squibview-output ul,
+.squibview-output ol {
+    padding-left: 2em;      /* Space for bullets + indent */
+    margin-left: 0;         /* Reset browser default margin */
+    margin-top: 0.5em;      /* Consistent vertical spacing */
+    margin-bottom: 0.5em;
+}
+
+/* Nested lists need only their natural indent, not additional margin */
+.squibview-output li > ul,
+.squibview-output li > ol {
+    margin-top: 0.25em;     /* Tighter spacing for nested lists */
+    margin-bottom: 0.25em;
+}
+
+/* Ensure consistent spacing for list items */
+.squibview-output li {
+    padding-left: 0.25em;   /* Small gap after bullet for readability */
+}
+
 /* Utility class to hide elements */
 .squibview-hidden {
     display: none !important; /* !important is used here to ensure override */

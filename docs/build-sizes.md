@@ -10,7 +10,7 @@
 | **UMD Lean** | 141.7 KB | 39.1 KB | UMD without bundled libraries |
 | **Standalone ESM** | 3576.3 KB | 985.2 KB | All-inclusive ES Module (no external dependencies) |
 | **Standalone UMD** | 3839.8 KB | 1035.4 KB | All-inclusive UMD (no external dependencies) |
-| **CSS** | 23.2 KB | 4.9 KB | Minified styles (required for all builds) |
+| **CSS** | 23.4 KB | 5.0 KB | Minified styles (required for all builds) |
 
 ### Build Configuration Guide
 

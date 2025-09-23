@@ -4,6 +4,20 @@ Complete changelog and release history for SquibView.
 
 ---
 
+## v1.0.20 (In Development)
+
+### 🐛 Bug Fixes
+- **Fixed list bullet positioning** - List bullets (ul/ol) now properly display within the content area instead of appearing in the left margin/gutter. Added explicit CSS rules for list padding and margins in `.squibview-output`.
+- **Fixed release tools** - Updated `make-release.sh` and `update-release-notes.sh` to use `docs/release-notes.md` instead of root directory
+
+### 🧪 Testing
+- Added unit test for list rendering structure validation
+
+### 📝 Known Issues
+- CSS bundling includes external dependencies (hljs, leaflet) in dist/squibview.css - planned fix for dynamic loading in future release
+
+---
+
 ## v1.0.19 (September 19, 2024)
 
 ### 🎯 Headless Mode & Documentation Improvements
@@ -32,19 +46,6 @@ Complete changelog and release history for SquibView.
 - `copyToClipboard(format)` → `copySource()` or `copyHTML()`
 - Event access via `editor.events.on()` not `editor.on()`
 - Event names use colons: `content:change`, `text:selected`, `revision:undo`
-
----
-## v1.0.19 (September 19, 2025)
-*Release Date: September 19, 2025*
-
-### ✨ Improvements
-- **Updated release scripts
-- **Updated docs
-- **V1.0.19 streaming support added
-- **Updated docs for headless mode
-- **Updated docs
-- **Fixed simple examples
-- **Updated examples and docs for 1.0.18
 
 ---
 
