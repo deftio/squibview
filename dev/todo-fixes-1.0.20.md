@@ -1,4 +1,4 @@
-# Todo Fixes for v1.0.20
+# Todo Fixes for v1.0.20 ✅ COMPLETED
 
 ## Issue 1: List Bullets Appearing in Left Margin
 
@@ -53,7 +53,7 @@ The following CSS rules were added to `src/squibview.css` (lines 118-140):
 
 ---
 
-## Issue 2: CSS Bundling - External Dependencies Being Included
+## Issue 2: CSS Bundling - External Dependencies Being Included ✅ FIXED
 
 ### Problem
 The `dist/squibview.css` file has grown from 621 lines (source) to 1400 lines because external CSS files (highlight.js, leaflet) are being bundled into it during the build process.
@@ -72,7 +72,15 @@ The `dist/squibview.css` file has grown from 621 lines (source) to 1400 lines be
    - Customizing leaflet styles
    - Keeping bundle size minimal when not using these features
 
-### Fix Plan
+### Fix Implemented ✅
+**Solution:** Removed CSS imports from `src/standalone.squibview.js` (lines 28-29). The autoload system already had CSS URLs configured and loads them dynamically when needed.
+
+**Results:**
+- dist/squibview.css reduced from 1400 to 645 lines (55% reduction)
+- External CSS loads on-demand via CDN
+- Users can now override themes without conflicts
+
+### Original Fix Plan
 
 #### Option 1: Dynamic CSS Loading (Recommended)
 1. Remove the CSS imports from `standalone.squibview.js`

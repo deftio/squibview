@@ -4,13 +4,13 @@
 
 | Build Variant | Minified Size | Gzipped | Description |
 |---------------|---------------|---------|-------------|
-| **ESM Standard** | 258.7 KB | 88.0 KB | ES Module with autoload capability |
-| **UMD Standard** | 259.6 KB | 88.2 KB | Universal Module Definition with autoload capability |
+| **ESM Standard** | 258.8 KB | 88.1 KB | ES Module with autoload capability |
+| **UMD Standard** | 259.7 KB | 88.2 KB | Universal Module Definition with autoload capability |
 | **ESM Lean** | 139.7 KB | 38.6 KB | ES Module without bundled libraries |
 | **UMD Lean** | 141.7 KB | 39.1 KB | UMD without bundled libraries |
 | **Standalone ESM** | 3576.3 KB | 985.2 KB | All-inclusive ES Module (no external dependencies) |
-| **Standalone UMD** | 3839.8 KB | 1035.4 KB | All-inclusive UMD (no external dependencies) |
-| **CSS** | 23.4 KB | 5.0 KB | Minified styles (required for all builds) |
+| **Standalone UMD** | 3839.9 KB | 1035.5 KB | All-inclusive UMD (no external dependencies) |
+| **CSS** | 11.6 KB | 2.2 KB | Minified styles (required for all builds) |
 
 ### Build Configuration Guide
 
@@ -24,7 +24,7 @@
 
 ### Quick Decision Guide
 
-- **Need it to just work?** → Use **Standard** (258.7 KB with autoload)
+- **Need it to just work?** → Use **Standard** (258.8 KB with autoload)
 - **Have a complex build system?** → Use **Lean** (139.7 KB, you control dependencies)
 - **No internet/CDN access?** → Use **Standalone** (3576.3 KB, everything included)
 

@@ -8,13 +8,15 @@ Complete changelog and release history for SquibView.
 
 ### 🐛 Bug Fixes
 - **Fixed list bullet positioning** - List bullets (ul/ol) now properly display within the content area instead of appearing in the left margin/gutter. Added explicit CSS rules for list padding and margins in `.squibview-output`.
+- **Fixed CSS bundling issue** - Removed external CSS imports (highlight.js, leaflet) from standalone build. These styles are now loaded dynamically via the autoload feature, reducing dist/squibview.css from 1400 to 645 lines.
 - **Fixed release tools** - Updated `make-release.sh` and `update-release-notes.sh` to use `docs/release-notes.md` instead of root directory
+
+### ✨ Improvements
+- **Cleaner CSS distribution** - Core squibview.css now contains only SquibView styles. External library styles load on-demand.
+- **Better theme flexibility** - Users can now provide custom highlight.js themes without conflicts
 
 ### 🧪 Testing
 - Added unit test for list rendering structure validation
-
-### 📝 Known Issues
-- CSS bundling includes external dependencies (hljs, leaflet) in dist/squibview.css - planned fix for dynamic loading in future release
 
 ---
 

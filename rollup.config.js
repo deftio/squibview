@@ -11,6 +11,13 @@ import polyfillNode from 'rollup-plugin-polyfill-node';
 
 const extensions = ['.js'];
 
+// Copyright banner for all builds
+const banner = `/*!
+ * SquibView
+ * (c) M Chatterjee 2025-
+ * https://github.com/deftio/squibview
+ */`;
+
 /* ------------------------------------------------------------------
    1) "Regular" UMD Build: (NOW BUNDLED WITH CORE DEPS)
    Bundles markdown-it, diff-match-patch, tiny-emitter
@@ -24,6 +31,7 @@ const umdConfig = {
       file: 'dist/squibview.umd.js',
       format: 'umd',
       name: 'SquibView',
+      banner,
       sourcemap: true,
       inlineDynamicImports: true,
       globals: {
@@ -35,6 +43,7 @@ const umdConfig = {
       file: 'dist/squibview.umd.min.js',
       format: 'umd',
       name: 'SquibView',
+      banner,
       sourcemap: true,
       inlineDynamicImports: true,
       globals: {
@@ -77,6 +86,7 @@ const umdStandaloneConfig = {
     file: 'dist/squibview.standalone.umd.min.js',
     format: 'umd',
     name: 'SquibView',
+    banner,
     sourcemap: true,
     inlineDynamicImports: true,
   },
@@ -113,12 +123,14 @@ const esmRegularConfig = {
     {
       file: 'dist/squibview.esm.js',
       format: 'es',
+      banner,
       sourcemap: true,
       inlineDynamicImports: true,
     },
     {
       file: 'dist/squibview.esm.min.js',
       format: 'es',
+      banner,
       sourcemap: true,
       inlineDynamicImports: true,
       plugins: [terser()],
@@ -153,12 +165,14 @@ const esmStandaloneConfig = {
     {
       file: 'dist/squibview.standalone.esm.js',
       format: 'es',
+      banner,
       sourcemap: true,
       inlineDynamicImports: true,
     },
     {
       file: 'dist/squibview.standalone.esm.min.js',
       format: 'es',
+      banner,
       sourcemap: true,
       inlineDynamicImports: true,
       plugins: [terser()],

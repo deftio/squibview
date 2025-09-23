@@ -11,7 +11,11 @@ var options = { /* options */ };
 var output = new CleanCSS(options).minify(input);
 
 //write output to file  ../dist/squibview.min.css
-let preamble = "/* SquibView minified CSS */\n";
+let preamble = `/* SquibView CSS
+ * (c) M Chatterjee 2025-
+ * https://github.com/deftio/squibview
+ */
+`;
 fs.writeFile('./dist/squibview.min.css', preamble+output.styles, function(err) {
     if(err) {
         return console.log(err);

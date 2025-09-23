@@ -24,9 +24,10 @@ import shell from 'highlight.js/lib/languages/shell';
 import sql from 'highlight.js/lib/languages/sql';
 import typescript from 'highlight.js/lib/languages/typescript';
 
-// Optionally, import the necessary CSS (if you want them inlined or processed by your CSS plugin)
-import 'highlight.js/styles/default.css';
-import 'leaflet/dist/leaflet.css';
+// CSS imports removed - these should be loaded dynamically via autoload
+// or included separately by users who need them
+// Previously: import 'highlight.js/styles/default.css';
+// Previously: import 'leaflet/dist/leaflet.css';
 
 // Register languages with hljs
 hljs.registerLanguage('javascript', javascript);
