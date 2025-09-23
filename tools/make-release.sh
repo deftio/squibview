@@ -165,11 +165,7 @@ if git diff --cached --quiet; then
     log_info "No changes to commit - files already committed"
 else
     log_info "Committing release files..."
-    git commit -m "Release v$VERSION
-
-🤖 Generated with [Claude Code](https://claude.ai/code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
+    git commit -m "Release v$VERSION"
     log_success "Changes committed"
 fi
 
