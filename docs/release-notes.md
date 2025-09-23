@@ -4,7 +4,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v1.0.20 (In Development)
+## v1.0.20 
 
 ### 🐛 Bug Fixes
 - **Fixed list bullet positioning** - List bullets (ul/ol) now properly display within the content area instead of appearing in the left margin/gutter. Added explicit CSS rules for list padding and margins in `.squibview-output`.
@@ -20,7 +20,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v1.0.19 (September 19, 2024)
+## v1.0.19 (September 19, 2025)
 
 ### 🎯 Headless Mode & Documentation Improvements
 
@@ -52,7 +52,7 @@ Complete changelog and release history for SquibView.
 ---
 
 
-## v1.0.18 (September 17, 2024)
+## v1.0.18 (September 17, 2025)
 
 ### Major Features
 
@@ -102,7 +102,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v1.0.17 (July 22, 2024)
+## v1.0.17 (July 22, 2025)
 
 ### Features
 - Added line number support to source view
@@ -122,7 +122,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v1.0.16 (July 16, 2024)
+## v1.0.16 (July 16, 2025)
 
 ### Improvements
 - Performance optimizations for large documents
@@ -136,7 +136,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v1.0.15 (June 2024)
+## v1.0.15 (June 2025)
 
 ### Build System Changes
 
@@ -171,7 +171,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v1.0.13 - v1.0.14 (May 2024)
+## v1.0.13 - v1.0.14 (May 2025)
 
 ### Diff View Support
 - **NEW**: `getSourceDiff()` method to get diff data between any two revisions
@@ -197,7 +197,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v1.0.11 - v1.0.12 (July 2024)
+## v1.0.11 - v1.0.12 (July 2025)
 
 ### Documentation & Build Improvements
 - Enhanced documentation structure
@@ -210,7 +210,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v1.0.10 (June 24, 2024)
+## v1.0.10 (June 24, 2025)
 
 ### Geographic & 3D Content Support
 - **NEW**: GeoJSON rendering with interactive Leaflet maps
@@ -220,7 +220,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v1.0.7 (June 19, 2024)
+## v1.0.7 (June 19, 2025)
 
 ### Math & Content Copy Improvements
 - **FIXED**: Math equation copy-paste functionality with proper sizing
@@ -230,7 +230,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v1.0.5 (June 17, 2024)
+## v1.0.5 (June 17, 2025)
 
 ### CLI Introduction & Syntax Highlighting Fixes
 - **NEW**: SquibV CLI tool for command-line Markdown to HTML conversion
@@ -247,7 +247,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v1.0.4 (June 16, 2024)
+## v1.0.4 (June 16, 2025)
 
 ### Build System & Release Management
 - **IMPROVED**: Release management tools for both library and CLI versions
@@ -256,7 +256,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v1.0.3 (June 16, 2024)
+## v1.0.3 (June 16, 2025)
 
 ### Math Rendering Improvements
 - **FIXED**: Math rendering issues in various contexts
@@ -265,7 +265,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v1.0.1 (June 3, 2024)
+## v1.0.1 (June 3, 2025)
 
 ### Bidirectional Editing Fixes & Runtime Identification
 - **FIXED**: Runtime version identification issues
@@ -276,7 +276,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v1.0.0 (June 3, 2024)
+## v1.0.0 (June 3, 2025)
 
 ### Major Release - Production Ready
 - **MILESTONE**: First stable 1.0 release
@@ -286,7 +286,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v0.0.36 (May 20, 2024)
+## v0.0.36 (May 20, 2025)
 
 ### Data Format Support & CI Improvements
 - **NEW**: CSV, TSV, and PSV inline block support with table rendering
@@ -297,7 +297,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v0.0.35 (May 14, 2024)
+## v0.0.35 (May 14, 2025)
 
 ### Image Handling & React Integration
 - **IMPROVED**: Image handling to preserve URLs in source view by default
@@ -307,7 +307,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v0.0.33 (May 14, 2024)
+## v0.0.33 (May 14, 2025)
 
 ### Build System Enhancements
 - **NEW**: Standalone ESM build for modern module systems
@@ -317,7 +317,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v0.0.32 (May 11, 2024)
+## v0.0.32 (May 11, 2025)
 
 ### React Support & Build Fixes
 - **NEW**: Full React build support with standalone ESM
@@ -327,7 +327,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v0.0.30 (March 28, 2024)
+## v0.0.30 (March 28, 2025)
 
 ### Text Selection API
 - Text selection API with events for detecting when text is selected in either panel
@@ -347,7 +347,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v0.0.29a (March 22, 2024)
+## v0.0.29a (March 22, 2025)
 
 ### Undo/Redo System
 - Support for undo/redo in both source and rendered panels
@@ -357,7 +357,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v0.0.29 (March 15, 2024)
+## v0.0.29 (March 15, 2025)
 
 ### Core Features
 - Bidirectional editing support
@@ -366,7 +366,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v0.0.28 (March 1, 2024)
+## v0.0.28 (March 1, 2025)
 
 ### Plugin System
 - Plugin system for extending functionality
@@ -376,7 +376,7 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v0.0.27 (February 15, 2024)
+## v0.0.27 (February 15, 2025)
 
 ### Initial Release
 - Initial release with core features
