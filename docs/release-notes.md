@@ -19,6 +19,18 @@ Complete changelog and release history for SquibView.
 - Added unit test for list rendering structure validation
 
 ---
+## v1.0.20 (September 22, 2025)
+*Release Date: September 22, 2025*
+
+### ✨ Improvements
+- **Added release notes update
+- **Update rel notes
+- **1.0.20 fixed bulletted list and css including extra overhead issues
+- **Fixed bulleted list css
+- **Updated release-notes
+
+---
+
 
 ## v1.0.19 (September 19, 2025)
 
