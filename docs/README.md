@@ -97,7 +97,7 @@ const editor = new SquibView('#editor', {
 
 ## Version
 
-Current version: 1.0.18
+See [release-notes]/(./docs/release-notes.md)
 
 ## License
 

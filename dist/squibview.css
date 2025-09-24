@@ -119,6 +119,44 @@
     background-color: var(--squibview-output-background-color);
 }
 
+/* Proper paragraph spacing in rendered output */
+.squibview-output p {
+    margin-top: 0;
+    margin-bottom: 1em; /* Standard paragraph spacing */
+}
+
+/* Remove extra margin from first and last paragraphs */
+.squibview-output p:first-child {
+    margin-top: 0;
+}
+
+.squibview-output p:last-child {
+    margin-bottom: 0;
+}
+
+/* Proper spacing for headings */
+.squibview-output h1,
+.squibview-output h2,
+.squibview-output h3,
+.squibview-output h4,
+.squibview-output h5,
+.squibview-output h6 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    line-height: 1.2;
+}
+
+/* First heading doesn't need top margin */
+.squibview-output h1:first-child,
+.squibview-output h2:first-child,
+.squibview-output h3:first-child,
+.squibview-output h4:first-child,
+.squibview-output h5:first-child,
+.squibview-output h6:first-child {
+    margin-top: 0;
+}
+
+
 /* Fix for list bullets appearing in margin/gutter (Issue #1 v1.0.20)
    Problem: Default browser list styling places bullets outside the content box.
    Solution: Explicitly set padding for lists to ensure bullets remain within

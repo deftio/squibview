@@ -556,6 +556,7 @@ class SquibView {
       html: true,
       linkify: true,
       typographer: true,
+      breaks: false,  // Set to true to preserve single line breaks
       highlight: (str, lang) => {
         const hljs = getHljs();
         if (lang && hljs && hljs.getLanguage && hljs.getLanguage(lang)) {
@@ -1481,21 +1482,28 @@ class SquibView {
       html = this._renderErrorPlaceholder('markdown');
     }
     let processedHtml = html;
+
+    // Apply linefeed view processing if enabled (view-only, doesn't modify source)
     if (this.linefeedViewEnabled) {
-      // Only process paragraphs, not code blocks or pre
-      processedHtml = processedHtml.replace(/(<p>)([\s\S]*?)(<\/p>)/g, (match, open, content, close) => {
-        // Split by <br> or by line
-        const lines = content.split(/<br\s*\/?>(?![^<]*<\/code>)/g);
-        const processedLines = lines.map(line => {
-          // If line is empty or already ends with <br>, skip
-          if (/\s*<\/?.*?>\s*/.test(line) || line.trim() === '') return line;
-          // If line already ends with <br>, skip
-          if (/<br\s*\/?>(\s*)$/.test(line)) return line;
+      // Add <br> tags at the end of lines within paragraphs for visual line breaks
+      processedHtml = processedHtml.replace(/<p>([\s\S]*?)<\/p>/g, (match, content) => {
+        // Split content by existing line breaks and process each line
+        const lines = content.split('\n');
+        const processedLines = lines.map((line, index) => {
+          // Don't add <br> to the last line or empty lines
+          if (index === lines.length - 1 || line.trim() === '') {
+            return line;
+          }
+          // Don't add <br> if line already ends with <br>
+          if (/<br\s*\/?>$/.test(line)) {
+            return line;
+          }
           return line + '<br>';
         });
-        return open + processedLines.join('') + close;
+        return '<p>' + processedLines.join('\n') + '</p>';
       });
     }
+
     // Replace incomplete block markers with visual indicators
     if (this.options.streamingMode || (this.options.errorHandling && this.options.errorHandling.showIncompleteBlockPlaceholder)) {
       processedHtml = processedHtml.replace(/<div class="incomplete-block-marker" data-type="(\w+)">INCOMPLETE:(\w+)<\/div>/g, (match, type1, type2) => {
@@ -4001,7 +4009,8 @@ class SquibView {
   }
 
   /**
-   * Toggles the linefeed view state. When enabled, rendered HTML will have <br> at the end of lines that would otherwise be collapsed.
+   * Toggles the linefeed view state. When enabled, rendered HTML will show line breaks that would otherwise be collapsed.
+   * This is a view-only toggle and doesn't modify the source markdown.
    */
   toggleLinefeedView() {
     this.linefeedViewEnabled = !this.linefeedViewEnabled;

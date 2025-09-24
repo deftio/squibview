@@ -4,7 +4,33 @@ Complete changelog and release history for SquibView.
 
 ---
 
-## v1.0.20 
+## v1.0.21 (September 23, 2025)
+
+### 🎯 Focus: Typography & Text Formatting Improvements
+
+This release enhances the visual presentation of rendered content with proper paragraph spacing and fixes the Smart Linefeeds feature for better control over line break handling.
+
+### 🐛 Bug Fixes
+- **Fixed Smart Linefeeds toggle** - Corrected `toggleLinefeedView()` to properly add `<br>` tags to rendered HTML for visual line breaks without modifying source markdown. This is a view-only toggle that preserves the original markdown text.
+
+### ✨ Improvements
+- **Enhanced typography** - Added professional spacing for better readability:
+  - Paragraphs now have 1em bottom margin for clear visual separation
+  - Headings have 1.5em top and 0.5em bottom margins for proper hierarchy
+  - First/last elements have smart margin adjustments to avoid excess spacing
+
+- **Smart Linefeeds clarification** - The feature now correctly maintains two distinct functions:
+  - `fixLinefeedsInMarkdown()` - Permanently modifies source markdown by adding two spaces at line ends (for portability)
+  - `toggleLinefeedView()` - View-only rendering toggle that adds visual line breaks without modifying the source
+
+### 📝 Developer Notes
+- The paragraph spacing improvements address rendering issues where text appeared too condensed
+- Smart Linefeeds functions are now properly separated: source modification vs. view-only rendering
+- All changes maintain full markdown compliance and backwards compatibility
+
+---
+
+## v1.0.20 (September 2024)
 
 ### 🐛 Bug Fixes
 - **Fixed list bullet positioning** - List bullets (ul/ol) now properly display within the content area instead of appearing in the left margin/gutter. Added explicit CSS rules for list padding and margins in `.squibview-output`.
@@ -17,17 +43,6 @@ Complete changelog and release history for SquibView.
 
 ### 🧪 Testing
 - Added unit test for list rendering structure validation
-
----
-## v1.0.20 (September 22, 2025)
-*Release Date: September 22, 2025*
-
-### ✨ Improvements
-- **Added release notes update
-- **Update rel notes
-- **1.0.20 fixed bulletted list and css including extra overhead issues
-- **Fixed bulleted list css
-- **Updated release-notes
 
 ---
 

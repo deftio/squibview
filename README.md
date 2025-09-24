@@ -24,8 +24,14 @@ SquibView renders Markdown (or HTML) with live preview and allows editing in bot
 - Visual diff comparison between any revisions
 - Export/copy as HTML with embedded images (including diagrams, pics, maps, 3D, editable tables and source code)
 - Works as CLI tool or JavaScript component
-- Streaming support for use with LLMs 
+- Streaming support for use with LLMs
 - Examples with Vue and React in addition to pure js
+
+**Recent Improvements (v1.0.21 - September 2025):**
+- ✨ Enhanced typography with proper paragraph and heading spacing
+- 🔧 Fixed Smart Linefeeds toggle for visual line break control
+- 📝 Dual linefeed handling: source modification or view-only rendering
+- 🎨 Professional text presentation with smart margin adjustments
 
 **Supported Content:**
 - 📊 Mermaid diagrams, flowcharts, sequence diagrams
@@ -130,6 +136,20 @@ const inlineDiff = editor.getSourceDiffInline(); // Blue additions, red deletion
 editor.copySource();   // Copy markdown to clipboard
 editor.copyHTML();     // Copy rendered HTML
 editor.exportHTML();   // Download as file
+```
+
+### Smart Linefeeds & Text Formatting
+```javascript
+// Fix linefeeds in markdown source (adds two spaces for hard breaks)
+const fixedMarkdown = editor.fixLinefeedsInMarkdown(text);
+
+// Toggle visual line breaks (view-only, doesn't modify source)
+editor.toggleLinefeedView();
+
+// Other formatting utilities
+editor.increaseHeadings();    // Increase heading levels (H1→H2, etc.)
+editor.decreaseHeadings();    // Decrease heading levels (H2→H1, etc.)
+editor.removeHR();             // Remove horizontal rules
 ```
 
 ## Examples
