@@ -29,6 +29,16 @@ This release enhances the visual presentation of rendered content with proper pa
 - All changes maintain full markdown compliance and backwards compatibility
 
 ---
+## v1.0.21 (September 23, 2025)
+*Release Date: September 23, 2025*
+
+### ✨ Improvements
+- **Making prerelease
+- **Fixed spacing and cr issues
+- **Minor clean ups
+
+---
+
 
 ## v1.0.20 (September 2024)
 
